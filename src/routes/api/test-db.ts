@@ -18,6 +18,15 @@ export const Route = createFileRoute("/api/test-db")({
             .from("user_profiles")
             .select("*");
 
+          // Test upserting a profile to check RLS permissions
+          const { data: testUpsert, error: testUpsertErr } = await clientPublishable
+            .from("user_profiles")
+            .upsert({
+              id: "00000000-0000-0000-0000-000000000000",
+              full_name: "Test RLS User"
+            })
+            .select();
+
           // 2. Test orders with publishable key
           const { data: pubOrders, error: pubOrdersErr } = await clientPublishable
             .from("orders")
@@ -51,6 +60,8 @@ export const Route = createFileRoute("/api/test-db")({
             publishable: {
               profilesCount: pubProfiles ? pubProfiles.length : null,
               profilesError: pubProfilesErr ? pubProfilesErr.message : null,
+              testUpsertError: testUpsertErr ? testUpsertErr.message : null,
+              testUpsertResult: testUpsert,
               ordersCount: pubOrders ? pubOrders.length : null,
               ordersError: pubOrdersErr ? pubOrdersErr.message : null,
               sampleOrders: pubOrders ? pubOrders.slice(0, 2) : null,

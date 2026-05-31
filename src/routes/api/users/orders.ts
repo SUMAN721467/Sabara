@@ -7,31 +7,49 @@ async function resolveSupabaseClient(request: Request, context: any) {
   let supabase = (context as any)?.supabase;
   let userId = (context as any)?.userId;
 
-  if (!supabase || !userId) {
-    const authHeader = request.headers.get("authorization");
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.replace("Bearer ", "");
-      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      if (supabaseUrl && supabaseKey) {
-        try {
-          const client = createClient(supabaseUrl, supabaseKey, {
-            global: { headers: { Authorization: `Bearer ${token}` } },
-            auth: {
-              storage: undefined,
-              persistSession: false,
-              autoRefreshToken: false,
-            }
-          });
-          const { data } = await client.auth.getClaims(token);
-          if (data?.claims?.sub) {
-            supabase = client;
-            userId = data.claims.sub;
-          }
-        } catch (e) {
-          console.error("[resolveSupabaseClient fallback error]", e);
+  const authHeader = request.headers.get("authorization");
+  const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
+
+  // Extract userId from token if not provided in context
+  if (!userId && token) {
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (supabaseUrl && supabaseKey) {
+      try {
+        const tempClient = createClient(supabaseUrl, supabaseKey);
+        const { data } = await tempClient.auth.getClaims(token);
+        if (data?.claims?.sub) {
+          userId = data.claims.sub;
         }
+      } catch (e) {
+        console.error("[resolveSupabaseClient extract sub error]", e);
       }
+    }
+  }
+
+  // Create client: Prefer service role key if available to bypass RLS on backend server calls
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  if (supabaseUrl) {
+    if (serviceKey && serviceKey.trim() && serviceKey.trim().startsWith("eyJ")) {
+      supabase = createClient(supabaseUrl, serviceKey, {
+        auth: {
+          storage: undefined,
+          persistSession: false,
+          autoRefreshToken: false,
+        }
+      });
+    } else if (token && supabaseKey) {
+      supabase = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: {
+          storage: undefined,
+          persistSession: false,
+          autoRefreshToken: false,
+        }
+      });
     }
   }
 
