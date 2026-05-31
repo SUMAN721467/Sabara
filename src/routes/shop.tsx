@@ -59,6 +59,22 @@ function groupProducts(list: Product[]): Product[] {
   }) as Product[];
 }
 
+function ProductCardSkeleton() {
+  return (
+    <div className="group block rounded-xl p-2 bg-card/45 border border-border/20">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-secondary/50 animate-pulse" />
+      <div className="mt-3 flex items-baseline justify-between gap-3 px-1">
+        <div className="h-5 w-2/3 rounded bg-secondary/50 animate-pulse" />
+        <div className="h-4 w-1/4 rounded bg-secondary/50 animate-pulse shrink-0" />
+      </div>
+      <div className="mt-2.5 flex gap-1.5 px-1">
+        <div className="h-6 w-6 rounded-full bg-secondary/50 animate-pulse" />
+        <div className="h-6 w-6 rounded-full bg-secondary/50 animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 function Shop() {
   const navigate = Route.useNavigate();
   const search = Route.useSearch();
@@ -78,28 +94,29 @@ function Shop() {
     queryKey: ["products", search.q ?? "", cat],
     queryFn: () => fetchProducts({ q: search.q, category: cat }),
     placeholderData: (prev) => prev,
-    // Demo fallback so the page renders even if the API is slow / unreachable
-    initialData: () => {
+  });
+
+  const visible = useMemo(() => {
+    let list = data;
+    // If the database query failed, fallback to mock products so the site remains browsable
+    if (isError || (!isLoading && !data)) {
       const q = (search.q ?? "").toLowerCase().trim();
-      let list = cat === "All" ? fallbackProducts : fallbackProducts.filter((p) => p.category === cat);
+      let fallbackList = cat === "All" ? fallbackProducts : fallbackProducts.filter((p) => p.category === cat);
       if (q) {
-        list = list.filter(
+        fallbackList = fallbackList.filter(
           (p) =>
             p.name.toLowerCase().includes(q) ||
             p.materials.toLowerCase().includes(q) ||
             p.category.toLowerCase().includes(q),
         );
       }
-      return groupProducts(list);
-    },
-  });
-
-  const visible = useMemo(() => {
-    const list = groupProducts(data ?? []);
-    if (sort === "low") return [...list].sort((a, b) => a.price - b.price);
-    if (sort === "high") return [...list].sort((a, b) => b.price - a.price);
-    return list;
-  }, [data, sort]);
+      list = fallbackList;
+    }
+    const grouped = groupProducts(list ?? []);
+    if (sort === "low") return [...grouped].sort((a, b) => a.price - b.price);
+    if (sort === "high") return [...grouped].sort((a, b) => b.price - a.price);
+    return grouped;
+  }, [data, isError, isLoading, sort, cat, search.q]);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,11 +210,17 @@ function Shop() {
       )}
 
       <div className="mt-10 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-        {visible.map((p, i) => (
-          <ScrollReveal key={p.id} variant="fade-up" delay={(i % 6) * 80} duration={600} once={true}>
-            <ProductCard product={p} />
-          </ScrollReveal>
-        ))}
+        {isLoading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <ProductCardSkeleton key={i} />
+          ))
+        ) : (
+          visible.map((p, i) => (
+            <ScrollReveal key={p.id} variant="fade-up" delay={(i % 6) * 80} duration={600} once={true}>
+              <ProductCard product={p} />
+            </ScrollReveal>
+          ))
+        )}
       </div>
 
       {!isLoading && visible.length === 0 && (

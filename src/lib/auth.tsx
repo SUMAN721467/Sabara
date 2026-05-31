@@ -10,16 +10,11 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-// ── Admin allow-list (read from env at build time) ───────────────────────────
-const ADMIN_EMAILS: Set<string> = new Set(
-  (import.meta.env.VITE_ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((e: string) => e.trim().toLowerCase())
-    .filter(Boolean),
-);
-
-// Fallback admin emails
-ADMIN_EMAILS.add("contact.sabara@gmail.com");
+// ── Admin allow-list ─────────────────────────────────────────────────────────
+const ADMIN_EMAILS: Set<string> = new Set([
+  "contact.sabara@gmail.com",
+  "sumansamanta721467@gmail.com",
+]);
 
 /** Returns true if the given email is in the admin allow-list */
 export function isAdminEmail(email: string | null | undefined): boolean {

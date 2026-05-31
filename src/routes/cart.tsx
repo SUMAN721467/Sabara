@@ -342,7 +342,7 @@ function CartPage() {
                                 <span className="inline-flex items-center rounded bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-300">
                                   Out of stock
                                 </span>
-                              ) : line.product.stock <= 3 ? (
+                              ) : line.product.stock <= 5 ? (
                                 <span className="inline-flex items-center rounded bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-300">
                                   Only {line.product.stock} left in stock
                                 </span>

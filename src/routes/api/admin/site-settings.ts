@@ -3,15 +3,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
 
 function getAdminEmails(): Set<string> {
-  const envEmails = process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || "";
-  const emails = new Set(
-    envEmails
-      .split(",")
-      .map((e) => e.trim().toLowerCase())
-      .filter(Boolean),
-  );
-  emails.add("contact.sabara@gmail.com");
-  return emails;
+  return new Set([
+    "contact.sabara@gmail.com",
+    "sumansamanta721467@gmail.com",
+  ]);
 }
 
 async function assertAdmin(request: Request, context: any) {

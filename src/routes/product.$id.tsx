@@ -194,7 +194,18 @@ function ProductPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isWishlisted = hasWishlist(product.id);
+  const maxStock = product.stock !== undefined && product.stock !== null ? Number(product.stock) : 10;
+  const isOutOfStock = maxStock <= 0;
   const [qty, setQty] = useState(1);
+
+  // Keep qty within stock bounds
+  useEffect(() => {
+    if (isOutOfStock) {
+      setQty(0);
+    } else {
+      setQty((q) => Math.max(1, Math.min(maxStock, q)));
+    }
+  }, [maxStock, isOutOfStock]);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
 
@@ -276,6 +287,28 @@ function ProductPage() {
             <div className="mt-3 text-xl text-muted-foreground">{formatPrice(product.price)}</div>
           )}
 
+          {/* Stock Availability Indicator */}
+          {product.stock !== undefined && product.stock !== null && (
+            <div className="mt-3 flex items-center gap-2 text-sm font-medium">
+              {isOutOfStock ? (
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-600 dark:text-red-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                  Out of Stock
+                </div>
+              ) : maxStock <= 5 ? (
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 dark:bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-600 dark:text-amber-500 animate-pulse">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  Only {maxStock} left
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  In Stock
+                </div>
+              )}
+            </div>
+          )}
+
           <p className="mt-6 leading-relaxed text-foreground/80">{product.story}</p>
 
           {/* Variety Selector */}
@@ -329,21 +362,30 @@ function ProductPage() {
             <div className="inline-flex items-center rounded-full border border-border">
               <button
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="inline-flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground"
+                className="inline-flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Decrease"
+                disabled={isOutOfStock || qty <= 1}
               >
                 <Minus className="h-4 w-4" />
               </button>
               <span className="w-8 text-center text-sm tabular-nums">{qty}</span>
               <button
-                onClick={() => setQty((q) => q + 1)}
-                className="inline-flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground"
+                onClick={() => setQty((q) => Math.min(maxStock, q + 1))}
+                className="inline-flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Increase"
+                disabled={isOutOfStock || qty >= maxStock}
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
-            {user ? (
+            {isOutOfStock ? (
+              <button
+                disabled
+                className="flex-1 rounded-full bg-border text-muted-foreground px-6 py-3 text-sm font-medium cursor-not-allowed opacity-50"
+              >
+                Out of Stock
+              </button>
+            ) : user ? (
               <button
                 onClick={() => {
                   add(product.id, qty);

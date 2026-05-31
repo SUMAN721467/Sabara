@@ -5,15 +5,10 @@ import { getOrSeedProducts } from "../products";
 
 /** Emails allowed to manage products — read from server env at request time */
 function getAdminEmails(): Set<string> {
-  const envEmails = process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || "";
-  const emails = new Set(
-    envEmails
-      .split(",")
-      .map((e) => e.trim().toLowerCase())
-      .filter(Boolean),
-  );
-  emails.add("contact.sabara@gmail.com");
-  return emails;
+  return new Set([
+    "contact.sabara@gmail.com",
+    "sumansamanta721467@gmail.com",
+  ]);
 }
 
 /** Throw a 403 if the caller is not in the admin allow-list */
