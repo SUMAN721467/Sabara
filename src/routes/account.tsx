@@ -601,24 +601,27 @@ function AccountPage() {
           <TabsList className="grid w-full grid-cols-3 p-1.5 h-12 bg-secondary/60 rounded-xl border border-border/40">
             <TabsTrigger
               value="profile"
-              className="rounded-lg py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="rounded-lg py-2.5 text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
-              <User className="h-4 w-4" />
-              Profile Details
+              <User className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Profile Details</span>
+              <span className="inline sm:hidden">Profile</span>
             </TabsTrigger>
             <TabsTrigger
               value="address"
-              className="rounded-lg py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="rounded-lg py-2.5 text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
-              <MapPin className="h-4 w-4" />
-              Shipping Address
+              <MapPin className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Shipping Address</span>
+              <span className="inline sm:hidden">Address</span>
             </TabsTrigger>
             <TabsTrigger
               value="orders"
-              className="rounded-lg py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="rounded-lg py-2.5 text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
-              <ShoppingBag className="h-4 w-4" />
-              My Orders
+              <ShoppingBag className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">My Orders</span>
+              <span className="inline sm:hidden">Orders</span>
             </TabsTrigger>
           </TabsList>
 
