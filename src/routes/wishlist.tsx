@@ -1,8 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { formatPrice, useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/wishlist")({
@@ -13,6 +14,8 @@ export const Route = createFileRoute("/wishlist")({
 function WishlistPage() {
   const { detailed, remove, count, clear } = useWishlist();
   const { add: addToCart } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleAddToCart = (product: any) => {
     addToCart(product.id, 1);
@@ -126,13 +129,23 @@ function WishlistPage() {
                 </div>
 
                 <div className="mt-5 flex gap-2">
-                  <Button
-                    onClick={() => handleAddToCart(product)}
-                    className="flex-1 rounded-full text-sm font-medium py-5 cursor-pointer"
-                  >
-                    <ShoppingBag className="mr-2 h-4 w-4" />
-                    Add to Cart
-                  </Button>
+                  {user ? (
+                    <Button
+                      onClick={() => handleAddToCart(product)}
+                      className="flex-1 rounded-full text-sm font-medium py-5 cursor-pointer"
+                    >
+                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      Add to Cart
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => navigate({ to: "/login", search: { redirect: "/wishlist" } })}
+                      variant="secondary"
+                      className="flex-1 rounded-full text-sm font-medium py-5 border border-border cursor-pointer"
+                    >
+                      Login to add to cart
+                    </Button>
+                  )}
                   <Button
                     asChild
                     variant="outline"

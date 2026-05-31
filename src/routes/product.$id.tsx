@@ -1,10 +1,11 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ArrowLeft, Minus, Plus, Heart } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { formatPrice, useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
+import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { ProductCard } from "@/components/site/ProductCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
@@ -190,6 +191,8 @@ function ProductPage() {
   const { product, related, variants } = Route.useLoaderData();
   const { add } = useCart();
   const { toggle: toggleWishlist, has: hasWishlist } = useWishlist();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const isWishlisted = hasWishlist(product.id);
   const [qty, setQty] = useState(1);
   const [api, setApi] = useState<CarouselApi>();
@@ -340,15 +343,26 @@ function ProductPage() {
                 <Plus className="h-4 w-4" />
               </button>
             </div>
-             <button
-              onClick={() => {
-                add(product.id, qty);
-                toast.success(`${product.name} added to cart`);
-              }}
-              className="flex-1 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
-            >
-              Add to cart · {formatPrice(product.price * qty)}
-            </button>
+            {user ? (
+              <button
+                onClick={() => {
+                  add(product.id, qty);
+                  toast.success(`${product.name} added to cart`);
+                }}
+                className="flex-1 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+              >
+                Add to cart · {formatPrice(product.price * qty)}
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  navigate({ to: "/login", search: { redirect: `/product/${product.id}` } });
+                }}
+                className="flex-1 rounded-full bg-secondary border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80 cursor-pointer"
+              >
+                Login to add to cart
+              </button>
+            )}
             <button
               onClick={() => {
                 toggleWishlist(product.id);
