@@ -2006,8 +2006,12 @@ function CustomersAdmin({
           
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
             {/* Avatar */}
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/10 font-serif text-3xl font-bold text-primary shadow-inner border border-primary/20">
-              {getInitials(c.fullName)}
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/10 font-serif text-3xl font-bold text-primary shadow-inner border border-primary/20 overflow-hidden">
+              {c.avatarUrl ? (
+                <img src={c.avatarUrl} alt={c.fullName} className="h-full w-full object-cover" />
+              ) : (
+                getInitials(c.fullName)
+              )}
             </div>
 
             {/* Main Info */}
@@ -2332,8 +2336,12 @@ function CustomersAdmin({
                 >
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 font-serif text-sm font-semibold text-primary">
-                        {getInitials(c.fullName)}
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 font-serif text-sm font-semibold text-primary overflow-hidden">
+                        {c.avatarUrl ? (
+                          <img src={c.avatarUrl} alt={c.fullName} className="h-full w-full object-cover" />
+                        ) : (
+                          getInitials(c.fullName)
+                        )}
                       </div>
                       <div>
                         <div className="font-medium text-foreground">{c.fullName}</div>

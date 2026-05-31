@@ -30,6 +30,15 @@ export const Route = createFileRoute("/account")({
   }),
 });
 
+const getStoragePathFromUrl = (url: string, bucketName: string = "product-images"): string | null => {
+  if (!url) return null;
+  const marker = `/${bucketName}/`;
+  const index = url.indexOf(marker);
+  if (index === -1) return null;
+  const pathWithQuery = url.substring(index + marker.length);
+  return pathWithQuery.split("?")[0];
+};
+
 function AccountPage() {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -300,6 +309,19 @@ function AccountPage() {
       const { data } = supabase.storage.from("product-images").getPublicUrl(path);
       const publicUrl = data.publicUrl;
 
+      // Clean up old avatar image from storage if it exists
+      const oldAvatarUrl = profile?.avatarUrl || user.user_metadata?.avatar_url || null;
+      if (oldAvatarUrl) {
+        const oldPath = getStoragePathFromUrl(oldAvatarUrl, "product-images");
+        if (oldPath) {
+          try {
+            await supabase.storage.from("product-images").remove([oldPath]);
+          } catch (delErr) {
+            console.error("Failed to delete old avatar from storage:", delErr);
+          }
+        }
+      }
+
       // Update Supabase auth user metadata so the Navbar dropdown updates immediately
       const { error: updateErr } = await supabase.auth.updateUser({
         data: { avatar_url: publicUrl }
@@ -335,6 +357,19 @@ function AccountPage() {
   const handleRemoveAvatar = async () => {
     setUploadingAvatar(true);
     try {
+      // Clean up old avatar image from storage if it exists
+      const oldAvatarUrl = profile?.avatarUrl || user.user_metadata?.avatar_url || null;
+      if (oldAvatarUrl) {
+        const oldPath = getStoragePathFromUrl(oldAvatarUrl, "product-images");
+        if (oldPath) {
+          try {
+            await supabase.storage.from("product-images").remove([oldPath]);
+          } catch (delErr) {
+            console.error("Failed to delete avatar from storage:", delErr);
+          }
+        }
+      }
+
       const { error } = await supabase.auth.updateUser({
         data: { avatar_url: null }
       });

@@ -154,7 +154,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               isRegistered: true,
               cart: profile.cart || [],
               wishlist: profile.wishlist || [],
-              loginMethod: profile.login_method || "email"
+              loginMethod: profile.login_method || "email",
+              avatarUrl: profile.avatar_url || null
             });
           });
 
@@ -187,7 +188,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               isRegistered: hasRegisteredOrder,
               cart: [],
               wishlist: [],
-              loginMethod: "guest"
+              loginMethod: "guest",
+              avatarUrl: null
             });
           });
 
