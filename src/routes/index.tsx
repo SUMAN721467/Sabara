@@ -121,13 +121,13 @@ function Index() {
   return (
     <div>
       {/* HERO — full width */}
-      <section className="relative h-[85vh] min-h-[520px] w-full overflow-hidden transition-opacity duration-500" style={{ opacity: showHero ? 1 : 0 }}>
+      <section className="relative h-[60vh] min-h-[400px] lg:h-[85vh] lg:min-h-[520px] w-full overflow-hidden transition-opacity duration-500" style={{ opacity: showHero ? 1 : 0 }}>
         <img
           src={settings.imageUrl}
           alt={settings.title}
           width={1600}
           height={1100}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 ease-out hover:scale-105"
+          className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-1000 ease-out hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent" />
         <div className="relative mx-auto flex h-full max-w-6xl items-center px-4 sm:px-6">
