@@ -3,6 +3,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
 import { getOrSeedProducts } from "../products";
 
+function getStoragePathFromUrl(url: string, bucketName: string = "product-images"): string | null {
+  if (!url) return null;
+  const marker = `/${bucketName}/`;
+  const index = url.indexOf(marker);
+  if (index === -1) return null;
+  const pathWithQuery = url.substring(index + marker.length);
+  return pathWithQuery.split("?")[0];
+}
+
 /** Emails allowed to manage products — read from server env at request time */
 function getAdminEmails(): Set<string> {
   return new Set([
@@ -146,12 +155,55 @@ export const Route = createFileRoute("/api/admin/products")({
           const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
           const supabase = createClient(supabaseUrl!, supabaseKey!);
 
+          // Fetch product image/gallery urls before deletion
+          const { data: product } = await supabase
+            .from("products")
+            .select("image, gallery")
+            .eq("id", id)
+            .single();
+
           const { error } = await supabase
             .from("products")
             .delete()
             .eq("id", id);
 
           if (error) throw new Error(error.message);
+
+          // Clean up storage images if the product was fetched successfully
+          if (product) {
+            const urlsToDelete = new Set<string>();
+            if (product.image) urlsToDelete.add(product.image);
+            if (Array.isArray(product.gallery)) {
+              product.gallery.forEach((url: any) => {
+                if (url && typeof url === "string") {
+                  urlsToDelete.add(url);
+                }
+              });
+            }
+
+            const pathsToDelete: string[] = [];
+            urlsToDelete.forEach((url) => {
+              const path = getStoragePathFromUrl(url, "product-images");
+              if (path) {
+                pathsToDelete.push(path);
+              }
+            });
+
+            if (pathsToDelete.length > 0) {
+              try {
+                // Perform deletion in storage
+                const { error: storageErr } = await supabase.storage
+                  .from("product-images")
+                  .remove(pathsToDelete);
+                if (storageErr) {
+                  console.error("[api/admin/products DELETE] Storage cleanup error:", storageErr.message);
+                }
+              } catch (storageErr) {
+                console.error("[api/admin/products DELETE] Storage cleanup exception:", storageErr);
+              }
+            }
+          }
+
           return Response.json({ success: true });
         } catch (err: any) {
           console.error("[api/admin/products DELETE error]", err);
