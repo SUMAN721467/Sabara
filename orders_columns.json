@@ -1,0 +1,38 @@
+{
+  "keys": [
+    "id",
+    "order_number",
+    "customer_name",
+    "customer_email",
+    "customer_phone",
+    "total",
+    "status",
+    "shipping_street",
+    "shipping_city",
+    "shipping_state",
+    "shipping_zip_code",
+    "user_id",
+    "created_at",
+    "cancellation_reason",
+    "customer_status",
+    "seller_instruction"
+  ],
+  "sample": {
+    "id": "16047ecb-c74a-4774-9740-d0b13e7770c3",
+    "order_number": "LW-2026-0010",
+    "customer_name": "Sabara Admin",
+    "customer_email": "contact.sabara@gmail.com",
+    "customer_phone": "6294359714",
+    "total": 13450,
+    "status": "Cancelled",
+    "shipping_street": "Nila|blue dart|bl1237895",
+    "shipping_city": "Paschim Medinipur",
+    "shipping_state": "West Bengal",
+    "shipping_zip_code": "721467",
+    "user_id": "065e6289-aa3d-4997-ad04-7fc323246143",
+    "created_at": "2026-05-25T14:59:10.140753+00:00",
+    "cancellation_reason": null,
+    "customer_status": "Cancelled by Customer",
+    "seller_instruction": null
+  }
+}

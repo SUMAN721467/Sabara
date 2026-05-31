@@ -1,0 +1,24 @@
+{
+  "coupons": [
+    {
+      "code": "FIRSTORDER",
+      "discount": 20
+    },
+    {
+      "code": "SABARA15",
+      "discount": 15
+    },
+    {
+      "code": "SABARA",
+      "limit": 0,
+      "discount": 50,
+      "minOrder": 1999
+    },
+    {
+      "code": "LALI",
+      "discount": 50,
+      "minOrder": 999,
+      "limit": 1
+    }
+  ]
+}
