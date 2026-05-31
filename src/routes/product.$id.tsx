@@ -309,56 +309,7 @@ function ProductPage() {
             </div>
           )}
 
-          <p className="mt-6 leading-relaxed text-foreground/80">{product.story}</p>
-
-          {/* Variety Selector */}
-          {variants && variants.length > 1 && (
-            <div className="mt-6 border-t border-border/60 pt-5">
-              <span className="text-sm font-semibold text-foreground">
-                Variety: <span className="font-normal text-muted-foreground">{product.name.split(" - ")[1] || "Default"}</span>
-              </span>
-              <div className="mt-3 flex flex-wrap gap-3">
-                {variants.map((v: any) => {
-                  const isSelected = v.id === product.id;
-                  const vColor = v.name.split(" - ")[1] || "Default";
-                  return (
-                    <Link
-                      key={v.id}
-                      to="/product/$id"
-                      params={{ id: v.id }}
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 rounded-xl border p-2 text-center bg-card transition-all hover:border-primary cursor-pointer w-24 sm:w-28",
-                        isSelected
-                          ? "border-primary ring-2 ring-primary/20 scale-[1.02]"
-                          : "border-border/60 opacity-85 hover:opacity-100"
-                      )}
-                    >
-                      <div className="h-16 w-full rounded-lg overflow-hidden bg-secondary/50">
-                        <img src={v.image} alt={vColor} className="h-full w-full object-cover" />
-                      </div>
-                      <div className="text-[11px] font-medium truncate w-full text-foreground/90">{vColor}</div>
-                      <div className="text-[10px] font-semibold text-muted-foreground whitespace-nowrap">
-                        {formatPrice(v.price)}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <dl className="mt-8 grid grid-cols-2 gap-y-3 border-y border-border/60 py-5 text-sm">
-            <dt className="text-muted-foreground">Materials</dt>
-            <dd className="text-foreground">{product.materials}</dd>
-            <dt className="text-muted-foreground">Dimensions</dt>
-            <dd className="text-foreground">{product.dimensions}</dd>
-            <dt className="text-muted-foreground">Made</dt>
-            <dd className="text-foreground">By hand, in small batches</dd>
-            <dt className="text-muted-foreground">Returns</dt>
-            <dd className="text-foreground text-emerald-600 dark:text-emerald-400 font-semibold">7 Days Hassle-Free Return</dd>
-          </dl>
-
-          <div className="mt-8 flex items-stretch gap-3">
+          <div className="mt-6 flex items-stretch gap-3">
             <div className="inline-flex items-center rounded-full border border-border">
               <button
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -425,7 +376,56 @@ function ProductPage() {
               <Heart className={cn("h-5 w-5", isWishlisted && "fill-current")} />
             </button>
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">Free shipping on all orders</p>
+          <p className="mt-3 text-xs text-muted-foreground">Free shipping on all orders</p>
+
+          <p className="mt-8 leading-relaxed text-foreground/80">{product.story}</p>
+
+          {/* Variety Selector */}
+          {variants && variants.length > 1 && (
+            <div className="mt-6 border-t border-border/60 pt-5">
+              <span className="text-sm font-semibold text-foreground">
+                Variety: <span className="font-normal text-muted-foreground">{product.name.split(" - ")[1] || "Default"}</span>
+              </span>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {variants.map((v: any) => {
+                  const isSelected = v.id === product.id;
+                  const vColor = v.name.split(" - ")[1] || "Default";
+                  return (
+                    <Link
+                      key={v.id}
+                      to="/product/$id"
+                      params={{ id: v.id }}
+                      className={cn(
+                        "flex flex-col items-center gap-1.5 rounded-xl border p-2 text-center bg-card transition-all hover:border-primary cursor-pointer w-24 sm:w-28",
+                        isSelected
+                          ? "border-primary ring-2 ring-primary/20 scale-[1.02]"
+                          : "border-border/60 opacity-85 hover:opacity-100"
+                      )}
+                    >
+                      <div className="h-16 w-full rounded-lg overflow-hidden bg-secondary/50">
+                        <img src={v.image} alt={vColor} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="text-[11px] font-medium truncate w-full text-foreground/90">{vColor}</div>
+                      <div className="text-[10px] font-semibold text-muted-foreground whitespace-nowrap">
+                        {formatPrice(v.price)}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <dl className="mt-8 grid grid-cols-2 gap-y-3 border-y border-border/60 py-5 text-sm">
+            <dt className="text-muted-foreground">Materials</dt>
+            <dd className="text-foreground">{product.materials}</dd>
+            <dt className="text-muted-foreground">Dimensions</dt>
+            <dd className="text-foreground">{product.dimensions}</dd>
+            <dt className="text-muted-foreground">Made</dt>
+            <dd className="text-foreground">By hand, in small batches</dd>
+            <dt className="text-muted-foreground">Returns</dt>
+            <dd className="text-foreground text-emerald-600 dark:text-emerald-400 font-semibold">7 Days Hassle-Free Return</dd>
+          </dl>
 
         </div>
       </div>

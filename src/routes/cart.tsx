@@ -194,7 +194,7 @@ function CartPage() {
     e.preventDefault();
     if (detailed.length === 0) return;
 
-    if (!fullName || !email || !street.trim() || !landmark.trim() || !city.trim() || !district.trim() || !stateName.trim() || !zipCode.trim()) {
+    if (!fullName || !email || !phone.trim() || !street.trim() || !landmark.trim() || !city.trim() || !district.trim() || !stateName.trim() || !zipCode.trim()) {
       toast.error("Please fill in all shipping details. All fields are mandatory.");
       return;
     }
@@ -386,8 +386,11 @@ function CartPage() {
 
             {/* Checkout Form */}
             <div>
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col mb-6">
                 <h2 className="font-serif text-2xl">2. Shipping & Delivery</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Please fill in all shipping details. <span className="font-semibold text-destructive dark:text-red-400">(All fields are mandatory)</span>
+                </p>
               </div>
 
               {!user ? (
@@ -408,7 +411,7 @@ function CartPage() {
                 <form id="checkout-form" onSubmit={handleCheckout} className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name</Label>
+                      <Label htmlFor="fullName">Full Name <span className="text-destructive">*</span></Label>
                       <Input
                         id="fullName"
                         required
@@ -418,7 +421,7 @@ function CartPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
+                      <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
                       <Input
                         id="email"
                         type="email"
@@ -431,10 +434,11 @@ function CartPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
+                    <Label htmlFor="phone">Phone Number <span className="text-destructive">*</span></Label>
                     <Input
                       id="phone"
                       type="tel"
+                      required
                       placeholder="+91 12345 67890"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
@@ -442,7 +446,7 @@ function CartPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="street">Street Address</Label>
+                    <Label htmlFor="street">Street Address <span className="text-destructive">*</span></Label>
                     <Input
                       id="street"
                       required
@@ -453,7 +457,7 @@ function CartPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="landmark">Landmark</Label>
+                    <Label htmlFor="landmark">Landmark <span className="text-destructive">*</span></Label>
                     <Input
                       id="landmark"
                       required
@@ -465,7 +469,7 @@ function CartPage() {
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="city">City / Town / Village</Label>
+                      <Label htmlFor="city">City / Town / Village <span className="text-destructive">*</span></Label>
                       <Input
                         id="city"
                         required
@@ -475,7 +479,7 @@ function CartPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="district">District</Label>
+                      <Label htmlFor="district">District <span className="text-destructive">*</span></Label>
                       <Input
                         id="district"
                         required
@@ -485,7 +489,7 @@ function CartPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="state">State / Province</Label>
+                      <Label htmlFor="state">State / Province <span className="text-destructive">*</span></Label>
                       <Input
                         id="state"
                         required
@@ -502,7 +506,7 @@ function CartPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="zipCode" className="flex items-center justify-between">
-                        <span>ZIP / Postal Code</span>
+                        <span>ZIP / Postal Code <span className="text-destructive">*</span></span>
                         {fetchingPincode && (
                           <span className="text-[10px] text-primary flex items-center gap-1 animate-pulse">
                             <Loader2 className="h-2.5 w-2.5 animate-spin" /> Fetching...

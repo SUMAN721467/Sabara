@@ -39,6 +39,13 @@ const getStoragePathFromUrl = (url: string, bucketName: string = "product-images
   return pathWithQuery.split("?")[0];
 };
 
+const getProductNamesString = (items: any[]) => {
+  if (!items || !items.length) return "Order";
+  const names = items.map((item) => item.productName || "Product");
+  if (names.length <= 1) return names[0];
+  return `${names[0]} (+ ${names.length - 1} other${names.length - 1 > 1 ? "s" : ""})`;
+};
+
 function AccountPage() {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -401,6 +408,12 @@ function AccountPage() {
     setSavingProfile(true);
 
     try {
+      if (!phone || !phone.trim()) {
+        toast.error("Phone / Mobile Number is mandatory.");
+        setSavingProfile(false);
+        return;
+      }
+
       const { data } = await supabase.auth.getSession();
       const token = data?.session?.access_token;
       if (!token) {
@@ -710,10 +723,11 @@ function AccountPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone / Mobile Number</Label>
+                    <Label htmlFor="phone">Phone / Mobile Number <span className="text-destructive">*</span></Label>
                     <Input
                       id="phone"
                       type="tel"
+                      required
                       placeholder="+91 12345 67890"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
@@ -762,14 +776,14 @@ function AccountPage() {
                 <div>
                   <h2 className="text-xl font-serif text-foreground">Shipping Details</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Add or update your address for smooth checkout deliveries.
+                    Add or update your address for smooth checkout deliveries. <span className="font-semibold text-destructive dark:text-red-400 block sm:inline mt-1 sm:mt-0 sm:ml-1">(All fields are mandatory)</span>
                   </p>
                 </div>
               </div>
 
               <form onSubmit={handleSaveAddress} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="street">Street Address</Label>
+                  <Label htmlFor="street">Street Address <span className="text-destructive">*</span></Label>
                   <Input
                     id="street"
                     required
@@ -780,7 +794,7 @@ function AccountPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="landmark">Landmark</Label>
+                  <Label htmlFor="landmark">Landmark <span className="text-destructive">*</span></Label>
                   <Input
                     id="landmark"
                     required
@@ -792,7 +806,7 @@ function AccountPage() {
 
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="city">City / Town / Village</Label>
+                    <Label htmlFor="city">City / Town / Village <span className="text-destructive">*</span></Label>
                     <Input
                       id="city"
                       required
@@ -803,7 +817,7 @@ function AccountPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="district">District</Label>
+                    <Label htmlFor="district">District <span className="text-destructive">*</span></Label>
                     <Input
                       id="district"
                       required
@@ -814,7 +828,7 @@ function AccountPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="state">State / Province</Label>
+                    <Label htmlFor="state">State / Province <span className="text-destructive">*</span></Label>
                     <Input
                       id="state"
                       required
@@ -832,7 +846,7 @@ function AccountPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="zipCode" className="flex items-center justify-between">
-                      <span>ZIP / Postal Code</span>
+                      <span>ZIP / Postal Code <span className="text-destructive">*</span></span>
                       {fetchingPincode && (
                         <span className="text-[10px] text-primary flex items-center gap-1 animate-pulse">
                           <Loader2 className="h-2.5 w-2.5 animate-spin" /> Fetching...
@@ -954,9 +968,9 @@ function AccountPage() {
                           className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4 cursor-pointer hover:bg-secondary/10 transition-colors"
                         >
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-sm font-bold text-foreground">
-                                {order.orderNumber}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-serif text-base font-bold text-foreground">
+                                {getProductNamesString(order.items)}
                               </span>
                               <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold tracking-wide ${
                                 order.customerStatus === "Cancelled by Customer" 
@@ -972,7 +986,11 @@ function AccountPage() {
                                     : order.status}
                               </span>
                             </div>
-                            <p className="text-xs text-muted-foreground">Placed on {formattedDate}</p>
+                            <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                              <span>ID: <span className="font-mono">{order.orderNumber}</span></span>
+                              <span className="text-muted-foreground/30">•</span>
+                              <span>Placed on {formattedDate}</span>
+                            </p>
                           </div>
                           <div className="flex items-center justify-between sm:justify-end gap-6">
                             <div className="text-right">
