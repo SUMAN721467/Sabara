@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { AuthService } from "@/services/auth.service";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -30,8 +30,10 @@ function LoginPage() {
   const [step, setStep] = useState<LoginStep>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [otpToken, setOtpToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -237,15 +239,29 @@ function LoginPage() {
 
           <div>
             <label className="text-sm text-foreground font-medium">New Password</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              placeholder="At least 6 characters"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-            />
+            <div className="relative mt-1">
+              <input
+                type={showNewPassword ? "text" : "password"}
+                required
+                minLength={6}
+                placeholder="At least 6 characters"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-md border border-border bg-background pl-3 pr-10 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center text-muted-foreground hover:text-foreground focus:outline-none cursor-pointer"
+                title={showNewPassword ? "Hide password" : "Show password"}
+              >
+                {showNewPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <button
@@ -332,13 +348,27 @@ function LoginPage() {
               Forgot password?
             </button>
           </div>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-          />
+          <div className="relative mt-1">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-md border border-border bg-background pl-3 pr-10 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center text-muted-foreground hover:text-foreground focus:outline-none cursor-pointer"
+              title={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
         </div>
         <button
           type="submit"
