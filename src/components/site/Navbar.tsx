@@ -304,7 +304,7 @@ export function Navbar() {
             </button>
 
             {/* User button — relative container for the dropdown panel */}
-            <div className="relative hidden sm:block">
+            <div className="relative">
               {user ? (
                 <>
                   <button
@@ -353,7 +353,7 @@ export function Navbar() {
             <Link
               to="/wishlist"
               aria-label="Wishlist"
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
+              className="relative hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
             >
               <Heart className="h-5 w-5" />
               {wishlistCount > 0 && (

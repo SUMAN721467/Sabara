@@ -149,6 +149,9 @@ export const Route = createFileRoute("/api/checkout")({
 
           const seq = (count || 0) + 1;
           const orderNumber = `LW-2026-${String(seq).padStart(4, "0")}`;
+          const baseStreet = `${shippingAddress.street.replace(/\|/g, " ")}${shippingAddress.landmark ? ` (Landmark: ${shippingAddress.landmark.replace(/\|/g, " ")})` : ""}${shippingAddress.district ? ` (District: ${shippingAddress.district.replace(/\|/g, " ")})` : ""}`;
+
+
           // Insert order
           const { data: order, error: orderError } = await supabase
             .from("orders")
@@ -160,8 +163,8 @@ export const Route = createFileRoute("/api/checkout")({
               total: finalTotal,
               status: "Pending",
               shipping_street: code 
-                ? `${shippingAddress.street.replace(/\|/g, " ")}|||${code}|${discount}` 
-                : shippingAddress.street.replace(/\|/g, " "),
+                ? `${baseStreet}|||${code}|${discount}` 
+                : baseStreet,
               shipping_city: shippingAddress.city,
               shipping_state: shippingAddress.state,
               shipping_zip_code: shippingAddress.zipCode,
@@ -257,7 +260,9 @@ export const Route = createFileRoute("/api/checkout")({
               street: order.shipping_street,
               city: order.shipping_city,
               state: order.shipping_state,
-              zipCode: order.shipping_zip_code
+              zipCode: order.shipping_zip_code,
+              landmark: shippingAddress.landmark || "",
+              district: shippingAddress.district || ""
             },
             items: items.map((i: any) => ({
               productId: i.productId,

@@ -171,6 +171,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [lines, hydrated, user, dbProducts, hasSyncedOnLogin]);
 
+  // 6. Automatically clean up stale/invalid items from lines once dbProducts is loaded
+  useEffect(() => {
+    if (!loading && dbProducts.length > 0 && lines.length > 0) {
+      const validLines = lines.filter(l => dbProducts.some(p => p.id === l.id));
+      if (validLines.length !== lines.length) {
+        setLines(validLines);
+      }
+    }
+  }, [loading, dbProducts, lines]);
+
   const value = useMemo<CartCtx>(() => {
     const detailed = lines
       .map((l) => {
@@ -183,7 +193,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       lines,
       detailed,
       loading,
-      count: lines.reduce((s, l) => s + l.qty, 0),
+      count: detailed.reduce((s, l) => s + l.qty, 0),
       subtotal: detailed.reduce((s, l) => s + l.product.price * l.qty, 0),
       add: (id, qty = 1) =>
         setLines((prev) => {

@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { INDIAN_STATES, fetchDistrictAndStateFromPincode } from "@/lib/pincode";
+
 
 export const Route = createFileRoute("/cart")({
   component: CartPage,
@@ -117,8 +119,37 @@ function CartPage() {
   const [phone, setPhone] = useState("");
   const [street, setStreet] = useState("");
   const [city, setCity] = useState("");
+  const [district, setDistrict] = useState("");
   const [stateName, setStateName] = useState("");
   const [zipCode, setZipCode] = useState("");
+  const [isManualInput, setIsManualInput] = useState(false);
+  const [landmark, setLandmark] = useState("");
+  const [fetchingPincode, setFetchingPincode] = useState(false);
+
+  // Auto-fetch district & state when pincode is exactly 6 digits (manual input only)
+  useEffect(() => {
+    if (zipCode && zipCode.length === 6 && isManualInput) {
+      const fetchDetails = async () => {
+        setFetchingPincode(true);
+        try {
+          const details = await fetchDistrictAndStateFromPincode(zipCode);
+          if (details) {
+            setDistrict(details.district);
+            setStateName(details.state);
+            toast.success(`District & State auto-filled for PIN Code ${zipCode}`);
+          } else {
+            toast.error("Could not find location details for this PIN Code. Please enter manually.");
+          }
+        } catch (err) {
+          console.error("Failed to fetch address details for pincode:", err);
+        } finally {
+          setFetchingPincode(false);
+        }
+      };
+      fetchDetails();
+    }
+  }, [zipCode, isManualInput]);
+
 
   // Fetch registered user profile details
   useEffect(() => {
@@ -147,8 +178,10 @@ function CartPage() {
             if (p.address) {
               setStreet(p.address.street || "");
               setCity(p.address.city || "");
+              setDistrict(p.address.district || "");
               setStateName(p.address.state || "");
               setZipCode(p.address.zipCode || "");
+              setLandmark(p.address.landmark || "");
             }
           }
         })
@@ -161,10 +194,16 @@ function CartPage() {
     e.preventDefault();
     if (detailed.length === 0) return;
 
-    if (!fullName || !email || !street || !city || !stateName || !zipCode) {
-      toast.error("Please fill in all shipping details");
+    if (!fullName || !email || !street.trim() || !landmark.trim() || !city.trim() || !district.trim() || !stateName.trim() || !zipCode.trim()) {
+      toast.error("Please fill in all shipping details. All fields are mandatory.");
       return;
     }
+
+    if (zipCode.length !== 6) {
+      toast.error("ZIP / Postal Code must be exactly 6 digits.");
+      return;
+    }
+
 
     setBusy(true);
     try {
@@ -187,8 +226,10 @@ function CartPage() {
         shippingAddress: {
           street,
           city,
+          district,
           state: stateName,
           zipCode,
+          landmark,
         },
       };
 
@@ -230,8 +271,10 @@ function CartPage() {
           <div>
             <span className="text-xs uppercase tracking-wider text-muted-foreground block">Shipping Address</span>
             <span>
-              {orderSuccess.shippingAddress.street}, {orderSuccess.shippingAddress.city},{" "}
-              {orderSuccess.shippingAddress.state} {orderSuccess.shippingAddress.zipCode}
+              {orderSuccess.shippingAddress.street},{" "}
+              {orderSuccess.shippingAddress.landmark ? `Landmark: ${orderSuccess.shippingAddress.landmark}, ` : ""}
+              {orderSuccess.shippingAddress.city}
+              {orderSuccess.shippingAddress.district ? `, ${orderSuccess.shippingAddress.district}` : ""}, {orderSuccess.shippingAddress.state} {orderSuccess.shippingAddress.zipCode}
             </span>
           </div>
           <div>
@@ -409,15 +452,36 @@ function CartPage() {
                     />
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="landmark">Landmark</Label>
+                    <Input
+                      id="landmark"
+                      required
+                      placeholder="e.g. Near Temple, Next to SBI Bank"
+                      value={landmark}
+                      onChange={(e) => setLandmark(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="city">City</Label>
+                      <Label htmlFor="city">City / Town / Village</Label>
                       <Input
                         id="city"
                         required
-                        placeholder="Enter your city name"
+                        placeholder="Enter your city/town name"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="district">District</Label>
+                      <Input
+                        id="district"
+                        required
+                        placeholder="Enter your district name"
+                        value={district}
+                        onChange={(e) => setDistrict(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -428,17 +492,43 @@ function CartPage() {
                         placeholder="Enter your state name"
                         value={stateName}
                         onChange={(e) => setStateName(e.target.value)}
+                        list="indian-states"
                       />
+                      <datalist id="indian-states">
+                        {INDIAN_STATES.map((st) => (
+                          <option key={st} value={st} />
+                        ))}
+                      </datalist>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="zipCode">ZIP / Postal Code</Label>
-                      <Input
-                        id="zipCode"
-                        required
-                        placeholder="Enter area pin code"
-                        value={zipCode}
-                        onChange={(e) => setZipCode(e.target.value)}
-                      />
+                      <Label htmlFor="zipCode" className="flex items-center justify-between">
+                        <span>ZIP / Postal Code</span>
+                        {fetchingPincode && (
+                          <span className="text-[10px] text-primary flex items-center gap-1 animate-pulse">
+                            <Loader2 className="h-2.5 w-2.5 animate-spin" /> Fetching...
+                          </span>
+                        )}
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="zipCode"
+                          required
+                          placeholder="Enter area pin code"
+                          value={zipCode}
+                          maxLength={6}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                            setIsManualInput(true);
+                            setZipCode(val);
+                          }}
+                          className={fetchingPincode ? "pr-8" : ""}
+                        />
+                        {fetchingPincode && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </form>
