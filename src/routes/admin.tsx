@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef, type FormEvent, Fragment } from "react";
-import { useHeroSettings, usePromoSettings } from "@/lib/settings";
+import { useHeroSettings, usePromoSettings, useHomepageSettings, defaultHomepageSettings } from "@/lib/settings";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useAuth } from "@/lib/auth";
 import { categories as defaultCategories } from "@/data/products";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import {
   ShieldX, Plus, X, Upload, ImagePlus, Loader2, ArrowLeft,
   DollarSign, ShoppingBag, Users, Layers, Search, MapPin, ClipboardList,
   ShoppingCart, Heart, Calendar, Activity, Info, LogIn, Mail, Phone, User,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Settings
 } from "lucide-react";
 import { ArrowUp, ArrowDown, Trash2, Edit, Check } from "lucide-react";
 
@@ -189,7 +190,7 @@ function AdminPage() {
             <TabsTrigger value="orders">Orders ({orders.length})</TabsTrigger>
             <TabsTrigger value="customers">Customers ({customers.length})</TabsTrigger>
             <TabsTrigger value="coupons">Coupons</TabsTrigger>
-            <TabsTrigger value="hero">Hero Settings</TabsTrigger>
+            <TabsTrigger value="hero">Homepage Settings</TabsTrigger>
             <TabsTrigger value="promotions">Promotions</TabsTrigger>
           </TabsList>
         </div>
@@ -206,7 +207,7 @@ function AdminPage() {
           <CouponsAdmin />
         </TabsContent>
         <TabsContent value="hero">
-          <HeroAdmin />
+          <HomepageAdmin />
         </TabsContent>
         <TabsContent value="promotions">
           <PromotionsAdmin />
@@ -2680,47 +2681,353 @@ function CouponsAdmin() {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   HERO ADMIN (unchanged)
+   HOMEPAGE ADMIN
    ══════════════════════════════════════════════════════════════════════════ */
 
-function HeroAdmin() {
-  const { settings, updateSettings, isLoaded } = useHeroSettings();
-  if (!isLoaded) return null;
+function HomepageAdmin() {
+  const { settings: heroSettings, updateSettings: updateHeroSettings, isLoaded: heroLoaded } = useHeroSettings();
+  const { settings: homepageSettings, updateSettings: updateHomepageSettings, isLoaded: homepageLoaded } = useHomepageSettings();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const [heroForm, setHeroForm] = useState({
+    badge: "",
+    title: "",
+    subtitle: "",
+    imageUrl: "",
+    ...heroSettings
+  });
+  const [homepageForm, setHomepageForm] = useState({
+    valuesBand: homepageSettings?.valuesBand || defaultHomepageSettings.valuesBand,
+    featuredSection: {
+      ...defaultHomepageSettings.featuredSection,
+      ...(homepageSettings?.featuredSection || {}),
+    },
+    craftStory: {
+      ...defaultHomepageSettings.craftStory,
+      ...(homepageSettings?.craftStory || {}),
+    },
+    testimonials: homepageSettings?.testimonials || defaultHomepageSettings.testimonials,
+    showTestimonials: homepageSettings?.showTestimonials !== undefined ? homepageSettings.showTestimonials : defaultHomepageSettings.showTestimonials,
+  });
+
+  useEffect(() => {
+    if (heroLoaded && heroSettings) {
+      setHeroForm({
+        badge: "",
+        title: "",
+        subtitle: "",
+        imageUrl: "",
+        ...heroSettings
+      });
+    }
+  }, [heroLoaded, heroSettings]);
+
+  useEffect(() => {
+    if (homepageLoaded && homepageSettings) {
+      setHomepageForm({
+        valuesBand: homepageSettings.valuesBand || defaultHomepageSettings.valuesBand,
+        featuredSection: {
+          ...defaultHomepageSettings.featuredSection,
+          ...(homepageSettings.featuredSection || {}),
+        },
+        craftStory: {
+          ...defaultHomepageSettings.craftStory,
+          ...(homepageSettings.craftStory || {}),
+        },
+        testimonials: homepageSettings.testimonials || defaultHomepageSettings.testimonials,
+        showTestimonials: homepageSettings.showTestimonials !== undefined ? homepageSettings.showTestimonials : defaultHomepageSettings.showTestimonials,
+      });
+    }
+  }, [homepageLoaded, homepageSettings]);
+
+  if (!heroLoaded || !homepageLoaded) {
+    return (
+      <div className="flex justify-center py-10">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const handleSaveHero = async (e: React.FormEvent) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    updateSettings({
-      title: fd.get("title") as string,
-      subtitle: fd.get("subtitle") as string,
-      badge: fd.get("badge") as string,
-      imageUrl: fd.get("imageUrl") as string,
-    });
+    await updateHeroSettings(heroForm);
     toast.success("Hero settings updated successfully");
   };
 
+  const handleSaveHomepage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateHomepageSettings(homepageForm);
+    toast.success("Homepage sections updated successfully");
+  };
+
+  const updateValuesBand = (index: number, key: string, val: string) => {
+    const newBand = [...homepageForm.valuesBand];
+    newBand[index] = { ...newBand[index], [key]: val };
+    setHomepageForm({ ...homepageForm, valuesBand: newBand });
+  };
+
+  const updateTestimonials = (index: number, key: string, val: string) => {
+    const newTestimonials = [...homepageForm.testimonials];
+    newTestimonials[index] = { ...newTestimonials[index], [key]: val };
+    setHomepageForm({ ...homepageForm, testimonials: newTestimonials });
+  };
+
   return (
-    <div className="rounded-xl border bg-card p-6 shadow-sm max-w-2xl">
-      <h2 className="text-xl font-medium mb-6">Edit Hero Section</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="badge">Badge Text</Label>
-          <Input id="badge" name="badge" defaultValue={settings.badge} />
+    <div className="space-y-8 max-w-4xl">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Settings className="h-5 w-5" />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="title">Main Title</Label>
-          <Textarea id="title" name="title" defaultValue={settings.title} className="resize-none" />
+        <div>
+          <h2 className="text-xl font-medium">Homepage Configuration</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Modify any section or text block on the homepage in real-time.
+          </p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="subtitle">Subtitle / Description</Label>
-          <Textarea id="subtitle" name="subtitle" defaultValue={settings.subtitle} rows={4} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="imageUrl">Background Image URL</Label>
-          <Input id="imageUrl" name="imageUrl" defaultValue={settings.imageUrl} />
-        </div>
-        <Button type="submit" className="w-full mt-4">Save Changes</Button>
-      </form>
+      </div>
+
+      <Accordion type="single" collapsible defaultValue="hero" className="w-full border rounded-xl bg-card shadow-sm px-6 py-2">
+        {/* HERO SECTION */}
+        <AccordionItem value="hero" className="border-b-0 py-2">
+          <AccordionTrigger className="text-lg font-medium hover:no-underline">
+            1. Hero Section
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-4">
+            <form onSubmit={handleSaveHero} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="hero-badge">Badge Text</Label>
+                <Input
+                  id="hero-badge"
+                  value={heroForm.badge}
+                  onChange={(e) => setHeroForm({ ...heroForm, badge: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="hero-title">Main Title</Label>
+                <Textarea
+                  id="hero-title"
+                  value={heroForm.title}
+                  onChange={(e) => setHeroForm({ ...heroForm, title: e.target.value })}
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="hero-subtitle">Subtitle / Description</Label>
+                <Textarea
+                  id="hero-subtitle"
+                  value={heroForm.subtitle}
+                  onChange={(e) => setHeroForm({ ...heroForm, subtitle: e.target.value })}
+                  rows={4}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="hero-imageUrl">Background Image URL</Label>
+                <Input
+                  id="hero-imageUrl"
+                  value={heroForm.imageUrl}
+                  onChange={(e) => setHeroForm({ ...heroForm, imageUrl: e.target.value })}
+                />
+              </div>
+              <Button type="submit" className="w-full">Save Hero Changes</Button>
+            </form>
+          </AccordionContent>
+        </AccordionItem>
+
+        <div className="h-[1px] bg-border" />
+
+        {/* VALUES BAND SECTION */}
+        <AccordionItem value="valuesBand" className="border-b-0 py-2">
+          <AccordionTrigger className="text-lg font-medium hover:no-underline">
+            2. Features / Values Band
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-6">
+            <form onSubmit={handleSaveHomepage} className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-3">
+                {homepageForm.valuesBand.map((item, idx) => (
+                  <div key={idx} className="p-4 border rounded-xl bg-secondary/10 space-y-4">
+                    <h4 className="font-medium text-primary text-sm">Feature Column {idx + 1}</h4>
+                    <div className="space-y-2">
+                      <Label htmlFor={`val-icon-${idx}`}>Lucide Icon Name</Label>
+                      <Input
+                        id={`val-icon-${idx}`}
+                        value={item.icon}
+                        onChange={(e) => updateValuesBand(idx, "icon", e.target.value)}
+                        placeholder="e.g. Hand, Leaf, Package"
+                      />
+                      <span className="text-[10px] text-muted-foreground block">
+                        Common: Hand, Leaf, Package, Shield, Heart, Star, Sparkles, Truck
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`val-title-${idx}`}>Title</Label>
+                      <Input
+                        id={`val-title-${idx}`}
+                        value={item.title}
+                        onChange={(e) => updateValuesBand(idx, "title", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`val-text-${idx}`}>Description</Label>
+                      <Textarea
+                        id={`val-text-${idx}`}
+                        value={item.text}
+                        onChange={(e) => updateValuesBand(idx, "text", e.target.value)}
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button type="submit" className="w-full">Save Features Changes</Button>
+            </form>
+          </AccordionContent>
+        </AccordionItem>
+
+        <div className="h-[1px] bg-border" />
+
+        {/* FEATURED SECTION */}
+        <AccordionItem value="featuredSection" className="border-b-0 py-2">
+          <AccordionTrigger className="text-lg font-medium hover:no-underline">
+            3. Featured Collection Headers
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-4">
+            <form onSubmit={handleSaveHomepage} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="feat-badge">Collection Badge Text</Label>
+                <Input
+                  id="feat-badge"
+                  value={homepageForm.featuredSection.badge}
+                  onChange={(e) => setHomepageForm({
+                    ...homepageForm,
+                    featuredSection: { ...homepageForm.featuredSection, badge: e.target.value }
+                  })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="feat-title">Collection Main Title</Label>
+                <Input
+                  id="feat-title"
+                  value={homepageForm.featuredSection.title}
+                  onChange={(e) => setHomepageForm({
+                    ...homepageForm,
+                    featuredSection: { ...homepageForm.featuredSection, title: e.target.value }
+                  })}
+                />
+              </div>
+              <Button type="submit" className="w-full">Save Collection Header</Button>
+            </form>
+          </AccordionContent>
+        </AccordionItem>
+
+        <div className="h-[1px] bg-border" />
+
+        {/* CRAFT STORY SECTION */}
+        <AccordionItem value="craftStory" className="border-b-0 py-2">
+          <AccordionTrigger className="text-lg font-medium hover:no-underline">
+            4. Craft Story Section
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-4">
+            <form onSubmit={handleSaveHomepage} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="craft-badge">Story Badge Text</Label>
+                <Input
+                  id="craft-badge"
+                  value={homepageForm.craftStory.badge}
+                  onChange={(e) => setHomepageForm({
+                    ...homepageForm,
+                    craftStory: { ...homepageForm.craftStory, badge: e.target.value }
+                  })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="craft-title">Story Title</Label>
+                <Input
+                  id="craft-title"
+                  value={homepageForm.craftStory.title}
+                  onChange={(e) => setHomepageForm({
+                    ...homepageForm,
+                    craftStory: { ...homepageForm.craftStory, title: e.target.value }
+                  })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="craft-desc">Story Description</Label>
+                <Textarea
+                  id="craft-desc"
+                  value={homepageForm.craftStory.description}
+                  onChange={(e) => setHomepageForm({
+                    ...homepageForm,
+                    craftStory: { ...homepageForm.craftStory, description: e.target.value }
+                  })}
+                  rows={5}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="craft-imageUrl">Story Image URL</Label>
+                <Input
+                  id="craft-imageUrl"
+                  value={homepageForm.craftStory.imageUrl}
+                  onChange={(e) => setHomepageForm({
+                    ...homepageForm,
+                    craftStory: { ...homepageForm.craftStory, imageUrl: e.target.value }
+                  })}
+                />
+              </div>
+              <Button type="submit" className="w-full">Save Story Changes</Button>
+            </form>
+          </AccordionContent>
+        </AccordionItem>
+
+        <div className="h-[1px] bg-border" />
+
+        {/* TESTIMONIALS SECTION */}
+        <AccordionItem value="testimonials" className="border-b-0 py-2">
+          <AccordionTrigger className="text-lg font-medium hover:no-underline">
+            5. Customer Testimonials
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-6">
+            <form onSubmit={handleSaveHomepage} className="space-y-6">
+              <div className="flex items-center gap-2 pb-4 border-b">
+                <input
+                  type="checkbox"
+                  id="show-testimonials"
+                  checked={homepageForm.showTestimonials}
+                  onChange={(e) => setHomepageForm({ ...homepageForm, showTestimonials: e.target.checked })}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary bg-background"
+                />
+                <Label htmlFor="show-testimonials" className="text-sm font-medium cursor-pointer">
+                  Enable Testimonials Section on Home Page
+                </Label>
+              </div>
+              <div className="grid gap-6 md:grid-cols-3">
+                {homepageForm.testimonials.map((item, idx) => (
+                  <div key={idx} className="p-4 border rounded-xl bg-secondary/10 space-y-4">
+                    <h4 className="font-medium text-primary text-sm">Testimonial {idx + 1}</h4>
+                    <div className="space-y-2">
+                      <Label htmlFor={`test-q-${idx}`}>Quote / Review</Label>
+                      <Textarea
+                        id={`test-q-${idx}`}
+                        value={item.q}
+                        onChange={(e) => updateTestimonials(idx, "q", e.target.value)}
+                        rows={4}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`test-a-${idx}`}>Author / Location</Label>
+                      <Input
+                        id={`test-a-${idx}`}
+                        value={item.a}
+                        onChange={(e) => updateTestimonials(idx, "a", e.target.value)}
+                        placeholder="e.g. Priya, Bangalore"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button type="submit" className="w-full">Save Testimonials</Button>
+            </form>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }

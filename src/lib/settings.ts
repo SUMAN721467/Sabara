@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/hero.jpg";
+import craftImg from "@/assets/craft.jpg";
 
 export type HeroSettings = {
   title: string;
@@ -11,7 +12,7 @@ export type HeroSettings = {
 
 const defaultSettings: HeroSettings = {
   title: "Mats woven slowly, to live with you for years.",
-  subtitle: "A collection of natural-fibre floor mats, yoga mats, doormats and table linens — each piece worked on a wooden loom by a single pair of hands.",
+  subtitle: "A collection of natural-fibre floor mats, yoga mats, doormats and table linens - each piece worked on a wooden loom by a single pair of hands.",
   badge: "Small batch · Handwoven",
   imageUrl: heroImg,
 };
@@ -145,6 +146,131 @@ export function usePromoSettings() {
       }
     } catch (e) {
       console.error("[usePromoSettings update error]", e);
+    }
+  };
+
+  return { settings, updateSettings, isLoaded };
+}
+
+export type ValuesBandItem = {
+  icon: string;
+  title: string;
+  text: string;
+};
+
+export type HomepageSettings = {
+  valuesBand: ValuesBandItem[];
+  featuredSection: {
+    badge: string;
+    title: string;
+  };
+  craftStory: {
+    badge: string;
+    title: string;
+    description: string;
+    imageUrl: string;
+  };
+  testimonials: {
+    q: string;
+    a: string;
+  }[];
+  showTestimonials: boolean;
+};
+
+export const defaultHomepageSettings: HomepageSettings = {
+  valuesBand: [
+    { icon: "Hand", title: "Hand-made", text: "Woven by a single artisan on a wooden loom." },
+    { icon: "Leaf", title: "Natural fibres", text: "Jute, cotton, coir and seagrass. Nothing synthetic." },
+    { icon: "Package", title: "Plastic-free shipping", text: "Wrapped in cotton and recycled paper." },
+  ],
+  featuredSection: {
+    badge: "The collection",
+    title: "Recently off the loom",
+  },
+  craftStory: {
+    badge: "Our craft",
+    title: "Three days at the loom, one mat at a time.",
+    description: "Each piece begins with raw fibre — jute spun on a charkha, cotton dyed in small batches with plant pigments. From there, it moves to a wooden pit loom, where a single weaver works the warp and weft over two to four days.",
+    imageUrl: craftImg,
+  },
+  testimonials: [
+    { q: "Beautifully made, and softer than I expected. It already feels like an heirloom.", a: "Priya, Bangalore" },
+    { q: "The doormat has survived a Pacific Northwest winter. Worth every penny.", a: "Marcus, Portland" },
+    { q: "I bought the yoga mat in spring — I still notice the weave under my hands every morning.", a: "Elena, Lisbon" },
+  ],
+  showTestimonials: true,
+};
+
+export function useHomepageSettings() {
+  const [settings, setSettings] = useState<HomepageSettings>(defaultHomepageSettings);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const res = await fetch("/api/site-settings?key=homepage");
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.success && data?.value) {
+            setSettings({
+              valuesBand: data.value.valuesBand || defaultHomepageSettings.valuesBand,
+              featuredSection: {
+                ...defaultHomepageSettings.featuredSection,
+                ...(data.value.featuredSection || {}),
+              },
+              craftStory: {
+                ...defaultHomepageSettings.craftStory,
+                ...(data.value.craftStory || {}),
+              },
+              testimonials: data.value.testimonials || defaultHomepageSettings.testimonials,
+              showTestimonials: data.value.showTestimonials !== undefined ? data.value.showTestimonials : defaultHomepageSettings.showTestimonials,
+            });
+          }
+        }
+      } catch (e) {
+        console.error("[useHomepageSettings load error]", e);
+      } finally {
+        setIsLoaded(true);
+      }
+    }
+    loadSettings();
+  }, []);
+
+  const updateSettings = async (newSettings: Partial<HomepageSettings>) => {
+    const updated = {
+      ...settings,
+      ...newSettings,
+      featuredSection: {
+        ...settings.featuredSection,
+        ...(newSettings.featuredSection || {}),
+      },
+      craftStory: {
+        ...settings.craftStory,
+        ...(newSettings.craftStory || {}),
+      },
+    };
+    setSettings(updated);
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch("/api/admin/site-settings", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          key: "homepage",
+          value: updated,
+        }),
+      });
+
+      if (!res.ok) {
+        console.error("[useHomepageSettings update failed]", await res.text());
+      }
+    } catch (e) {
+      console.error("[useHomepageSettings update error]", e);
     }
   };
 
