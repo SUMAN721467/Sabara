@@ -2739,6 +2739,44 @@ function HomepageAdmin() {
     }
   }, [homepageLoaded, homepageSettings]);
 
+  const heroFileRef = useRef<HTMLInputElement>(null);
+  const craftFileRef = useRef<HTMLInputElement>(null);
+  const [uploadingHero, setUploadingHero] = useState(false);
+  const [uploadingCraft, setUploadingCraft] = useState(false);
+
+  const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingHero(true);
+    try {
+      const url = await uploadImage(file);
+      setHeroForm((prev) => ({ ...prev, imageUrl: url }));
+      toast.success("Hero image uploaded successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Hero image upload failed");
+    } finally {
+      setUploadingHero(false);
+    }
+  };
+
+  const handleCraftUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCraft(true);
+    try {
+      const url = await uploadImage(file);
+      setHomepageForm((prev) => ({
+        ...prev,
+        craftStory: { ...prev.craftStory, imageUrl: url }
+      }));
+      toast.success("Craft story image uploaded successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Craft story image upload failed");
+    } finally {
+      setUploadingCraft(false);
+    }
+  };
+
   if (!heroLoaded || !homepageLoaded) {
     return (
       <div className="flex justify-center py-10">
@@ -2820,12 +2858,31 @@ function HomepageAdmin() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="hero-imageUrl">Background Image URL</Label>
-                <Input
-                  id="hero-imageUrl"
-                  value={heroForm.imageUrl}
-                  onChange={(e) => setHeroForm({ ...heroForm, imageUrl: e.target.value })}
-                />
+                <Label>Background Image</Label>
+                <div className="flex items-start gap-4">
+                  {heroForm.imageUrl ? (
+                    <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-xl border bg-secondary/30">
+                      <img src={heroForm.imageUrl} alt="Hero preview" className="h-full w-full object-cover" />
+                      <button type="button" onClick={() => setHeroForm((prev) => ({ ...prev, imageUrl: "" }))}
+                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => heroFileRef.current?.click()}
+                      disabled={uploadingHero}
+                      className="flex h-32 w-32 shrink-0 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors bg-background">
+                      {uploadingHero ? <Loader2 className="h-6 w-6 animate-spin" /> : <Upload className="h-6 w-6" />}
+                      <span className="text-xs">Upload</span>
+                    </button>
+                  )}
+                  <input ref={heroFileRef} type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} />
+                  <div className="flex-1 text-xs text-muted-foreground pt-1">
+                    <p>Upload from your computer or paste an external URL below:</p>
+                    <Input className="mt-2" placeholder="https://…" value={heroForm.imageUrl}
+                      onChange={(e) => setHeroForm((prev) => ({ ...prev, imageUrl: e.target.value }))} />
+                  </div>
+                </div>
               </div>
               <Button type="submit" className="w-full">Save Hero Changes</Button>
             </form>
@@ -2962,15 +3019,31 @@ function HomepageAdmin() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="craft-imageUrl">Story Image URL</Label>
-                <Input
-                  id="craft-imageUrl"
-                  value={homepageForm.craftStory.imageUrl}
-                  onChange={(e) => setHomepageForm({
-                    ...homepageForm,
-                    craftStory: { ...homepageForm.craftStory, imageUrl: e.target.value }
-                  })}
-                />
+                <Label>Story Image</Label>
+                <div className="flex items-start gap-4">
+                  {homepageForm.craftStory.imageUrl ? (
+                    <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-xl border bg-secondary/30">
+                      <img src={homepageForm.craftStory.imageUrl} alt="Craft story preview" className="h-full w-full object-cover" />
+                      <button type="button" onClick={() => setHomepageForm((prev) => ({ ...prev, craftStory: { ...prev.craftStory, imageUrl: "" } }))}
+                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => craftFileRef.current?.click()}
+                      disabled={uploadingCraft}
+                      className="flex h-32 w-32 shrink-0 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors bg-background">
+                      {uploadingCraft ? <Loader2 className="h-6 w-6 animate-spin" /> : <Upload className="h-6 w-6" />}
+                      <span className="text-xs">Upload</span>
+                    </button>
+                  )}
+                  <input ref={craftFileRef} type="file" accept="image/*" className="hidden" onChange={handleCraftUpload} />
+                  <div className="flex-1 text-xs text-muted-foreground pt-1">
+                    <p>Upload from your computer or paste an external URL below:</p>
+                    <Input className="mt-2" placeholder="https://…" value={homepageForm.craftStory.imageUrl}
+                      onChange={(e) => setHomepageForm((prev) => ({ ...prev, craftStory: { ...prev.craftStory, imageUrl: e.target.value } }))} />
+                  </div>
+                </div>
               </div>
               <Button type="submit" className="w-full">Save Story Changes</Button>
             </form>
