@@ -1421,6 +1421,7 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Pending": return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400";
+      case "Paid": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
       case "Shipped": return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
       case "Delivered": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
       case "Cancelled":

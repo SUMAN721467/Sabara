@@ -275,9 +275,9 @@ export function Navbar() {
       {justLoggedIn && user && <LoginSuccessPopup user={user} />}
 
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link to="/" className="font-serif text-xl tracking-tight group">
-            <img src={logoImg} alt="Sabara" className="h-12 w-auto max-h-12 transition-transform duration-500 ease-out group-hover:scale-105" />
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <Link to="/" className="font-serif text-xl tracking-tight group mr-3 shrink-0">
+            <img src={logoImg} alt="Sabara" className="h-7 sm:h-9 w-auto max-h-7 sm:max-h-9 transition-transform duration-500 ease-out group-hover:scale-105" />
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -295,6 +295,13 @@ export function Navbar() {
           </nav>
 
           <div className="flex items-center gap-1">
+            <Link
+              to="/shop"
+              className="inline-flex h-7 items-center justify-center rounded-full border border-primary/30 bg-transparent px-2.5 text-[10px] font-bold text-primary transition-all hover:bg-primary/5 active:scale-95 md:hidden whitespace-nowrap cursor-pointer ml-2 mr-1"
+            >
+              Shop Now
+            </Link>
+
             <button
               onClick={() => setSearchOpen((v) => !v)}
               aria-label="Search"
@@ -418,7 +425,7 @@ export function Navbar() {
         <div
           className={cn(
             "overflow-hidden border-t border-border/60 transition-[max-height] duration-300 md:hidden",
-            open ? "max-h-[28rem]" : "max-h-0",
+            open ? "max-h-[32rem]" : "max-h-0",
           )}
         >
           <nav className="flex flex-col px-4 py-3">
@@ -427,8 +434,8 @@ export function Navbar() {
                 key={l.to}
                 to={l.to}
                 onClick={() => setOpen(false)}
-                className="py-2 text-sm text-muted-foreground hover:text-foreground"
-                activeProps={{ className: "py-2 text-sm text-foreground" }}
+                className="py-2 text-sm text-muted-foreground hover:text-foreground font-medium"
+                activeProps={{ className: "py-2 text-sm text-foreground font-semibold" }}
                 activeOptions={{ exact: l.to === "/" }}
               >
                 {l.label}

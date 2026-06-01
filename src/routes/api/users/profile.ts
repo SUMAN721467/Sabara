@@ -83,16 +83,24 @@ export const Route = createFileRoute("/api/users/profile")({
             return Response.json({ success: true, profile: null });
           }
 
+          const streetStr = data.street || "";
+          const parts = streetStr.split("|||");
+          const street = parts[0] || "";
+          const landmark = parts[1] || "";
+          const district = parts[2] || "";
+
           const profile = {
             fullName: data.full_name,
             age: data.age,
             phone: data.phone,
             avatarUrl: data.avatar_url,
             address: {
-              street: data.street,
+              street: street,
               city: data.city,
+              district: district,
               state: data.state,
               zipCode: data.zip_code,
+              landmark: landmark,
             },
           };
 
@@ -118,7 +126,7 @@ export const Route = createFileRoute("/api/users/profile")({
             age?: string | number;
             phone?: string;
             avatarUrl?: string | null;
-            address?: { street?: string; city?: string; state?: string; zipCode?: string };
+            address?: { street?: string; city?: string; district?: string; state?: string; zipCode?: string; landmark?: string };
           };
 
           // Handle age string-to-number safe casting
@@ -141,6 +149,11 @@ export const Route = createFileRoute("/api/users/profile")({
 
           const finalAvatarUrl = avatarUrl !== undefined ? avatarUrl : existingAvatarUrl;
 
+          // Encode district and landmark in street column to avoid database migration
+          const dbStreet = address
+            ? `${address.street || ""}|||${address.landmark || ""}|||${address.district || ""}`
+            : null;
+
           const { data, error } = await supabase
             .from("user_profiles")
             .upsert(
@@ -149,7 +162,7 @@ export const Route = createFileRoute("/api/users/profile")({
                 full_name: fullName ?? null,
                 age: parsedAge,
                 phone: phone ?? null,
-                street: address?.street ?? null,
+                street: dbStreet,
                 city: address?.city ?? null,
                 state: address?.state ?? null,
                 zip_code: address?.zipCode ?? null,
@@ -165,16 +178,24 @@ export const Route = createFileRoute("/api/users/profile")({
             return Response.json({ success: false, error: error.message }, { status: 500 });
           }
 
+          const streetStr = data.street || "";
+          const parts = streetStr.split("|||");
+          const street = parts[0] || "";
+          const landmark = parts[1] || "";
+          const district = parts[2] || "";
+
           const profile = {
             fullName: data.full_name,
             age: data.age,
             phone: data.phone,
             avatarUrl: data.avatar_url,
             address: {
-              street: data.street,
+              street: street,
               city: data.city,
+              district: district,
               state: data.state,
               zipCode: data.zip_code,
+              landmark: landmark,
             },
           };
 

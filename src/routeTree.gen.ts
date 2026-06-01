@@ -20,12 +20,15 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
+import { Route as ApiVerifyPaymentRouteImport } from './routes/api/verify-payment'
 import { Route as ApiTestReturnRouteImport } from './routes/api/test-return'
 import { Route as ApiTestEmailRouteImport } from './routes/api/test-email'
 import { Route as ApiTestDbRouteImport } from './routes/api/test-db'
 import { Route as ApiSiteSettingsRouteImport } from './routes/api/site-settings'
 import { Route as ApiProductsRouteImport } from './routes/api/products'
+import { Route as ApiCreateOrderRouteImport } from './routes/api/create-order'
 import { Route as ApiCheckoutRouteImport } from './routes/api/checkout'
+import { Route as ApiCancelOrderRouteImport } from './routes/api/cancel-order'
 import { Route as ApiUsersSyncRouteImport } from './routes/api/users/sync'
 import { Route as ApiUsersProfileRouteImport } from './routes/api/users/profile'
 import { Route as ApiUsersOrdersRouteImport } from './routes/api/users/orders'
@@ -89,6 +92,11 @@ const ProductIdRoute = ProductIdRouteImport.update({
   path: '/product/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVerifyPaymentRoute = ApiVerifyPaymentRouteImport.update({
+  id: '/api/verify-payment',
+  path: '/api/verify-payment',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTestReturnRoute = ApiTestReturnRouteImport.update({
   id: '/api/test-return',
   path: '/api/test-return',
@@ -114,9 +122,19 @@ const ApiProductsRoute = ApiProductsRouteImport.update({
   path: '/api/products',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCreateOrderRoute = ApiCreateOrderRouteImport.update({
+  id: '/api/create-order',
+  path: '/api/create-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCheckoutRoute = ApiCheckoutRouteImport.update({
   id: '/api/checkout',
   path: '/api/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCancelOrderRoute = ApiCancelOrderRouteImport.update({
+  id: '/api/cancel-order',
+  path: '/api/cancel-order',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiUsersSyncRoute = ApiUsersSyncRouteImport.update({
@@ -166,12 +184,15 @@ export interface FileRoutesByFullPath {
   '/shop': typeof ShopRoute
   '/signup': typeof SignupRoute
   '/wishlist': typeof WishlistRoute
+  '/api/cancel-order': typeof ApiCancelOrderRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/create-order': typeof ApiCreateOrderRoute
   '/api/products': typeof ApiProductsRoute
   '/api/site-settings': typeof ApiSiteSettingsRoute
   '/api/test-db': typeof ApiTestDbRoute
   '/api/test-email': typeof ApiTestEmailRoute
   '/api/test-return': typeof ApiTestReturnRoute
+  '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/product/$id': typeof ProductIdRoute
   '/api/admin/customers': typeof ApiAdminCustomersRoute
   '/api/admin/orders': typeof ApiAdminOrdersRoute
@@ -192,12 +213,15 @@ export interface FileRoutesByTo {
   '/shop': typeof ShopRoute
   '/signup': typeof SignupRoute
   '/wishlist': typeof WishlistRoute
+  '/api/cancel-order': typeof ApiCancelOrderRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/create-order': typeof ApiCreateOrderRoute
   '/api/products': typeof ApiProductsRoute
   '/api/site-settings': typeof ApiSiteSettingsRoute
   '/api/test-db': typeof ApiTestDbRoute
   '/api/test-email': typeof ApiTestEmailRoute
   '/api/test-return': typeof ApiTestReturnRoute
+  '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/product/$id': typeof ProductIdRoute
   '/api/admin/customers': typeof ApiAdminCustomersRoute
   '/api/admin/orders': typeof ApiAdminOrdersRoute
@@ -219,12 +243,15 @@ export interface FileRoutesById {
   '/shop': typeof ShopRoute
   '/signup': typeof SignupRoute
   '/wishlist': typeof WishlistRoute
+  '/api/cancel-order': typeof ApiCancelOrderRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/create-order': typeof ApiCreateOrderRoute
   '/api/products': typeof ApiProductsRoute
   '/api/site-settings': typeof ApiSiteSettingsRoute
   '/api/test-db': typeof ApiTestDbRoute
   '/api/test-email': typeof ApiTestEmailRoute
   '/api/test-return': typeof ApiTestReturnRoute
+  '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/product/$id': typeof ProductIdRoute
   '/api/admin/customers': typeof ApiAdminCustomersRoute
   '/api/admin/orders': typeof ApiAdminOrdersRoute
@@ -247,12 +274,15 @@ export interface FileRouteTypes {
     | '/shop'
     | '/signup'
     | '/wishlist'
+    | '/api/cancel-order'
     | '/api/checkout'
+    | '/api/create-order'
     | '/api/products'
     | '/api/site-settings'
     | '/api/test-db'
     | '/api/test-email'
     | '/api/test-return'
+    | '/api/verify-payment'
     | '/product/$id'
     | '/api/admin/customers'
     | '/api/admin/orders'
@@ -273,12 +303,15 @@ export interface FileRouteTypes {
     | '/shop'
     | '/signup'
     | '/wishlist'
+    | '/api/cancel-order'
     | '/api/checkout'
+    | '/api/create-order'
     | '/api/products'
     | '/api/site-settings'
     | '/api/test-db'
     | '/api/test-email'
     | '/api/test-return'
+    | '/api/verify-payment'
     | '/product/$id'
     | '/api/admin/customers'
     | '/api/admin/orders'
@@ -299,12 +332,15 @@ export interface FileRouteTypes {
     | '/shop'
     | '/signup'
     | '/wishlist'
+    | '/api/cancel-order'
     | '/api/checkout'
+    | '/api/create-order'
     | '/api/products'
     | '/api/site-settings'
     | '/api/test-db'
     | '/api/test-email'
     | '/api/test-return'
+    | '/api/verify-payment'
     | '/product/$id'
     | '/api/admin/customers'
     | '/api/admin/orders'
@@ -326,12 +362,15 @@ export interface RootRouteChildren {
   ShopRoute: typeof ShopRoute
   SignupRoute: typeof SignupRoute
   WishlistRoute: typeof WishlistRoute
+  ApiCancelOrderRoute: typeof ApiCancelOrderRoute
   ApiCheckoutRoute: typeof ApiCheckoutRoute
+  ApiCreateOrderRoute: typeof ApiCreateOrderRoute
   ApiProductsRoute: typeof ApiProductsRoute
   ApiSiteSettingsRoute: typeof ApiSiteSettingsRoute
   ApiTestDbRoute: typeof ApiTestDbRoute
   ApiTestEmailRoute: typeof ApiTestEmailRoute
   ApiTestReturnRoute: typeof ApiTestReturnRoute
+  ApiVerifyPaymentRoute: typeof ApiVerifyPaymentRoute
   ProductIdRoute: typeof ProductIdRoute
   ApiAdminCustomersRoute: typeof ApiAdminCustomersRoute
   ApiAdminOrdersRoute: typeof ApiAdminOrdersRoute
@@ -421,6 +460,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/verify-payment': {
+      id: '/api/verify-payment'
+      path: '/api/verify-payment'
+      fullPath: '/api/verify-payment'
+      preLoaderRoute: typeof ApiVerifyPaymentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/test-return': {
       id: '/api/test-return'
       path: '/api/test-return'
@@ -456,11 +502,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/create-order': {
+      id: '/api/create-order'
+      path: '/api/create-order'
+      fullPath: '/api/create-order'
+      preLoaderRoute: typeof ApiCreateOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/checkout': {
       id: '/api/checkout'
       path: '/api/checkout'
       fullPath: '/api/checkout'
       preLoaderRoute: typeof ApiCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cancel-order': {
+      id: '/api/cancel-order'
+      path: '/api/cancel-order'
+      fullPath: '/api/cancel-order'
+      preLoaderRoute: typeof ApiCancelOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/users/sync': {
@@ -526,12 +586,15 @@ const rootRouteChildren: RootRouteChildren = {
   ShopRoute: ShopRoute,
   SignupRoute: SignupRoute,
   WishlistRoute: WishlistRoute,
+  ApiCancelOrderRoute: ApiCancelOrderRoute,
   ApiCheckoutRoute: ApiCheckoutRoute,
+  ApiCreateOrderRoute: ApiCreateOrderRoute,
   ApiProductsRoute: ApiProductsRoute,
   ApiSiteSettingsRoute: ApiSiteSettingsRoute,
   ApiTestDbRoute: ApiTestDbRoute,
   ApiTestEmailRoute: ApiTestEmailRoute,
   ApiTestReturnRoute: ApiTestReturnRoute,
+  ApiVerifyPaymentRoute: ApiVerifyPaymentRoute,
   ProductIdRoute: ProductIdRoute,
   ApiAdminCustomersRoute: ApiAdminCustomersRoute,
   ApiAdminOrdersRoute: ApiAdminOrdersRoute,

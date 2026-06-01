@@ -542,6 +542,8 @@ function AccountPage() {
     switch (status) {
       case "Pending":
         return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20";
+      case "Paid":
+        return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
       case "Shipped":
         return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20";
       case "Delivered":

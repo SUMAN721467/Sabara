@@ -273,22 +273,8 @@ export const Route = createFileRoute("/api/checkout")({
             }))
           };
 
-          // Determine request host origin dynamically
-          const requestUrl = new URL(request.url);
-          const origin = requestUrl.origin;
+          // Note: Confirmation emails will be sent from /api/verify-payment after successful payment verification.
 
-          // Send confirmation emails asynchronously (non-blocking for checkout completion response)
-          sendOrderEmails({
-            order: {
-              ...camelCaseOrder,
-              couponCode: code || null,
-              discountAmount: discount
-            },
-            items: items,
-            origin: origin
-          }).catch((err) => {
-            console.error("[api/checkout email dispatch failed]", err);
-          });
 
           return Response.json({ success: true, order: camelCaseOrder });
         } catch (err: any) {
