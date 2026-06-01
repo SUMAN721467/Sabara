@@ -443,8 +443,8 @@ function CartPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20">
-      <h1 className="font-serif text-4xl text-foreground md:text-5xl mb-10 text-center sm:text-left">Checkout</h1>
+    <div className="mx-auto max-w-6xl px-4 pt-6 pb-14 sm:px-6 md:pt-8 md:pb-16">
+      <h1 className="font-serif text-3xl text-foreground md:text-4xl mb-6 text-center sm:text-left">Checkout</h1>
 
       {detailed.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-12 text-center">
@@ -457,9 +457,9 @@ function CartPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-6">
           {/* Stepper Header */}
-          <div className="max-w-xl mx-auto mb-12">
+          <div className="max-w-xl mx-auto mb-8">
             <div className="flex items-center justify-between relative">
               {/* Horizontal connecting lines */}
               <div className="absolute left-[10%] right-[10%] top-5 h-0.5 bg-gray-200 z-0" />
@@ -534,7 +534,7 @@ function CartPage() {
             </div>
           </div>
 
-          <div className="grid gap-12 lg:grid-cols-[1fr_400px]">
+          <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
             {/* Left Column: Form or Summary depending on checkoutStep */}
             <div className="space-y-8">
               {checkoutStep === 1 ? (
@@ -737,15 +737,15 @@ function CartPage() {
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="font-bold text-[15px] text-foreground">{fullName}</span>
-                        <span className="bg-muted text-muted-foreground text-[10px] font-bold px-2 py-0.5 rounded-[2px] uppercase">
-                          HOME
-                        </span>
                       </div>
                       <p className="text-[14px] text-foreground mt-1 leading-relaxed">
                         {street}, {landmark ? `${landmark}, ` : ""}{city}{district ? `, ${district}` : ""}, {stateName} - <span className="font-semibold">{zipCode}</span>
                       </p>
                       <p className="text-[14px] text-foreground mt-2 font-medium">
                         {phone}
+                      </p>
+                      <p className="text-[14px] text-foreground mt-0.5 font-medium">
+                        {email}
                       </p>
                     </div>
                     <button 

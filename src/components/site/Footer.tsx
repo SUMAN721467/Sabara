@@ -3,9 +3,9 @@ import { Instagram, Mail, Phone } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="mt-24 border-t border-border/60 bg-secondary/40">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-4">
-        <div className="md:col-span-2">
+    <footer className="mt-12 border-t border-border/60 bg-secondary/40">
+      <div className="mx-auto grid grid-cols-2 max-w-6xl gap-8 px-4 py-8 sm:px-6 md:grid-cols-4">
+        <div className="col-span-2 md:col-span-2">
           <div className="font-serif text-2xl">Sabara</div>
           <p className="mt-3 max-w-sm text-sm text-muted-foreground">
             Handwoven mats made slowly, in small batches, by a collective of artisans working with
@@ -55,7 +55,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-border/60">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-3.5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:px-6">
           <span>© {new Date().getFullYear()} Sabara. Woven with Tradition.</span>
           <span>Shipping all over india · Made to last</span>
         </div>
