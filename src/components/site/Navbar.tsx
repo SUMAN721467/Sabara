@@ -275,9 +275,9 @@ export function Navbar() {
       {justLoggedIn && user && <LoginSuccessPopup user={user} />}
 
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-2.5 sm:px-6">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-2 sm:px-6">
           <Link to="/" className="font-serif text-xl tracking-tight group mr-2 sm:mr-3 shrink-0">
-            <img src={logoImg} alt="Sabara" className="h-6.5 sm:h-9 w-auto max-h-6.5 sm:max-h-9 max-w-[95px] sm:max-w-none transition-transform duration-500 ease-out group-hover:scale-105" />
+            <img src={logoImg} alt="Sabara" className="h-6 sm:h-9 w-auto max-h-6 sm:max-h-9 max-w-[90px] sm:max-w-none transition-transform duration-500 ease-out group-hover:scale-105" />
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -297,7 +297,7 @@ export function Navbar() {
           <div className="flex items-center gap-0.5 sm:gap-1">
             <Link
               to="/shop"
-              className="inline-flex h-6.5 items-center justify-center rounded-full border border-primary/30 bg-transparent px-2 text-[9px] font-bold text-primary transition-all hover:bg-primary/5 active:scale-95 md:hidden whitespace-nowrap cursor-pointer ml-1 mr-0.5"
+              className="inline-flex h-6 items-center justify-center rounded-full border border-primary/30 bg-transparent px-2 text-[9px] font-bold text-primary transition-all hover:bg-primary/5 active:scale-95 md:hidden whitespace-nowrap cursor-pointer ml-1 mr-0.5"
             >
               Shop Now
             </Link>
@@ -328,7 +328,7 @@ export function Navbar() {
                       <img
                         src={user.user_metadata.avatar_url}
                         alt="avatar"
-                        className="h-5.5 w-5.5 sm:h-7 sm:w-7 rounded-full object-cover"
+                        className="h-5 w-5 sm:h-7 sm:w-7 rounded-full object-cover"
                       />
                     ) : (
                       <User className="h-4 w-4 sm:h-5 sm:w-5" />

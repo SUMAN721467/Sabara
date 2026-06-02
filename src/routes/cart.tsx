@@ -534,9 +534,9 @@ function CartPage() {
             </div>
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
+          <div className="grid gap-8 lg:grid-cols-[1fr_400px] w-full">
             {/* Left Column: Form or Summary depending on checkoutStep */}
-            <div className="space-y-8">
+            <div className="space-y-8 w-full min-w-0">
               {checkoutStep === 1 ? (
                 /* Step 1: Address Form */
                 <div>
@@ -730,48 +730,48 @@ function CartPage() {
                 /* Step 2: Order Summary & Review Items */
                 <div className="space-y-6">
                   {/* Address Summary Card */}
-                  <div className="rounded-lg border border-[#e0e0e0] bg-white p-6 shadow-sm flex justify-between items-start gap-4 text-left">
-                    <div className="space-y-1">
+                  <div className="rounded-lg border border-[#e0e0e0] bg-white p-4 sm:p-6 shadow-sm flex justify-between items-start gap-3 sm:gap-4 text-left">
+                    <div className="space-y-1 flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Deliver to:</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider">Deliver to:</span>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="font-bold text-[15px] text-foreground">{fullName}</span>
+                        <span className="font-bold text-[13px] sm:text-[15px] text-foreground">{fullName}</span>
                       </div>
-                      <p className="text-[14px] text-foreground mt-1 leading-relaxed">
+                      <p className="text-[12px] sm:text-[14px] text-foreground mt-1 leading-relaxed break-words">
                         {street}, {landmark ? `${landmark}, ` : ""}{city}{district ? `, ${district}` : ""}, {stateName} - <span className="font-semibold">{zipCode}</span>
                       </p>
-                      <p className="text-[14px] text-foreground mt-2 font-medium">
+                      <p className="text-[12px] sm:text-[14px] text-foreground mt-2 font-medium break-all">
                         {phone}
                       </p>
-                      <p className="text-[14px] text-foreground mt-0.5 font-medium">
+                      <p className="text-[12px] sm:text-[14px] text-foreground mt-0.5 font-medium break-all">
                         {email}
                       </p>
                     </div>
                     <button 
                       onClick={() => setCheckoutStep(1)}
-                      className="border border-primary/20 text-primary bg-white rounded-[4px] px-5 py-1.5 text-sm font-semibold hover:shadow-sm cursor-pointer shrink-0 transition-all hover:bg-primary/5"
+                      className="border border-primary/20 text-primary bg-white rounded-[4px] px-3 py-1 sm:px-5 sm:py-1.5 text-xs sm:text-sm font-semibold hover:shadow-sm cursor-pointer shrink-0 transition-all hover:bg-primary/5"
                     >
                       Change
                     </button>
                   </div>
 
                   {/* Review items block */}
-                  <div className="bg-white border border-[#e0e0e0] rounded-lg p-6 shadow-sm">
-                    <h3 className="font-serif text-2xl mb-6 text-left">2. Review Items</h3>
+                  <div className="bg-white border border-[#e0e0e0] rounded-lg p-4 sm:p-6 shadow-sm">
+                    <h3 className="font-serif text-xl sm:text-2xl mb-4 sm:mb-6 text-left">2. Review Items</h3>
                     <ul className="divide-y divide-border/60">
                       {detailed.map((line) => {
                         const original = line.product.original_price || Math.round(line.product.price * 1.45);
                         const discountPercent = Math.round(((original - line.product.price) / original) * 100);
                         
                         return (
-                          <li key={line.id} className="flex gap-6 py-6 first:pt-0 last:pb-0">
+                          <li key={line.id} className="flex gap-4 sm:gap-6 py-4 sm:py-6 first:pt-0 last:pb-0">
                             {/* Product Image & Qty Dropdown */}
                             <div className="flex flex-col items-center">
                               <Link
                                 to="/product/$id"
                                 params={{ id: line.product.id }}
-                                className="h-28 w-24 shrink-0 overflow-hidden rounded-md bg-secondary/30 flex items-center justify-center"
+                                className="h-24 w-20 sm:h-28 sm:w-24 shrink-0 overflow-hidden rounded-md bg-secondary/30 flex items-center justify-center"
                               >
                                 <img
                                   src={line.product.image}
@@ -781,58 +781,58 @@ function CartPage() {
                               </Link>
                               
                               {/* Quantity Selector with - and + */}
-                              <div className="mt-3 inline-flex items-center rounded-full border border-primary/20 bg-white">
+                              <div className="mt-2.5 inline-flex items-center rounded-full border border-primary/20 bg-white">
                                 <button
                                   type="button"
                                   onClick={() => setQty(line.id, Math.max(1, line.qty - 1))}
                                   disabled={line.qty <= 1}
-                                  className="inline-flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                  className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                                   aria-label="Decrease quantity"
                                 >
-                                  <Minus className="h-3.5 w-3.5" />
+                                  <Minus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                 </button>
-                                <span className="w-8 text-center text-xs font-semibold tabular-nums text-foreground select-none">
+                                <span className="w-6 sm:w-8 text-center text-[11px] sm:text-xs font-semibold tabular-nums text-foreground select-none">
                                   {line.qty}
                                 </span>
                                 <button
                                   type="button"
                                   onClick={() => setQty(line.id, Math.min(line.product.stock || 10, line.qty + 1))}
                                   disabled={line.qty >= (line.product.stock || 10)}
-                                  className="inline-flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                  className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                                   aria-label="Increase quantity"
                                 >
-                                  <Plus className="h-3.5 w-3.5" />
+                                  <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                 </button>
                               </div>
                             </div>
 
                             {/* Product Info */}
-                            <div className="flex flex-1 flex-col justify-between">
+                            <div className="flex flex-1 min-w-0 flex-col justify-between">
                               <div className="flex items-start justify-between gap-3">
-                                <div>
+                                <div className="min-w-0 flex-1">
                                   <Link
                                     to="/product/$id"
                                     params={{ id: line.product.id }}
-                                    className="text-foreground text-[15px] font-medium hover:text-primary text-left block leading-snug"
+                                    className="text-foreground text-[13px] sm:text-[15px] font-medium hover:text-primary text-left block leading-snug break-words"
                                   >
                                     {line.product.name}
                                   </Link>
-                                  <p className="text-[12px] text-muted-foreground mt-1 text-left font-medium">
+                                  <p className="text-[11px] sm:text-[12px] text-muted-foreground mt-1 text-left font-medium">
                                     {line.product.category} · {line.product.dimensions || "Standard Size"}
                                   </p>
 
                                   {/* Price Row */}
-                                  <div className="flex items-center gap-2.5 mt-3">
-                                    <span className="text-[13px] text-primary font-bold flex items-center">
-                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <span className="text-[11px] sm:text-[13px] text-primary font-bold flex items-center">
+                                      <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 13l-7 7-7-7" />
                                       </svg>
                                       {discountPercent}% Off
                                     </span>
-                                    <span className="text-[13px] text-muted-foreground line-through">
+                                    <span className="text-[11px] sm:text-[13px] text-muted-foreground line-through">
                                       {formatPrice(original)}
                                     </span>
-                                    <span className="text-[16px] font-bold text-foreground">
+                                    <span className="text-[14px] sm:text-[16px] font-bold text-foreground">
                                       {formatPrice(line.product.price)}
                                     </span>
                                   </div>
@@ -848,7 +848,7 @@ function CartPage() {
                               </div>
 
                               <div className="flex items-center justify-end mt-3 pt-3 border-t border-dashed border-border/60">
-                                <div className="text-sm font-bold text-foreground">
+                                <div className="text-xs sm:text-sm font-bold text-foreground">
                                   Subtotal: {formatPrice(line.product.price * line.qty)}
                                 </div>
                               </div>
@@ -863,12 +863,12 @@ function CartPage() {
             </div>
 
             {/* Right Column: Order Summary & Action Buttons */}
-            <div className="space-y-4">
-              <aside className="sticky top-6 h-fit rounded-lg border border-[#e0e0e0] bg-white p-6 text-left shadow-sm">
-                <h2 className="text-muted-foreground text-[13px] font-bold uppercase tracking-wider border-b border-border/60 pb-3 mb-4">
+            <div className="space-y-4 w-full min-w-0">
+              <aside className="sticky top-6 h-fit rounded-lg border border-[#e0e0e0] bg-white p-4 sm:p-6 text-left shadow-sm w-full">
+                <h2 className="text-muted-foreground text-[11px] sm:text-[13px] font-bold uppercase tracking-wider border-b border-border/60 pb-3 mb-4">
                   Price Details
                 </h2>
-                <dl className="space-y-4 text-sm mb-6">
+                <dl className="space-y-4 text-xs sm:text-sm mb-6">
                   <div className="flex justify-between items-center">
                     <span className="text-foreground border-b border-dashed border-border/80 pb-0.5 cursor-help">
                       MRP (incl. of all taxes)
@@ -893,12 +893,12 @@ function CartPage() {
 
                 {/* Coupon Form */}
                 <div className="mb-6 border-t border-[#f0f0f0] pt-4">
-                  <Label htmlFor="coupon-input" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
+                  <Label htmlFor="coupon-input" className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
                     Promo / Coupon Code
                   </Label>
                   {appliedCoupon ? (
                     <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-4 py-2.5">
-                      <div className="text-sm">
+                      <div className="text-xs sm:text-sm">
                         <span className="font-semibold text-primary">
                           {appliedCoupon} ({
                             availableCoupons.find(c => c.code.toUpperCase() === appliedCoupon.toUpperCase())?.discount || 0
@@ -920,12 +920,12 @@ function CartPage() {
                         placeholder="e.g. SABARA15"
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value)}
-                        className="flex-1 min-w-0 bg-background/80 rounded-full h-10 text-sm border-border"
+                        className="flex-1 min-w-0 bg-background/80 rounded-full h-9 sm:h-10 text-xs sm:text-sm border-border"
                       />
                       <Button
                         onClick={handleApplyCoupon}
                         variant="outline"
-                        className="rounded-full px-5 h-10 text-sm cursor-pointer border-primary text-primary hover:bg-primary/5"
+                        className="rounded-full px-4 sm:px-5 h-9 sm:h-10 text-xs sm:text-sm cursor-pointer border-primary text-primary hover:bg-primary/5"
                       >
                         Apply
                       </Button>
@@ -933,17 +933,17 @@ function CartPage() {
                   )}
                 </div>
 
-                <div className="mt-4 flex justify-between border-t border-[#f0f0f0] pt-4 text-base mb-6 font-bold">
-                  <span className="text-foreground text-[16px]">Total Amount</span>
-                  <span className="text-[18px] text-foreground font-serif">
+                <div className="mt-4 flex justify-between border-t border-[#f0f0f0] pt-4 text-sm sm:text-base mb-6 font-bold">
+                  <span className="text-foreground text-[14px] sm:text-[16px]">Total Amount</span>
+                  <span className="text-[16px] sm:text-[18px] text-foreground font-serif">
                     {formatPrice(totalAmount)}
                   </span>
                 </div>
 
                 {/* Savings banner */}
                 {totalDiscount > 0 && (
-                  <div className="bg-primary/10 border border-primary/20 text-primary text-sm font-semibold rounded-[4px] p-3 flex items-center gap-2 mb-6">
-                    <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-semibold rounded-[4px] p-2.5 sm:p-3 flex items-center gap-2 mb-6">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span>You'll save {formatPrice(totalDiscount)} on this order!</span>
@@ -963,7 +963,7 @@ function CartPage() {
                       }
                       setCheckoutStep(2);
                     }}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-[4px] py-6 text-base font-bold transition-all uppercase tracking-wider shadow-sm"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-[4px] py-4 sm:py-6 text-sm sm:text-base font-bold transition-all uppercase tracking-wider shadow-sm"
                   >
                     Proceed to Summary
                   </Button>
@@ -972,21 +972,21 @@ function CartPage() {
 
               {/* Continuing Bottom Bar under the price details inside the right column */}
               {checkoutStep === 2 && (
-                <div className="bg-white border border-[#e0e0e0] rounded-lg p-4 flex items-center justify-between shadow-sm sticky bottom-4 z-20">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xl font-bold text-foreground font-serif">{formatPrice(totalAmount)}</span>
-                    <svg className="w-4 h-4 text-muted-foreground cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="bg-white border border-[#e0e0e0] rounded-lg p-3 sm:p-4 flex items-center justify-between shadow-sm sticky bottom-4 z-20 w-full">
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg sm:text-xl font-bold text-foreground font-serif">{formatPrice(totalAmount)}</span>
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                   <Button
                     onClick={handleCheckout}
                     disabled={busy || detailed.length === 0}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-[4px] px-10 py-5 text-sm font-bold uppercase tracking-wider transition-all shadow-sm flex items-center justify-center min-w-[150px]"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-[4px] px-6 py-4 sm:px-10 sm:py-5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all shadow-sm flex items-center justify-center min-w-[120px] sm:min-w-[150px]"
                   >
                     {busy ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Placing Order...
+                        <Loader2 className="h-4.5 w-4.5 mr-1.5 animate-spin" /> Placing...
                       </>
                     ) : (
                       "Continue"
