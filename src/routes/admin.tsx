@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef, type FormEvent, Fragment } from "react";
-import { useHeroSettings, usePromoSettings, useHomepageSettings, defaultHomepageSettings } from "@/lib/settings";
+import { useHeroSettings, usePromoSettings, useHomepageSettings, defaultHomepageSettings, useShippingSettings } from "@/lib/settings";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -192,6 +192,7 @@ function AdminPage() {
             <TabsTrigger value="coupons">Coupons</TabsTrigger>
             <TabsTrigger value="hero">Homepage Settings</TabsTrigger>
             <TabsTrigger value="promotions">Promotions</TabsTrigger>
+            <TabsTrigger value="shipping">Shipping</TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="products">
@@ -211,6 +212,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="promotions">
           <PromotionsAdmin />
+        </TabsContent>
+        <TabsContent value="shipping">
+          <ShippingAdmin />
         </TabsContent>
       </Tabs>
     </div>
@@ -3508,3 +3512,140 @@ function PromotionsAdmin() {
     </div>
   );
 }
+
+function ShippingAdmin() {
+  const { settings, updateSettings, isLoaded } = useShippingSettings();
+  const [saving, setSaving] = useState(false);
+  const [fee, setFee] = useState(0);
+  const [minOrder, setMinOrder] = useState(0);
+  const [enabled, setEnabled] = useState(true);
+
+  // Sync state when settings are loaded
+  useEffect(() => {
+    if (isLoaded && settings) {
+      setFee(settings.fee);
+      setMinOrder(settings.minOrder);
+      setEnabled(settings.enabled);
+    }
+  }, [isLoaded, settings]);
+
+  if (!isLoaded) {
+    return (
+      <div className="flex justify-center py-10">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateSettings({
+        enabled,
+        fee: Number(fee),
+        minOrder: Number(minOrder)
+      });
+      toast.success("Shipping settings updated successfully");
+    } catch (e) {
+      toast.error("Failed to save shipping settings");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border bg-card p-6 shadow-sm max-w-2xl text-left">
+      <div className="flex items-center gap-3 mb-6 pb-4 border-b">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Settings className="h-5 w-5" />
+        </div>
+        <div>
+          <h2 className="text-xl font-medium">Shipping Configuration</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Configure global shipping fees and free shipping thresholds for your storefront checkout.
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSave} className="space-y-6">
+        <div className="flex items-center justify-between p-4 border rounded-lg bg-secondary/10">
+          <div>
+            <Label className="font-semibold cursor-pointer" htmlFor="shippingEnabled">
+              Enable Shipping Fees
+            </Label>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Charge shipping fees when cart value is below the threshold. If disabled, shipping is always free.
+            </p>
+          </div>
+          <input
+            id="shippingEnabled"
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+            className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+          />
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="shippingFee">Shipping Fee (₹)</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-sm text-muted-foreground">₹</span>
+              <Input
+                id="shippingFee"
+                type="number"
+                min="0"
+                value={fee}
+                onChange={(e) => setFee(Number(e.target.value) || 0)}
+                disabled={!enabled}
+                className="pl-7"
+                placeholder="100"
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Amount charged if the order value does not meet the free shipping threshold.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="minOrder">Free Shipping Threshold (₹)</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-sm text-muted-foreground">₹</span>
+              <Input
+                id="minOrder"
+                type="number"
+                min="0"
+                value={minOrder}
+                onChange={(e) => setMinOrder(Number(e.target.value) || 0)}
+                disabled={!enabled}
+                className="pl-7"
+                placeholder="1000"
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Minimum order total required to qualify for free shipping.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t">
+          <Button
+            type="submit"
+            disabled={saving}
+            className="rounded-full px-6 cursor-pointer"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
+              </>
+            ) : (
+              "Save Settings"
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+

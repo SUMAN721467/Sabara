@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Minus, Plus, X, Loader2, CheckCircle2 } from "lucide-react";
+import { Minus, Plus, X, Loader2, CheckCircle2, Info } from "lucide-react";
 import { toast } from "sonner";
 import { formatPrice, useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { INDIAN_STATES, fetchDistrictAndStateFromPincode } from "@/lib/pincode";
+import { useShippingSettings } from "@/lib/settings";
+
 
 
 export const Route = createFileRoute("/cart")({
@@ -38,7 +40,7 @@ function CartPage() {
   const [busy, setBusy] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<any | null>(null);
   const [checkoutStep, setCheckoutStep] = useState(1);
-  const FEES = 0;
+  const { settings: shippingSettings } = useShippingSettings();
 
   // Form fields
   const [fullName, setFullName] = useState("");
@@ -48,6 +50,10 @@ function CartPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
   const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
+
+  const FEES = (shippingSettings.enabled && (subtotal - discount) < shippingSettings.minOrder) 
+    ? shippingSettings.fee 
+    : 0;
 
   // Fetch available coupons
   useEffect(() => {
@@ -911,7 +917,24 @@ function CartPage() {
                       <span>-{formatPrice(discount)}</span>
                     </div>
                   )}
+                  {shippingSettings.enabled && (
+                    <div className="flex justify-between items-center text-foreground">
+                      <span className="flex items-center gap-1 border-b border-dashed border-border/80 pb-0.5 cursor-help">
+                        Shipping Charges
+                      </span>
+                      <span className={FEES === 0 ? "text-green-600 font-semibold" : "text-foreground font-mono"}>
+                        {FEES === 0 ? "FREE" : formatPrice(FEES)}
+                      </span>
+                    </div>
+                  )}
                 </dl>
+
+                {shippingSettings.enabled && FEES > 0 && (
+                  <div className="mb-6 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-[11px] rounded-lg p-2.5 flex items-center gap-1.5 font-medium animate-pulse">
+                    <Info className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <span>Add {formatPrice(shippingSettings.minOrder - (subtotal - discount))} more to get <strong>FREE SHIPPING!</strong></span>
+                  </div>
+                )}
 
                 {/* Coupon Form */}
                 <div className="mb-6 border-t border-[#f0f0f0] pt-4">

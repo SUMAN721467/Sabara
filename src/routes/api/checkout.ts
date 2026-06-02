@@ -140,7 +140,26 @@ export const Route = createFileRoute("/api/checkout")({
               );
             }
           }
-          const finalTotal = Math.max(0, secureSubtotal - discount);
+          // Fetch shipping settings from database
+          const { data: shippingSetting } = await supabase
+            .from("site_settings")
+            .select("value")
+            .eq("key", "shipping")
+            .single();
+
+          const shippingSettings = (shippingSetting?.value as any) || {
+            enabled: true,
+            fee: 100,
+            minOrder: 1000
+          };
+
+          let shippingFee = 0;
+          if (shippingSettings.enabled && (secureSubtotal - discount) < shippingSettings.minOrder) {
+            shippingFee = Number(shippingSettings.fee) || 0;
+          }
+
+          const finalTotal = Math.max(0, secureSubtotal - discount + shippingFee);
+
 
           // Count existing orders to make a sequential order number
           const { count } = await supabase

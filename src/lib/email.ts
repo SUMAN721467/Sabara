@@ -186,6 +186,7 @@ export async function sendOrderEmails({ order, items, origin }: EmailPayload) {
   const couponCodeApplied = order.couponCode || null;
   const discountVal = order.discountAmount || 0;
   const subtotalAmount = items.reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0);
+  const calculatedShipping = Math.max(0, totalAmount - (subtotalAmount - discountVal));
 
   const street = order.shipping_street || order.shippingStreet || "—";
   const city = order.shipping_city || order.shippingCity || "—";
@@ -237,7 +238,7 @@ export async function sendOrderEmails({ order, items, origin }: EmailPayload) {
               </tr>` : ""}
               <tr>
                 <td colspan="2" style="padding: 8px 8px; font-weight: 600; color: #4b5563; font-size: 14px;">Shipping</td>
-                <td align="right" style="padding: 8px 0; font-weight: 600; color: #10b981; font-size: 13px;">FREE</td>
+                <td align="right" style="padding: 8px 0; font-weight: 600; color: ${calculatedShipping > 0 ? '#111827' : '#10b981'}; font-size: 13px;">${calculatedShipping > 0 ? formatVal(calculatedShipping) : 'FREE'}</td>
               </tr>
               <tr style="border-top: 2px solid #e5e7eb;">
                 <td colspan="2" style="padding: 16px 8px; font-size: 16px; font-weight: 700; color: #111827; border-top: 1px solid #e5e7eb;">Total</td>

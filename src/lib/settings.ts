@@ -277,3 +277,69 @@ export function useHomepageSettings() {
   return { settings, updateSettings, isLoaded };
 }
 
+export type ShippingSettings = {
+  enabled: boolean;
+  fee: number;
+  minOrder: number;
+};
+
+export const defaultShippingSettings: ShippingSettings = {
+  enabled: true,
+  fee: 100, // ₹100 shipping fee
+  minOrder: 1000, // Free shipping above ₹1000
+};
+
+export function useShippingSettings() {
+  const [settings, setSettings] = useState<ShippingSettings>(defaultShippingSettings);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const res = await fetch("/api/site-settings?key=shipping");
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.success && data?.value) {
+            setSettings({ ...defaultShippingSettings, ...data.value });
+          }
+        }
+      } catch (e) {
+        console.error("[useShippingSettings load error]", e);
+      } finally {
+        setIsLoaded(true);
+      }
+    }
+    loadSettings();
+  }, []);
+
+  const updateSettings = async (newSettings: Partial<ShippingSettings>) => {
+    const updated = { ...settings, ...newSettings };
+    setSettings(updated);
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch("/api/admin/site-settings", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          key: "shipping",
+          value: updated,
+        }),
+      });
+
+      if (!res.ok) {
+        console.error("[useShippingSettings update failed]", await res.text());
+      }
+    } catch (e) {
+      console.error("[useShippingSettings update error]", e);
+    }
+  };
+
+  return { settings, updateSettings, isLoaded };
+}
+
+
