@@ -16,6 +16,9 @@ export default defineConfig(async ({ command, mode }) => {
 
   // TanStack Start plugin — skip Cloudflare server entry on Vercel
   const tanstackStartOptions: any = {
+    router: {
+      routeFileIgnorePattern: "check-columns",
+    },
     importProtection: {
       behavior: "error" as const,
       client: {

@@ -268,7 +268,7 @@ function ProductPage() {
           <span className="text-xs font-medium uppercase tracking-[0.22em] text-primary">
             {product.category}
           </span>
-          <h1 className="mt-3 font-serif text-4xl leading-tight text-foreground md:text-5xl">
+          <h1 className="mt-3 font-serif text-2xl leading-tight text-foreground md:text-3xl">
             {product.name.split(" - ")[0]}
           </h1>
           {product.original_price && product.original_price > product.price ? (
@@ -378,7 +378,40 @@ function ProductPage() {
           </div>
           <p className="mt-3 text-xs text-muted-foreground">Free shipping on all orders</p>
 
-          <p className="mt-8 leading-relaxed text-foreground/80">{product.story}</p>
+          {/* Formatted Story/Description */}
+          {(() => {
+            const story = product.story || "";
+            if (story.includes("★")) {
+              const parts = story.split("★").map(p => p.trim()).filter(Boolean);
+              return (
+                <div className="mt-8 space-y-3.5">
+                  {parts.map((part, index) => {
+                    const colonIndex = part.indexOf(":");
+                    if (colonIndex > -1) {
+                      const title = part.substring(0, colonIndex).trim();
+                      const desc = part.substring(colonIndex + 1).trim();
+                      return (
+                        <div key={index} className="flex gap-3 items-start bg-secondary/25 p-4 rounded-xl border border-border/30 hover:bg-secondary/45 transition-all duration-300">
+                          <span className="text-primary shrink-0 font-bold text-sm mt-0.5">★</span>
+                          <div>
+                            <h4 className="font-semibold text-foreground text-sm leading-snug">{title}</h4>
+                            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{desc}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={index} className="flex gap-3 items-start bg-secondary/25 p-4 rounded-xl border border-border/30 hover:bg-secondary/45 transition-all duration-300">
+                        <span className="text-primary shrink-0 font-bold text-sm mt-0.5">★</span>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{part}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            }
+            return <p className="mt-8 leading-relaxed text-sm text-foreground/80 whitespace-pre-line">{story}</p>;
+          })()}
 
           {/* Variety Selector */}
           {variants && variants.length > 1 && (
