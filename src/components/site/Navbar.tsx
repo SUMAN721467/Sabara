@@ -275,9 +275,9 @@ export function Navbar() {
       {justLoggedIn && user && <LoginSuccessPopup user={user} />}
 
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link to="/" className="font-serif text-xl tracking-tight group mr-3 shrink-0">
-            <img src={logoImg} alt="Sabara" className="h-7 sm:h-9 w-auto max-h-7 sm:max-h-9 transition-transform duration-500 ease-out group-hover:scale-105" />
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-2.5 sm:px-6">
+          <Link to="/" className="font-serif text-xl tracking-tight group mr-2 sm:mr-3 shrink-0">
+            <img src={logoImg} alt="Sabara" className="h-6.5 sm:h-9 w-auto max-h-6.5 sm:max-h-9 max-w-[95px] sm:max-w-none transition-transform duration-500 ease-out group-hover:scale-105" />
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -294,10 +294,10 @@ export function Navbar() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             <Link
               to="/shop"
-              className="inline-flex h-7 items-center justify-center rounded-full border border-primary/30 bg-transparent px-2.5 text-[10px] font-bold text-primary transition-all hover:bg-primary/5 active:scale-95 md:hidden whitespace-nowrap cursor-pointer ml-2 mr-1"
+              className="inline-flex h-6.5 items-center justify-center rounded-full border border-primary/30 bg-transparent px-2 text-[9px] font-bold text-primary transition-all hover:bg-primary/5 active:scale-95 md:hidden whitespace-nowrap cursor-pointer ml-1 mr-0.5"
             >
               Shop Now
             </Link>
@@ -305,9 +305,9 @@ export function Navbar() {
             <button
               onClick={() => setSearchOpen((v) => !v)}
               aria-label="Search"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90"
+              className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90"
             >
-              <Search className="h-5 w-5" />
+              <Search className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
 
             {/* User button — relative container for the dropdown panel */}
@@ -320,7 +320,7 @@ export function Navbar() {
                     aria-expanded={accountOpen}
                     onClick={() => setAccountOpen((v) => !v)}
                     className={cn(
-                      "relative flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90",
+                      "relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90",
                       accountOpen && "bg-secondary scale-105",
                     )}
                   >
@@ -328,13 +328,13 @@ export function Navbar() {
                       <img
                         src={user.user_metadata.avatar_url}
                         alt="avatar"
-                        className="h-7 w-7 rounded-full object-cover"
+                        className="h-5.5 w-5.5 sm:h-7 sm:w-7 rounded-full object-cover"
                       />
                     ) : (
-                      <User className="h-5 w-5" />
+                      <User className="h-4 w-4 sm:h-5 sm:w-5" />
                     )}
                     {/* Green online dot */}
-                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500 animate-pulse" />
+                    <span className="absolute -right-0.5 -top-0.5 h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full border border-background bg-emerald-500 animate-pulse" />
                   </button>
 
                   {accountOpen && (
@@ -350,9 +350,9 @@ export function Navbar() {
                 <Link
                   to="/login"
                   aria-label="Sign in"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90"
+                  className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90"
                 >
-                  <User className="h-5 w-5" />
+                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Link>
               )}
             </div>
@@ -360,11 +360,11 @@ export function Navbar() {
             <Link
               to="/wishlist"
               aria-label="Wishlist"
-              className="relative hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
+              className="relative hidden sm:inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
             >
-              <Heart className="h-5 w-5" />
+              <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
               {wishlistCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-medium text-primary-foreground animate-in zoom-in-50 duration-300">
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 sm:h-5 sm:min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[9px] sm:text-[11px] font-medium text-primary-foreground animate-in zoom-in-50 duration-300">
                   {wishlistCount}
                 </span>
               )}
@@ -373,11 +373,11 @@ export function Navbar() {
             <Link
               to="/cart"
               aria-label="Cart"
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
+              className="relative inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
             >
-              <ShoppingBag className="h-5 w-5" />
+              <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
               {count > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-medium text-primary-foreground animate-in zoom-in-50 duration-300">
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 sm:h-5 sm:min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[9px] sm:text-[11px] font-medium text-primary-foreground animate-in zoom-in-50 duration-300">
                   {count}
                 </span>
               )}
@@ -385,10 +385,10 @@ export function Navbar() {
 
             <button
               onClick={() => setOpen((v) => !v)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 md:hidden"
+              className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 md:hidden"
               aria-label="Toggle menu"
             >
-              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {open ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : <Menu className="h-4 w-4 sm:h-5 sm:w-5" />}
             </button>
           </div>
         </div>
@@ -410,7 +410,7 @@ export function Navbar() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search mats by name, material, category…"
-              className="h-9 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              className="h-9 flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
             <button
               type="submit"

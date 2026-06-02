@@ -920,7 +920,7 @@ function CartPage() {
                         placeholder="e.g. SABARA15"
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value)}
-                        className="bg-background/80 rounded-full h-10 text-sm border-border"
+                        className="flex-1 min-w-0 bg-background/80 rounded-full h-10 text-sm border-border"
                       />
                       <Button
                         onClick={handleApplyCoupon}
