@@ -59,14 +59,23 @@ export const Route = createFileRoute("/api/verify-payment")({
           }
 
           // Update Order in Supabase
-          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-          const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          const supabase = createClient(supabaseUrl!, supabaseKey!);
+          const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)?.replace(/['"]/g, '').trim();
+          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.replace(/['"]/g, '').trim();
+          const useServiceKey = !!(serviceKey && serviceKey.startsWith("eyJ"));
+          const supabase = useServiceKey
+            ? createClient(supabaseUrl!, serviceKey, {
+                auth: {
+                  storage: undefined,
+                  persistSession: false,
+                  autoRefreshToken: false,
+                }
+              })
+            : createClient(supabaseUrl!, (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)!?.replace(/['"]/g, '').trim());
 
-          // First, update order status to "Paid"
+          // Update order customer_status to "Paid" (status stays "Pending" due to database constraints)
           const { error: updateError } = await supabase
             .from("orders")
-            .update({ status: "Paid" })
+            .update({ customer_status: "Paid" })
             .eq("id", orderId);
 
           if (updateError) {

@@ -986,9 +986,11 @@ function AccountPage() {
                               }`}>
                                 {order.customerStatus === "Cancelled by Customer" 
                                   ? "Cancelled by Customer" 
-                                  : (order.customerStatus && order.customerStatus !== "Pending")
-                                    ? order.customerStatus
-                                    : order.status}
+                                  : order.customerStatus === "Paid"
+                                    ? "Payment Success, Order Pending"
+                                    : (order.customerStatus && order.customerStatus !== "Pending")
+                                      ? order.customerStatus
+                                      : order.status}
                               </span>
                             </div>
                             <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">

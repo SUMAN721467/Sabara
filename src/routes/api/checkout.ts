@@ -24,8 +24,8 @@ export const Route = createFileRoute("/api/checkout")({
             );
           }
 
-          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-          const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)?.replace(/['"]/g, '').trim();
+          const supabaseKey = (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)?.replace(/['"]/g, '').trim();
           const supabase = createClient(supabaseUrl!, supabaseKey!);
 
           // Verify and deduct stock for each item in the order, and calculate secure subtotal
@@ -208,10 +208,10 @@ export const Route = createFileRoute("/api/checkout")({
             });
 
             // Write back to database using Service Role key if possible to bypass RLS, otherwise fallback to publishable key client
-            const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-            const isServiceKeyValid = !!(serviceKey && serviceKey.trim() && serviceKey.trim().startsWith("eyJ"));
+            const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.replace(/['"]/g, '').trim();
+            const isServiceKeyValid = !!(serviceKey && serviceKey.startsWith("eyJ"));
             const supabaseAdmin = isServiceKeyValid
-              ? createClient(supabaseUrl!, serviceKey!, {
+              ? createClient(supabaseUrl!, serviceKey, {
                   auth: {
                     storage: undefined,
                     persistSession: false,

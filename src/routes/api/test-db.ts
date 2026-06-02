@@ -6,73 +6,65 @@ export const Route = createFileRoute("/api/test-db")({
     handlers: {
       GET: async () => {
         try {
-          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-          const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-          const clientPublishable = createClient(supabaseUrl!, supabaseKey!);
-          const clientService = serviceKey ? createClient(supabaseUrl!, serviceKey) : null;
-
-          // 1. Test profiles with publishable key
-          const { data: pubProfiles, error: pubProfilesErr } = await clientPublishable
-            .from("user_profiles")
-            .select("*");
-
-          // Test upserting a profile to check RLS permissions
-          const { data: testUpsert, error: testUpsertErr } = await clientPublishable
-            .from("user_profiles")
-            .upsert({
-              id: "00000000-0000-0000-0000-000000000000",
-              full_name: "Test RLS User"
-            })
-            .select();
-
-          // 2. Test orders with publishable key
-          const { data: pubOrders, error: pubOrdersErr } = await clientPublishable
-            .from("orders")
-            .select("*");
-
-          // 3. Test profiles with service key
-          let servProfiles = null;
-          let servProfilesErr = null;
-          if (clientService) {
-            const { data, error } = await clientService.from("user_profiles").select("*");
-            servProfiles = data;
-            servProfilesErr = error;
+          const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)?.replace(/['"]/g, '').trim();
+          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.replace(/['"]/g, '').trim();
+          
+          if (!serviceKey) {
+            return Response.json({ success: false, error: "No service role key found" });
           }
 
-          // 4. Test orders with service key
-          let servOrders = null;
-          let servOrdersErr = null;
-          if (clientService) {
-            const { data, error } = await clientService.from("orders").select("*");
-            servOrders = data;
-            servOrdersErr = error;
+          const supabase = createClient(supabaseUrl!, serviceKey, {
+            auth: {
+              storage: undefined,
+              persistSession: false,
+              autoRefreshToken: false,
+            }
+          });
+
+          // Fetch one order to test
+          const { data: orders, error: fetchErr } = await supabase
+            .from("orders")
+            .select("id, status")
+            .limit(1);
+
+          if (fetchErr || !orders || orders.length === 0) {
+            return Response.json({ success: false, error: "No orders found to test with: " + fetchErr?.message });
+          }
+
+          const testOrderId = orders[0].id;
+          const originalCustomerStatus = orders[0].customer_status || null;
+
+          const statusesToTest = [
+            "Pending",
+            "Paid",
+            "Payment Success, Order Pending",
+            "Cancelled by Customer",
+            "Return Requested",
+            "Return Approved",
+            "Return Rejected"
+          ];
+          const results: Record<string, any> = {};
+
+          for (const customer_status of statusesToTest) {
+            const { error } = await supabase
+              .from("orders")
+              .update({ customer_status })
+              .eq("id", testOrderId);
+            
+            if (error) {
+              results[customer_status] = { success: false, error: error.message };
+            } else {
+              results[customer_status] = { success: true };
+              // Revert back to original status immediately
+              await supabase.from("orders").update({ customer_status: originalCustomerStatus }).eq("id", testOrderId);
+            }
           }
 
           return Response.json({
             success: true,
-            env: {
-              supabaseUrl: !!supabaseUrl,
-              supabaseKey: !!supabaseKey,
-              serviceKey: !!serviceKey,
-            },
-            publishable: {
-              profilesCount: pubProfiles ? pubProfiles.length : null,
-              profilesError: pubProfilesErr ? pubProfilesErr.message : null,
-              testUpsertError: testUpsertErr ? testUpsertErr.message : null,
-              testUpsertResult: testUpsert,
-              ordersCount: pubOrders ? pubOrders.length : null,
-              ordersError: pubOrdersErr ? pubOrdersErr.message : null,
-              sampleOrders: pubOrders ? pubOrders.slice(0, 2) : null,
-            },
-            serviceRole: {
-              profilesCount: servProfiles ? servProfiles.length : null,
-              profilesError: servProfilesErr ? servProfilesErr.message : null,
-              ordersCount: servOrders ? servOrders.length : null,
-              ordersError: servOrdersErr ? servOrdersErr.message : null,
-              sampleProfiles: servProfiles ? servProfiles.slice(0, 2) : null,
-            }
+            testOrderId,
+            originalCustomerStatus,
+            results
           });
         } catch (e: any) {
           return Response.json({ success: false, error: e.message });

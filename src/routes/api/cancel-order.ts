@@ -25,9 +25,18 @@ export const Route = createFileRoute("/api/cancel-order")({
             );
           }
 
-          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-          const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          const supabase = createClient(supabaseUrl!, supabaseKey!);
+          const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)?.replace(/['"]/g, '').trim();
+          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.replace(/['"]/g, '').trim();
+          const useServiceKey = !!(serviceKey && serviceKey.startsWith("eyJ"));
+          const supabase = useServiceKey
+            ? createClient(supabaseUrl!, serviceKey, {
+                auth: {
+                  storage: undefined,
+                  persistSession: false,
+                  autoRefreshToken: false,
+                }
+              })
+            : createClient(supabaseUrl!, (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)!?.replace(/['"]/g, '').trim());
 
           // Check if order exists and is in "Pending" status to avoid double cancellation/double stock recovery
           const { data: order, error: orderErr } = await supabase

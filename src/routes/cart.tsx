@@ -163,6 +163,15 @@ function CartPage() {
     }
   }, [zipCode, isManualInput]);
 
+  // Auto-redirect to My Orders tab in Account page after successful checkout
+  useEffect(() => {
+    if (orderSuccess) {
+      const timer = setTimeout(() => {
+        navigate({ to: "/account", search: { tab: "orders" } });
+      }, 5000); // 5 seconds to read receipt/details
+      return () => clearTimeout(timer);
+    }
+  }, [orderSuccess, navigate]);
 
   // Fetch registered user profile details
   useEffect(() => {
@@ -227,6 +236,7 @@ function CartPage() {
     }
 
     setBusy(true);
+    setCheckoutStep(3);
     let dbOrder: any = null;
 
     try {
@@ -328,7 +338,7 @@ function CartPage() {
             clear();
             toast.success("Payment verified and order placed successfully!");
           } catch (verifyErr: any) {
-            toast.error(verifyErr.message || "Payment verification failed. Please contact support.");
+            toast.error((verifyErr.message || "Payment verification failed. Please contact support.") + " If any money was debited, it will be refunded automatically.");
           } finally {
             setBusy(false);
           }
@@ -350,7 +360,8 @@ function CartPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ orderId: dbOrder.id, reason: "Payment cancelled by user" })
               });
-              toast.error("Payment cancelled. Your order has not been placed.");
+              setCheckoutStep(2);
+              toast.error("Payment cancelled. Your order has not been placed. If any money was debited from your account, it will be refunded automatically.");
             } catch (cancelErr) {
               console.error("Error cancelling order:", cancelErr);
             } finally {
@@ -373,7 +384,8 @@ function CartPage() {
               reason: `Payment failed: ${response.error.description || "Unknown error"}`
             })
           });
-          toast.error(`Payment failed: ${response.error.description || "Transaction failed"}`);
+          setCheckoutStep(2);
+          toast.error(`Payment failed: ${response.error.description || "Transaction failed"}. If any money was debited, it will be refunded automatically.`);
         } catch (cancelErr) {
           console.error("Error cancelling failed order:", cancelErr);
         } finally {
@@ -383,6 +395,7 @@ function CartPage() {
       rzp.open();
 
     } catch (err: any) {
+      setCheckoutStep(2);
       toast.error(err.message || "Something went wrong during checkout.");
     } finally {
       // Set busy to false only if we did NOT proceed to payment window
@@ -398,9 +411,9 @@ function CartPage() {
         <div className="flex justify-center mb-6">
           <CheckCircle2 className="h-16 w-16 text-emerald-500 animate-pulse" />
         </div>
-        <h1 className="font-serif text-4xl mb-2 text-foreground">Thank you for your order!</h1>
+        <h1 className="font-serif text-3xl mb-2 text-foreground">Payment Success! Order Pending</h1>
         <p className="text-muted-foreground mb-8">
-          Your order <span className="font-mono font-medium text-foreground">{orderSuccess.orderNumber}</span> has been received and is being processed.
+          Your order <span className="font-mono font-medium text-foreground">{orderSuccess.orderNumber}</span> has been placed successfully. We are redirecting you to your order history tab...
         </p>
         <div className="rounded-xl border bg-card p-6 text-left shadow-sm mb-8 space-y-4">
           <h3 className="font-medium text-lg border-b pb-2">Delivery Summary</h3>
@@ -422,9 +435,14 @@ function CartPage() {
             <span className="font-serif text-lg text-primary">{formatPrice(orderSuccess.total)}</span>
           </div>
         </div>
-        <Button onClick={() => navigate({ to: "/shop" })} className="rounded-full px-8 py-6 text-base">
-          Continue Shopping
-        </Button>
+        <div className="flex flex-col gap-3">
+          <Button onClick={() => navigate({ to: "/account", search: { tab: "orders" } })} className="rounded-full px-8 py-6 text-base">
+            Go to My Orders Now
+          </Button>
+          <span className="text-xs text-muted-foreground animate-pulse">
+            Redirecting automatically in a few seconds...
+          </span>
+        </div>
       </div>
     );
   }
@@ -465,7 +483,7 @@ function CartPage() {
               <div className="absolute left-[10%] right-[10%] top-5 h-0.5 bg-gray-200 z-0" />
               <div 
                 className="absolute left-[10%] top-5 h-0.5 bg-primary transition-all duration-300 z-0" 
-                style={{ width: checkoutStep === 2 ? '40%' : '0%' }}
+                style={{ width: checkoutStep === 3 ? '80%' : checkoutStep === 2 ? '40%' : '0%' }}
               />
 
               {/* Step 1: Address */}
@@ -511,7 +529,11 @@ function CartPage() {
                       ? 'border-primary bg-white text-primary'
                       : 'border-border bg-muted text-muted-foreground'
                 }`}>
-                  2
+                  {checkoutStep > 2 ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : '2'}
                 </div>
                 <span className={`text-xs sm:text-sm font-medium ${
                   checkoutStep === 2 ? 'text-foreground font-bold' : 'text-muted-foreground'
@@ -989,7 +1011,7 @@ function CartPage() {
                         <Loader2 className="h-4.5 w-4.5 mr-1.5 animate-spin" /> Placing...
                       </>
                     ) : (
-                      "Continue"
+                      "Pay Now"
                     )}
                   </Button>
                 </div>
