@@ -68,7 +68,7 @@ export let ordersState: Order[] = [
     orderNumber: "LW-2026-9813",
     date: "2026-05-21T09:15:00Z",
     customerName: "Suman Mondal",
-    customerEmail: "sumanmondal06285@gmail.com",
+    customerEmail: "suman.customer@example.com",
     customerPhone: "+91 98765 43210",
     items: [
       {

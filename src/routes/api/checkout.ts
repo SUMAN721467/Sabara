@@ -26,7 +26,17 @@ export const Route = createFileRoute("/api/checkout")({
 
           const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)?.replace(/['"]/g, '').trim();
           const supabaseKey = (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)?.replace(/['"]/g, '').trim();
-          const supabase = createClient(supabaseUrl!, supabaseKey!);
+          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.replace(/['"]/g, '').trim();
+          const isServiceKeyValid = !!(serviceKey && serviceKey.startsWith("eyJ"));
+          const supabase = isServiceKeyValid
+            ? createClient(supabaseUrl!, serviceKey, {
+                auth: {
+                  storage: undefined,
+                  persistSession: false,
+                  autoRefreshToken: false,
+                }
+              })
+            : createClient(supabaseUrl!, supabaseKey!);
 
           // Verify and deduct stock for each item in the order, and calculate secure subtotal
           let secureSubtotal = 0;

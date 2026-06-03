@@ -232,6 +232,7 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
   const [mode, setMode] = useState<FormMode>("list");
   const [editTarget, setEditTarget] = useState<any | null>(null);
   const [prefillTarget, setPrefillTarget] = useState<any | null>(null);
+  const [productSearch, setProductSearch] = useState("");
 
   useEffect(() => { setProducts(initialProducts); }, [initialProducts]);
 
@@ -280,6 +281,31 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
       toast.error(err.message || "Failed to update visibility");
     }
   };
+
+  useEffect(() => {
+    fetchVisibility();
+  }, []);
+
+  const filteredProducts = products.filter((p) => {
+    const s = productSearch.toLowerCase().trim();
+    if (!s) return true;
+    return (
+      (p.name || "").toLowerCase().includes(s) ||
+      (p.category || "").toLowerCase().includes(s) ||
+      (p.sku || "").toLowerCase().includes(s)
+    );
+  });
+
+  // Group products by base name
+  const groups = new Map<string, any[]>();
+  filteredProducts.forEach((p) => {
+    const base = (p.name || "").split(" - ")[0].trim();
+    if (!base) return;
+    if (!groups.has(base)) {
+      groups.set(base, []);
+    }
+    groups.get(base)!.push(p);
+  });
 
   const toggleProductExpand = (baseName: string) => {
     setExpandedProducts((prev) => ({
@@ -472,12 +498,23 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
         <div>
           <h2 className="text-xl font-medium">Manage Products</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {products.length} product{products.length !== 1 ? "s" : ""} total
+            {filteredProducts.length} variety / {groups.size} product group{groups.size !== 1 ? "s" : ""} listed
           </p>
         </div>
-        <Button onClick={() => setMode("add")} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-1" /> Add Product
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-center">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, SKU, category..."
+              className="pl-9 h-9 text-sm"
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+            />
+          </div>
+          <Button onClick={() => setMode("add")} className="w-full sm:w-auto h-9">
+            <Plus className="h-4 w-4 mr-1" /> Add Product
+          </Button>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -487,6 +524,7 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
               <TableHead className="w-[40px]"></TableHead>
               <TableHead>Image</TableHead>
               <TableHead>Name</TableHead>
+              <TableHead>SKU ID</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
@@ -498,21 +536,10 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
           </TableHeader>
           <TableBody>
             {(() => {
-              // Group products by base name
-              const groups = new Map<string, any[]>();
-              products.forEach((p) => {
-                const base = (p.name || "").split(" - ")[0].trim();
-                if (!base) return;
-                if (!groups.has(base)) {
-                  groups.set(base, []);
-                }
-                groups.get(base)!.push(p);
-              });
-
               if (groups.size === 0) {
                 return (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={11} className="text-center py-10 text-muted-foreground">
                       No products found. Add one above!
                     </TableCell>
                   </TableRow>
@@ -571,6 +598,9 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
                         <div className="text-xs text-muted-foreground mt-0.5">
                           {sortedGroup.length} variety{sortedGroup.length !== 1 ? "ies" : ""}
                         </div>
+                      </TableCell>
+                      <TableCell className="text-xs font-mono text-muted-foreground">
+                        {mainProduct.sku || "—"}
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
@@ -656,7 +686,7 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
                     {/* Collapsible varieties list dropdown */}
                     {isExpanded && (
                       <TableRow className="bg-muted/10 border-l-2 border-l-primary/40 dark:bg-muted/5 transition-colors">
-                        <TableCell colSpan={10} className="p-4 sm:p-6">
+                        <TableCell colSpan={11} className="p-4 sm:p-6">
                           <div className="rounded-xl border bg-background/50 p-4 space-y-4">
                             <div className="flex items-center justify-between border-b pb-3">
                               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -681,6 +711,7 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
                                   <TableRow>
                                     <TableHead className="py-2 text-[11px] font-semibold">Image</TableHead>
                                     <TableHead className="py-2 text-[11px] font-semibold">Variety / Color</TableHead>
+                                    <TableHead className="py-2 text-[11px] font-semibold">SKU ID</TableHead>
                                     <TableHead className="py-2 text-[11px] font-semibold">Price</TableHead>
                                     <TableHead className="py-2 text-[11px] font-semibold">Stock</TableHead>
                                     <TableHead className="py-2 text-[11px] font-semibold">Display</TableHead>
@@ -690,7 +721,7 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
                                 <TableBody>
                                   {sortedGroup.slice(1).length === 0 ? (
                                     <TableRow>
-                                      <TableCell colSpan={6} className="text-center py-6 text-xs text-muted-foreground">
+                                      <TableCell colSpan={7} className="text-center py-6 text-xs text-muted-foreground">
                                         No other varieties added yet.
                                       </TableCell>
                                     </TableRow>
@@ -705,6 +736,9 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
                                           </TableCell>
                                           <TableCell className="py-2 font-medium text-xs">
                                             {vLabel}
+                                          </TableCell>
+                                          <TableCell className="py-2 font-mono text-xs text-muted-foreground">
+                                            {v.sku || "—"}
                                           </TableCell>
                                           <TableCell className="py-2 font-mono text-xs">
                                             {v.original_price && v.original_price > v.price ? (
@@ -902,6 +936,7 @@ function ProductForm({
   const [story, setStory] = useState(initial?.story ?? "");
   const [badge, setBadge] = useState(initial?.badge ?? "");
   const [stock, setStock] = useState<number>(initial?.stock ?? 10);
+  const [sku, setSku] = useState(initial?.sku ?? "");
 
   // Images
   const [mainImageUrl, setMainImageUrl] = useState(initial?.image ?? "");
@@ -932,6 +967,7 @@ function ProductForm({
     setStory(initial?.story ?? "");
     setBadge(initial?.badge ?? "");
     setStock(initial?.stock ?? 10);
+    setSku(initial?.sku ?? "");
     setMainImageUrl(initial?.image ?? "");
     setGalleryUrls(initial?.gallery ?? []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -994,7 +1030,7 @@ function ProductForm({
       const fullName = color.trim() ? `${baseName.trim()} - ${color.trim()}` : baseName.trim();
       const payload: any = {
         name: fullName, price, category, materials, dimensions, story, badge,
-        image: mainImageUrl, gallery, stock,
+        image: mainImageUrl, gallery, stock, sku: sku.trim() || null,
         original_price: originalPrice || null,
       };
       if (isEdit && initial?.id) payload.id = initial.id;
@@ -1027,11 +1063,16 @@ function ProductForm({
           <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             Basic Information
           </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
             <div className="sm:col-span-2 space-y-2">
               <Label htmlFor="p-name">Product Name *</Label>
               <Input id="p-name" required placeholder="e.g. Asha Yoga Mat"
                 value={baseName} onChange={(e) => setBaseName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="p-sku">SKU ID</Label>
+              <Input id="p-sku" placeholder="e.g. MAT-ASHA-GRN"
+                value={sku} onChange={(e) => setSku(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="p-price">Selling Price (₹) *</Label>
@@ -1241,6 +1282,7 @@ function ProductForm({
                   <TableRow>
                     <TableHead className="w-[60px]">Image</TableHead>
                     <TableHead>Variety Name</TableHead>
+                    <TableHead>SKU ID</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Stock</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -1256,7 +1298,7 @@ function ProductForm({
                     if (siblingList.length === 0) {
                       return (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-6 text-muted-foreground text-xs">
+                          <TableCell colSpan={6} className="text-center py-6 text-muted-foreground text-xs">
                             No varieties found.
                           </TableCell>
                         </TableRow>
@@ -1280,6 +1322,9 @@ function ProductForm({
                                 </span>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell className="text-xs font-mono text-muted-foreground">
+                            {v.sku || "—"}
                           </TableCell>
                           <TableCell className="text-sm font-mono">
                             {v.original_price && v.original_price > v.price ? (

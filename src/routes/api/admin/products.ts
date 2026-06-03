@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
 import { getOrSeedProducts } from "../products";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function getStoragePathFromUrl(url: string, bucketName: string = "product-images"): string | null {
   if (!url) return null;
@@ -33,8 +34,7 @@ async function assertAdmin(request: Request, context: any) {
       const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       if (supabaseUrl && supabaseKey) {
         try {
-          const supabase = createClient(supabaseUrl, supabaseKey);
-          const { data } = await supabase.auth.getClaims(token);
+          const { data } = await supabaseAdmin.auth.getClaims(token);
           if (data?.claims) {
             claims = data.claims;
           }
@@ -69,10 +69,7 @@ export const Route = createFileRoute("/api/admin/products")({
       GET: async ({ request, context }) => {
         try {
           await assertAdmin(request, context);
-          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-          const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          const supabase = createClient(supabaseUrl!, supabaseKey!);
-          const dbProducts = await getOrSeedProducts(supabase);
+          const dbProducts = await getOrSeedProducts(supabaseAdmin);
           return Response.json({ products: dbProducts });
         } catch (err: any) {
           console.error("[api/admin/products GET error]", err);
@@ -83,11 +80,8 @@ export const Route = createFileRoute("/api/admin/products")({
         try {
           await assertAdmin(request, context);
           const body = await request.json();
-          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-          const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          const supabase = createClient(supabaseUrl!, supabaseKey!);
-
-          const { data, error } = await supabase
+ 
+          const { data, error } = await supabaseAdmin
             .from("products")
             .insert({
               name: body.name,
@@ -100,7 +94,8 @@ export const Route = createFileRoute("/api/admin/products")({
               story: body.story,
               badge: body.badge || null,
               gallery: body.gallery || [body.image],
-              stock: body.stock !== undefined ? Number(body.stock) : 10
+              stock: body.stock !== undefined ? Number(body.stock) : 10,
+              sku: body.sku || null
             })
             .select("*")
             .single();
@@ -116,11 +111,8 @@ export const Route = createFileRoute("/api/admin/products")({
         try {
           await assertAdmin(request, context);
           const body = await request.json();
-          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-          const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          const supabase = createClient(supabaseUrl!, supabaseKey!);
-
-          const { data, error } = await supabase
+ 
+          const { data, error } = await supabaseAdmin
             .from("products")
             .upsert({
               id: body.id,
@@ -134,7 +126,8 @@ export const Route = createFileRoute("/api/admin/products")({
               story: body.story,
               badge: body.badge || null,
               gallery: body.gallery || [body.image],
-              stock: body.stock !== undefined ? Number(body.stock) : 10
+              stock: body.stock !== undefined ? Number(body.stock) : 10,
+              sku: body.sku || null
             })
             .select("*")
             .single();
@@ -151,18 +144,15 @@ export const Route = createFileRoute("/api/admin/products")({
           await assertAdmin(request, context);
           const url = new URL(request.url);
           const id = url.searchParams.get("id");
-          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-          const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          const supabase = createClient(supabaseUrl!, supabaseKey!);
-
+ 
           // Fetch product image/gallery urls before deletion
-          const { data: product } = await supabase
+          const { data: product } = await supabaseAdmin
             .from("products")
             .select("image, gallery")
             .eq("id", id)
             .single();
-
-          const { error } = await supabase
+ 
+          const { error } = await supabaseAdmin
             .from("products")
             .delete()
             .eq("id", id);
@@ -192,7 +182,7 @@ export const Route = createFileRoute("/api/admin/products")({
             if (pathsToDelete.length > 0) {
               try {
                 // Perform deletion in storage
-                const { error: storageErr } = await supabase.storage
+                const { error: storageErr } = await supabaseAdmin.storage
                   .from("product-images")
                   .remove(pathsToDelete);
                 if (storageErr) {

@@ -450,6 +450,12 @@ function ProductPage() {
           )}
 
           <dl className="mt-8 grid grid-cols-2 gap-y-3 border-y border-border/60 py-5 text-sm">
+            {product.sku && (
+              <>
+                <dt className="text-muted-foreground">SKU ID</dt>
+                <dd className="text-foreground font-mono text-xs">{product.sku}</dd>
+              </>
+            )}
             <dt className="text-muted-foreground">Materials</dt>
             <dd className="text-foreground">{product.materials}</dd>
             <dt className="text-muted-foreground">Dimensions</dt>
