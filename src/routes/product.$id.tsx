@@ -32,7 +32,12 @@ const getProductDetails = createServerFn({ method: "GET" })
       });
 
     // Group related products by base name (excluding variants of current product)
-    const otherProducts = list.filter((x: any) => x.name.split(" - ")[0] !== baseName && x.category === product.category);
+    const otherProducts = list.filter((x: any) => {
+      if (x.name.split(" - ")[0] === baseName) return false;
+      const xCats = (x.category || "").split(",").map((c: string) => c.trim().toLowerCase());
+      const prodCats = (product.category || "").split(",").map((c: string) => c.trim().toLowerCase());
+      return xCats.some((c: string) => prodCats.includes(c));
+    });
     const relatedGroups = new Map<string, any[]>();
     otherProducts.forEach((p: any) => {
       const bName = p.name.split(" - ")[0];
@@ -266,7 +271,7 @@ function ProductPage() {
 
         <div className="flex flex-col">
           <span className="text-xs font-medium uppercase tracking-[0.22em] text-primary">
-            {product.category}
+            {(product.category || "").split(",").map((c: string) => c.trim()).join(" · ")}
           </span>
           <h1 className="mt-3 font-serif text-2xl leading-tight text-foreground md:text-3xl">
             {product.name.split(" - ")[0]}
@@ -472,7 +477,7 @@ function ProductPage() {
       {related.length > 0 && (
         <section className="mt-24">
           <h2 className="font-serif text-2xl text-foreground md:text-3xl">You might also like</h2>
-          <div className="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-3">
             {related.map((p: any) => (
               <ProductCard key={p.id} product={p} />
             ))}

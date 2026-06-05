@@ -469,7 +469,18 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
         isEdit={mode === "edit"}
         onSave={handleSave}
         onCancel={() => { setMode("list"); setEditTarget(null); setPrefillTarget(null); }}
-        existingCategories={[...new Set(products.map((p) => p.category))]}
+        existingCategories={(() => {
+          const catsSet = new Set<string>();
+          products.forEach((p) => {
+            if (p.category) {
+              p.category.split(",").forEach((c: string) => {
+                const trimmed = c.trim();
+                if (trimmed) catsSet.add(trimmed);
+              });
+            }
+          });
+          return Array.from(catsSet);
+        })()}
         products={products}
         onEditProduct={(prod) => {
           setEditTarget(prod);
@@ -603,9 +614,13 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
                         {mainProduct.sku || "—"}
                       </TableCell>
                       <TableCell>
-                        <span className="inline-flex rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
-                          {mainProduct.category}
-                        </span>
+                        <div className="flex flex-wrap gap-1 max-w-[150px]">
+                          {(mainProduct.category || "").split(",").map((c: string) => c.trim()).filter(Boolean).map((cat: string) => (
+                            <span key={cat} className="inline-flex rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                              {cat}
+                            </span>
+                          ))}
+                        </div>
                       </TableCell>
                       <TableCell className="font-medium font-mono text-sm">
                         {priceDisplay}
@@ -928,7 +943,10 @@ function ProductForm({
   });
   const [price, setPrice] = useState<number>(initial?.price ?? 0);
   const [originalPrice, setOriginalPrice] = useState<number | undefined>(initial?.original_price ?? undefined);
-  const [category, setCategory] = useState(initial?.category ?? allCategories[0] ?? "");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    if (!initial?.category) return [];
+    return initial.category.split(",").map((c: string) => c.trim()).filter(Boolean);
+  });
   const [customCategory, setCustomCategory] = useState("");
   const [showCustomCat, setShowCustomCat] = useState(false);
   const [materials, setMaterials] = useState(initial?.materials ?? "");
@@ -959,7 +977,11 @@ function ProductForm({
     
     setPrice(initial?.price ?? 0);
     setOriginalPrice(initial?.original_price ?? undefined);
-    setCategory(initial?.category ?? defaultCategories[0] ?? "");
+    if (initial?.category) {
+      setSelectedCategories(initial.category.split(",").map((c: string) => c.trim()).filter(Boolean));
+    } else {
+      setSelectedCategories([]);
+    }
     setCustomCategory("");
     setShowCustomCat(false);
     setMaterials(initial?.materials ?? "");
@@ -1015,7 +1037,16 @@ function ProductForm({
   const addCustomCategory = () => {
     const cat = customCategory.trim();
     if (!cat) return;
-    setCategory(cat);
+    const newCats = cat.split(",").map(c => c.trim()).filter(Boolean);
+    setSelectedCategories((prev) => {
+      const next = [...prev];
+      newCats.forEach((nc) => {
+        if (!next.includes(nc)) {
+          next.push(nc);
+        }
+      });
+      return next;
+    });
     setCustomCategory("");
     setShowCustomCat(false);
   };
@@ -1027,9 +1058,13 @@ function ProductForm({
     setBusy(true);
     try {
       const gallery = galleryUrls.length > 0 ? galleryUrls : [mainImageUrl];
+      if (selectedCategories.length === 0) {
+        toast.error("Please select at least one category");
+        return;
+      }
       const fullName = color.trim() ? `${baseName.trim()} - ${color.trim()}` : baseName.trim();
       const payload: any = {
-        name: fullName, price, category, materials, dimensions, story, badge,
+        name: fullName, price, category: selectedCategories.join(", "), materials, dimensions, story, badge,
         image: mainImageUrl, gallery, stock, sku: sku.trim() || null,
         original_price: originalPrice || null,
       };
@@ -1099,27 +1134,40 @@ function ProductForm({
 
           {/* Category */}
           <div className="mt-4 space-y-2">
-            <Label>Category *</Label>
+            <Label>Category * (Select one or more)</Label>
             <div className="flex flex-wrap gap-2">
-              {allCategories.map((c) => (
+              {allCategories.map((c) => {
+                const isSelected = selectedCategories.includes(c);
+                return (
+                  <button
+                    key={c} type="button"
+                    onClick={() => {
+                      setSelectedCategories((prev) =>
+                        prev.includes(c) ? prev.filter((catName) => catName !== c) : [...prev, c]
+                      );
+                    }}
+                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                      isSelected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                );
+              })}
+              {/* Show selected custom categories if they are not in allCategories */}
+              {selectedCategories.filter(c => !allCategories.includes(c)).map((c) => (
                 <button
                   key={c} type="button"
-                  onClick={() => setCategory(c)}
-                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                    category === c
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-foreground hover:bg-secondary"
-                  }`}
+                  onClick={() => {
+                    setSelectedCategories((prev) => prev.filter((catName) => catName !== c));
+                  }}
+                  className="rounded-full border border-primary bg-primary text-primary-foreground px-3 py-1.5 text-sm transition-colors"
                 >
-                  {c}
+                  {c} <span className="ml-1 text-xs opacity-80">×</span>
                 </button>
               ))}
-              {/* Show custom category if it's not in list */}
-              {category && !allCategories.includes(category) && (
-                <span className="rounded-full border border-primary bg-primary text-primary-foreground px-3 py-1.5 text-sm">
-                  {category}
-                </span>
-              )}
               <button
                 type="button"
                 onClick={() => setShowCustomCat(!showCustomCat)}
@@ -1132,7 +1180,7 @@ function ProductForm({
             {showCustomCat && (
               <div className="flex gap-2 mt-2 max-w-xs">
                 <Input
-                  placeholder="e.g. Outdoor"
+                  placeholder="e.g. Outdoor, Cushion"
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomCategory(); } }}

@@ -77,12 +77,12 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
       )}
 
-      <div className="mt-3 flex items-baseline justify-between gap-3 px-1">
-        <h3 className="font-serif text-lg leading-tight text-foreground transition-colors group-hover:text-primary duration-300">
+      <div className="mt-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3 px-1">
+        <h3 className="font-serif text-base sm:text-lg leading-tight text-foreground transition-colors group-hover:text-primary duration-300">
           {product.name.split(" - ")[0]}
         </h3>
         {product.original_price && product.original_price > product.price ? (
-          <div className="flex flex-col items-end shrink-0">
+          <div className="flex flex-row items-baseline gap-1.5 flex-wrap sm:flex-col sm:items-end shrink-0">
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold text-red-600 dark:text-red-400">
                 {formatPrice(product.price)}
@@ -96,7 +96,7 @@ export function ProductCard({ product }: { product: Product }) {
             </span>
           </div>
         ) : (
-          <span className="text-sm font-medium text-muted-foreground">{formatPrice(product.price)}</span>
+          <span className="text-sm font-medium text-muted-foreground shrink-0">{formatPrice(product.price)}</span>
         )}
       </div>
       <p className="mt-0.5 text-xs uppercase tracking-wider text-muted-foreground/80 px-1 pb-1">

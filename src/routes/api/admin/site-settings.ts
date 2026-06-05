@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
+import { clearSettingsCache } from "../site-settings";
 
 function getAdminEmails(): Set<string> {
   return new Set([
@@ -99,6 +100,8 @@ export const Route = createFileRoute("/api/admin/site-settings")({
           } catch (e: any) {
             dbError = e;
           }
+
+          clearSettingsCache(key);
 
           // If key is coupons, save locally to src/data/coupons.json as fallback
           let localSaved = false;

@@ -1,5 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
+import { getSiteSetting } from "./site-settings";
+
+let productsCache: { data: any[]; timestamp: number } | null = null;
+const PRODUCTS_CACHE_TTL = 30000; // 30 seconds
+
+export function clearProductsCache() {
+  productsCache = null;
+}
 
 function getServerSupabase() {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -10,31 +18,38 @@ function getServerSupabase() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
-export async function getOrSeedProducts(supabase: any, filterHidden = false) {
+export async function getOrSeedProducts(supabase: any, filterHidden = false, bypassCache = false) {
   try {
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
-    
-    if (error) {
-      console.error("[getOrSeedProducts] fetch error:", error.message);
-      return [];
+    const now = Date.now();
+    let rawList: any[] = [];
+
+    if (!bypassCache && productsCache && (now - productsCache.timestamp) < PRODUCTS_CACHE_TTL) {
+      rawList = productsCache.data;
+    } else {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
+      if (error) {
+        console.error("[getOrSeedProducts] fetch error:", error.message);
+        return [];
+      }
+      rawList = data || [];
+      if (!bypassCache) {
+        productsCache = { data: rawList, timestamp: now };
+      }
     }
 
-    let list = data || [];
+    let list = [...rawList];
 
     if (filterHidden) {
       try {
-        const { data: settingData } = await supabase
-          .from("site_settings")
-          .select("value")
-          .eq("key", "visibility")
-          .single();
+        const visibilityData = await getSiteSetting("visibility");
         
-        if (settingData?.value) {
-          const hiddenProducts = settingData.value.hiddenProducts || [];
-          const hiddenVarieties = settingData.value.hiddenVarieties || [];
+        if (visibilityData) {
+          const hiddenProducts = visibilityData.hiddenProducts || [];
+          const hiddenVarieties = visibilityData.hiddenVarieties || [];
           
           list = list.filter((p: any) => {
             const baseName = p.name.split(" - ")[0].trim();
@@ -71,9 +86,26 @@ export const Route = createFileRoute("/api/products")({
           const supabase = getServerSupabase();
           const dbProducts = await getOrSeedProducts(supabase, true);
 
+          // Extract unique categories from all live products dynamically
+          const defaultCats = ["Floor", "Yoga", "Doormat", "Table"];
+          const catsSet = new Set<string>(defaultCats);
+          dbProducts.forEach((p: any) => {
+            if (p.category) {
+              p.category.split(",").forEach((c: string) => {
+                const trimmed = c.trim();
+                if (trimmed) catsSet.add(trimmed);
+              });
+            }
+          });
+          const uniqueCategories = Array.from(catsSet);
+
           let list = dbProducts;
           if (category && category !== "All") {
-            list = list.filter((p: any) => p.category === category);
+            list = list.filter((p: any) => {
+              if (!p.category) return false;
+              const cats = p.category.split(",").map((c: string) => c.trim().toLowerCase());
+              return cats.includes(category.toLowerCase());
+            });
           }
           if (q) {
             list = list.filter(
@@ -86,7 +118,7 @@ export const Route = createFileRoute("/api/products")({
           }
 
           return Response.json(
-            { products: list },
+            { products: list, categories: uniqueCategories },
             { headers: { "cache-control": "public, max-age=5" } },
           );
         } catch (err: any) {

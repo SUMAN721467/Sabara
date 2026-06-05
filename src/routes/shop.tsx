@@ -25,14 +25,13 @@ export const Route = createFileRoute("/shop")({
   }),
 });
 
-async function fetchProducts(params: { q?: string; category?: string }): Promise<Product[]> {
+async function fetchProducts(params: { q?: string; category?: string }): Promise<{ products: Product[]; categories: string[] }> {
   const search = new URLSearchParams();
   if (params.q) search.set("q", params.q);
   if (params.category && params.category !== "All") search.set("category", params.category);
   const res = await fetch(`/api/products?${search.toString()}`);
   if (!res.ok) throw new Error("Failed to load products");
-  const data = (await res.json()) as { products: Product[] };
-  return data.products;
+  return res.json() as Promise<{ products: Product[]; categories: string[] }>;
 }
 
 function groupProducts(list: Product[]): Product[] {
@@ -63,9 +62,9 @@ function ProductCardSkeleton() {
   return (
     <div className="group block rounded-xl p-2 bg-card/45 border border-border/20">
       <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-secondary/50 animate-pulse" />
-      <div className="mt-3 flex items-baseline justify-between gap-3 px-1">
+      <div className="mt-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3 px-1">
         <div className="h-5 w-2/3 rounded bg-secondary/50 animate-pulse" />
-        <div className="h-4 w-1/4 rounded bg-secondary/50 animate-pulse shrink-0" />
+        <div className="h-4 w-1/4 rounded bg-secondary/50 animate-pulse shrink-0 self-start sm:self-auto" />
       </div>
       <div className="mt-2.5 flex gap-1.5 px-1">
         <div className="h-6 w-6 rounded-full bg-secondary/50 animate-pulse" />
@@ -96,12 +95,23 @@ function Shop() {
     placeholderData: (prev) => prev,
   });
 
+  const dynamicCategories = useMemo(() => {
+    if (data?.categories && data.categories.length > 0) {
+      return data.categories;
+    }
+    return categories;
+  }, [data]);
+
   const visible = useMemo(() => {
-    let list = data;
+    let list = data?.products;
     // If the database query failed, fallback to mock products so the site remains browsable
     if (isError || (!isLoading && !data)) {
       const q = (search.q ?? "").toLowerCase().trim();
-      let fallbackList = cat === "All" ? fallbackProducts : fallbackProducts.filter((p) => p.category === cat);
+      let fallbackList = cat === "All" ? fallbackProducts : fallbackProducts.filter((p) => {
+        if (!p.category) return false;
+        const cats = p.category.split(",").map((c: string) => c.trim().toLowerCase());
+        return cats.includes(cat.toLowerCase());
+      });
       if (q) {
         fallbackList = fallbackList.filter(
           (p) =>
@@ -172,7 +182,7 @@ function Shop() {
       <ScrollReveal variant="fade-up" duration={700} delay={150}>
         <div className="mt-6 flex flex-col gap-4 border-b border-border/60 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="-mx-1 flex flex-wrap gap-1">
-            {(["All", ...categories] as const).map((c) => (
+            {["All", ...dynamicCategories].map((c) => (
               <button
                 key={c}
                 onClick={() => onCategory(c)}
@@ -209,7 +219,7 @@ function Shop() {
         </p>
       )}
 
-      <div className="mt-10 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-3">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <ProductCardSkeleton key={i} />

@@ -27,6 +27,7 @@ import { Route as ApiTestDbRouteImport } from './routes/api/test-db'
 import { Route as ApiSiteSettingsRouteImport } from './routes/api/site-settings'
 import { Route as ApiProductsRouteImport } from './routes/api/products'
 import { Route as ApiCreateOrderRouteImport } from './routes/api/create-order'
+import { Route as ApiContactRouteImport } from './routes/api/contact'
 import { Route as ApiCheckoutRouteImport } from './routes/api/checkout'
 import { Route as ApiCancelOrderRouteImport } from './routes/api/cancel-order'
 import { Route as ApiUsersSyncRouteImport } from './routes/api/users/sync'
@@ -127,6 +128,11 @@ const ApiCreateOrderRoute = ApiCreateOrderRouteImport.update({
   path: '/api/create-order',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiContactRoute = ApiContactRouteImport.update({
+  id: '/api/contact',
+  path: '/api/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCheckoutRoute = ApiCheckoutRouteImport.update({
   id: '/api/checkout',
   path: '/api/checkout',
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/wishlist': typeof WishlistRoute
   '/api/cancel-order': typeof ApiCancelOrderRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/contact': typeof ApiContactRoute
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/products': typeof ApiProductsRoute
   '/api/site-settings': typeof ApiSiteSettingsRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByTo {
   '/wishlist': typeof WishlistRoute
   '/api/cancel-order': typeof ApiCancelOrderRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/contact': typeof ApiContactRoute
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/products': typeof ApiProductsRoute
   '/api/site-settings': typeof ApiSiteSettingsRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/wishlist': typeof WishlistRoute
   '/api/cancel-order': typeof ApiCancelOrderRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/contact': typeof ApiContactRoute
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/products': typeof ApiProductsRoute
   '/api/site-settings': typeof ApiSiteSettingsRoute
@@ -276,6 +285,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/api/cancel-order'
     | '/api/checkout'
+    | '/api/contact'
     | '/api/create-order'
     | '/api/products'
     | '/api/site-settings'
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/api/cancel-order'
     | '/api/checkout'
+    | '/api/contact'
     | '/api/create-order'
     | '/api/products'
     | '/api/site-settings'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/api/cancel-order'
     | '/api/checkout'
+    | '/api/contact'
     | '/api/create-order'
     | '/api/products'
     | '/api/site-settings'
@@ -364,6 +376,7 @@ export interface RootRouteChildren {
   WishlistRoute: typeof WishlistRoute
   ApiCancelOrderRoute: typeof ApiCancelOrderRoute
   ApiCheckoutRoute: typeof ApiCheckoutRoute
+  ApiContactRoute: typeof ApiContactRoute
   ApiCreateOrderRoute: typeof ApiCreateOrderRoute
   ApiProductsRoute: typeof ApiProductsRoute
   ApiSiteSettingsRoute: typeof ApiSiteSettingsRoute
@@ -509,6 +522,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCreateOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/contact': {
+      id: '/api/contact'
+      path: '/api/contact'
+      fullPath: '/api/contact'
+      preLoaderRoute: typeof ApiContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/checkout': {
       id: '/api/checkout'
       path: '/api/checkout'
@@ -588,6 +608,7 @@ const rootRouteChildren: RootRouteChildren = {
   WishlistRoute: WishlistRoute,
   ApiCancelOrderRoute: ApiCancelOrderRoute,
   ApiCheckoutRoute: ApiCheckoutRoute,
+  ApiContactRoute: ApiContactRoute,
   ApiCreateOrderRoute: ApiCreateOrderRoute,
   ApiProductsRoute: ApiProductsRoute,
   ApiSiteSettingsRoute: ApiSiteSettingsRoute,

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { toast } from "sonner";
 import { MapPin, Mail, Instagram, Phone } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
@@ -14,6 +15,48 @@ export const Route = createFileRoute("/contact")({
 });
 
 function Contact() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const data = {
+      name: formData.get("name") as string,
+      email: formData.get("email") as string,
+      message: formData.get("message") as string,
+    };
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const text = await res.text();
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch (parseErr) {
+        throw new Error(`Server error: ${text.substring(0, 150)}`);
+      }
+
+      if (res.ok && result.success) {
+        toast.success("Thanks — we'll be in touch soon.");
+        form.reset();
+      } else {
+        toast.error(result.error || "Failed to send message.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "An error occurred.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-24">
       <div className="grid gap-12 md:grid-cols-2 md:gap-20">
@@ -63,11 +106,7 @@ For custom orders, exhibitions, collaborations, wholesale enquiries, or any assi
 
         <ScrollReveal variant="fade-left" duration={800} delay={100}>
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              toast.success("Thanks — we'll be in touch soon.");
-              (e.currentTarget as HTMLFormElement).reset();
-            }}
+            onSubmit={handleSubmit}
             className="rounded-2xl border border-border/60 bg-card p-6 sm:p-8 shadow-sm transition-shadow duration-300 hover:shadow-md"
           >
             <div className="grid gap-4">
@@ -84,8 +123,11 @@ For custom orders, exhibitions, collaborations, wholesale enquiries, or any assi
                   className="rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-ring"
                 />
               </div>
-              <button className="mt-2 w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/95 hover:scale-[1.02] active:scale-98 shadow-sm">
-                Send message
+              <button
+                disabled={isSubmitting}
+                className="mt-2 w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/95 hover:scale-[1.02] active:scale-98 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Sending..." : "Send message"}
               </button>
             </div>
           </form>

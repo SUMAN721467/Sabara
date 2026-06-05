@@ -9,6 +9,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { getOrSeedProducts } from "./api/products";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
+import { getSiteSetting } from "./api/site-settings";
 
 const getFeaturedProducts = createServerFn({ method: "GET" })
   .handler(async () => {
@@ -50,44 +51,38 @@ const getFeaturedProducts = createServerFn({ method: "GET" })
 const getHeroSettingsServer = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
-      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const supabase = serviceKey
-        ? createClient(supabaseUrl!, serviceKey, {
-            auth: {
-              storage: undefined,
-              persistSession: false,
-              autoRefreshToken: false,
-            }
-          })
-        : createClient(supabaseUrl!, (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)!);
-
-      // Discover schema columns
+      // Discover schema columns once if files are missing
       try {
-        const { data: profileSample } = await supabase.from("user_profiles").select("*").limit(1);
-        const { data: orderSample } = await supabase.from("orders").select("*").limit(1);
         const fs = await import("fs");
-        fs.writeFileSync("user_profiles_columns.json", JSON.stringify({
-          keys: profileSample && profileSample[0] ? Object.keys(profileSample[0]) : [],
-          sample: profileSample && profileSample[0] ? profileSample[0] : null
-        }, null, 2));
-        fs.writeFileSync("orders_columns.json", JSON.stringify({
-          keys: orderSample && orderSample[0] ? Object.keys(orderSample[0]) : [],
-          sample: orderSample && orderSample[0] ? orderSample[0] : null
-        }, null, 2));
+        if (!fs.existsSync("user_profiles_columns.json") || !fs.existsSync("orders_columns.json")) {
+          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const supabase = serviceKey
+            ? createClient(supabaseUrl!, serviceKey, {
+                auth: {
+                  storage: undefined,
+                  persistSession: false,
+                  autoRefreshToken: false,
+                }
+              })
+            : createClient(supabaseUrl!, (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)!);
+
+          const { data: profileSample } = await supabase.from("user_profiles").select("*").limit(1);
+          const { data: orderSample } = await supabase.from("orders").select("*").limit(1);
+          fs.writeFileSync("user_profiles_columns.json", JSON.stringify({
+            keys: profileSample && profileSample[0] ? Object.keys(profileSample[0]) : [],
+            sample: profileSample && profileSample[0] ? profileSample[0] : null
+          }, null, 2));
+          fs.writeFileSync("orders_columns.json", JSON.stringify({
+            keys: orderSample && orderSample[0] ? Object.keys(orderSample[0]) : [],
+            sample: orderSample && orderSample[0] ? orderSample[0] : null
+          }, null, 2));
+        }
       } catch (err) {
         console.error("Schema discovery error:", err);
       }
 
-      const { data } = await supabase
-        .from("site_settings")
-        .select("value")
-        .eq("key", "hero")
-        .single();
-
-      if (data?.value) {
-        return data.value;
-      }
+      return await getSiteSetting("hero");
     } catch (e) {
       console.error("[getHeroSettingsServer error]", e);
     }
@@ -97,17 +92,7 @@ const getHeroSettingsServer = createServerFn({ method: "GET" })
 const getHomepageSettingsServer = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
-      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const supabase = createClient(supabaseUrl!, supabaseKey!);
-      const { data } = await supabase
-        .from("site_settings")
-        .select("value")
-        .eq("key", "homepage")
-        .single();
-      if (data?.value) {
-        return data.value;
-      }
+      return await getSiteSetting("homepage");
     } catch (e) {
       console.error("[getHomepageSettingsServer error]", e);
     }
@@ -159,6 +144,8 @@ function Index() {
           alt={settings.title}
           width={1600}
           height={1100}
+          loading="eager"
+          fetchPriority="high"
           className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-1000 ease-out hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent" />
@@ -234,7 +221,7 @@ function Index() {
           </div>
         </ScrollReveal>
 
-        <div className="mt-10 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-4">
           {(featured || []).map((p: any, i: number) => (
             <ScrollReveal key={p.id} variant="fade-up" delay={i * 100} duration={700}>
               <ProductCard product={p} />

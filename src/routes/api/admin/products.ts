@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
-import { getOrSeedProducts } from "../products";
+import { getOrSeedProducts, clearProductsCache } from "../products";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function getStoragePathFromUrl(url: string, bucketName: string = "product-images"): string | null {
@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/admin/products")({
       GET: async ({ request, context }) => {
         try {
           await assertAdmin(request, context);
-          const dbProducts = await getOrSeedProducts(supabaseAdmin);
+          const dbProducts = await getOrSeedProducts(supabaseAdmin, false, true);
           return Response.json({ products: dbProducts });
         } catch (err: any) {
           console.error("[api/admin/products GET error]", err);
@@ -101,6 +101,7 @@ export const Route = createFileRoute("/api/admin/products")({
             .single();
 
           if (error) throw new Error(error.message);
+          clearProductsCache();
           return Response.json({ success: true, product: data });
         } catch (err: any) {
           console.error("[api/admin/products POST error]", err);
@@ -133,6 +134,7 @@ export const Route = createFileRoute("/api/admin/products")({
             .single();
 
           if (error) throw new Error(error.message);
+          clearProductsCache();
           return Response.json({ success: true, product: data });
         } catch (err: any) {
           console.error("[api/admin/products PUT error]", err);
@@ -158,6 +160,7 @@ export const Route = createFileRoute("/api/admin/products")({
             .eq("id", id);
 
           if (error) throw new Error(error.message);
+          clearProductsCache();
 
           // Clean up storage images if the product was fetched successfully
           if (product) {
