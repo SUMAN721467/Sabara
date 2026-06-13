@@ -22,7 +22,7 @@ export interface Order {
   customerPhone: string;
   items: OrderItem[];
   total: number;
-  status: "Pending" | "Shipped" | "Delivered" | "Cancelled" | "Cancelled by Seller";
+  status: "Pending" | "Shipped" | "Out for Delivery" | "Delivered" | "Cancelled" | "Cancelled by Seller";
   shippingAddress: ShippingAddress;
   cancellationReason?: string;
   customerStatus?: "Pending" | "Cancelled by Customer";

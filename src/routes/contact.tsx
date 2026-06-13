@@ -78,7 +78,7 @@ For custom orders, exhibitions, collaborations, wholesale enquiries, or any assi
               <li className="flex items-start gap-3 group">
                 <MapPin className="mt-0.5 h-4 w-4 text-primary transition-transform duration-300 group-hover:scale-110" />
                 <div>
-                  <div className="text-foreground transition-colors group-hover:text-primary duration-300">Sabara -by Laxmi Bishnu Mat Weaving</div>
+                  <div className="text-foreground transition-colors group-hover:text-primary duration-300">Sabara</div>
                   <div className="text-muted-foreground">NankarNila,Sabang,Paschim Medinipur 721467,West Bengal,India</div>
                 </div>
               </li>

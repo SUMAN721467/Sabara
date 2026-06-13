@@ -1,12 +1,13 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ArrowLeft, Minus, Plus, Heart } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Heart, Star, MessageSquare, X, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { formatPrice, useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/site/ProductCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { createServerFn } from "@tanstack/react-start";
@@ -192,6 +193,24 @@ function ZoomableImage({ src, alt }: { src: string; alt: string }) {
   );
 }
 
+const StarRating = ({ rating, size = "h-4 w-4" }: { rating: number; size?: string }) => {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={cn(
+            size,
+            star <= rating
+              ? "fill-amber-400 text-amber-400 stroke-amber-400"
+              : "text-muted-foreground/35 stroke-[1.5]"
+          )}
+        />
+      ))}
+    </div>
+  );
+};
+
 function ProductPage() {
   const { product, related, variants } = Route.useLoaderData();
   const { add } = useCart();
@@ -202,6 +221,36 @@ function ProductPage() {
   const maxStock = product.stock !== undefined && product.stock !== null ? Number(product.stock) : 10;
   const isOutOfStock = maxStock <= 0;
   const [qty, setQty] = useState(1);
+
+  // Reviews states
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+  const fetchReviews = async () => {
+    setReviewsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("product_reviews")
+        .select("*")
+        .eq("product_id", product.id)
+        .order("created_at", { ascending: false });
+      
+      if (!error && data) {
+        setReviews(data || []);
+      } else if (error) {
+        console.warn("Could not fetch product reviews, table may not exist yet:", error.message);
+      }
+    } catch (err) {
+      console.warn("Error fetching reviews:", err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, [product.id]);
 
   // Keep qty within stock bounds
   useEffect(() => {
@@ -473,6 +522,189 @@ function ProductPage() {
 
         </div>
       </div>
+
+      {/* ── Reviews Section ────────────────────────────────────────────────── */}
+      <section className="mt-8 border-t border-border/60 pt-6">
+        <div className="flex flex-col md:flex-row justify-between md:items-baseline gap-2 mb-4 pb-1.5 border-b border-border/40">
+          <div>
+            <h2 className="font-serif text-lg text-foreground md:text-xl">Customer Reviews</h2>
+            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
+              <MessageSquare className="h-3 w-3" />
+              Real feedback from verified purchasers
+            </p>
+          </div>
+        </div>
+
+        {reviewsLoading ? (
+          <div className="flex flex-col items-center justify-center py-6 gap-2 text-muted-foreground text-xs">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            Loading reviews...
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-[170px_1fr] lg:grid-cols-[190px_1fr] items-start">
+            {/* Left Sidebar: Ratings Summary */}
+            <div className="bg-secondary/15 rounded-lg border border-border/40 p-3 space-y-3">
+              <div className="text-center md:text-left">
+                <span className="font-serif text-2xl font-bold text-foreground">
+                  {(() => {
+                    const total = reviews.length;
+                    if (total === 0) return "0.0";
+                    return (reviews.reduce((sum, r) => sum + r.rating, 0) / total).toFixed(1);
+                  })()}
+                </span>
+                <span className="text-muted-foreground text-[10px] font-medium ml-1">/ 5</span>
+                
+                <div className="flex justify-center md:justify-start mt-1">
+                  <StarRating 
+                    rating={reviews.length > 0 
+                      ? Math.round(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) 
+                      : 0
+                    } 
+                    size="h-3.5 w-3.5" 
+                  />
+                </div>
+                
+                <span className="text-[9px] text-muted-foreground block mt-1 font-medium">
+                  Based on {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
+                </span>
+              </div>
+
+              {/* Star distribution breakdown */}
+              <div className="space-y-1.5 pt-2 border-t border-border/40">
+                {[5, 4, 3, 2, 1].map((starRating) => {
+                  const count = reviews.filter((r) => r.rating === starRating).length;
+                  const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                  return (
+                    <div key={starRating} className="flex items-center gap-1.5 text-[10px] text-foreground font-medium">
+                      <span className="w-5 shrink-0 text-right">{starRating} ★</span>
+                      <div className="h-1 flex-1 rounded-full bg-secondary overflow-hidden border border-border/10">
+                        <div
+                          style={{ width: `${percentage}%` }}
+                          className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                        />
+                      </div>
+                      <span className="w-5 shrink-0 text-right text-muted-foreground font-mono">
+                        {count}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right Side: Reviews List */}
+            <div className="space-y-4">
+              {reviews.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center py-5 px-3 rounded-lg border-2 border-dashed border-border/60 bg-secondary/5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
+                    <MessageSquare className="h-4 w-4" />
+                  </div>
+                  <h3 className="font-serif text-sm font-semibold text-foreground">No reviews yet</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 max-w-xs leading-relaxed">
+                    Be the first to share your thoughts about this product after your order is delivered!
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border/60">
+                  {reviews.map((review) => {
+                    const formattedDate = new Date(review.created_at).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    });
+                    const initials = review.user_name
+                      ? review.user_name
+                          .split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)
+                      : "U";
+
+                    return (
+                      <div key={review.id} className="py-4 first:pt-0 last:pb-0 space-y-2 animate-in fade-in duration-200">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-2">
+                            {review.user_avatar ? (
+                              <img
+                                src={review.user_avatar}
+                                alt={review.user_name}
+                                className="h-8 w-8 rounded-full object-cover border"
+                              />
+                            ) : (
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold border border-primary/20 text-[10px]">
+                                {initials}
+                              </div>
+                            )}
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-xs text-foreground">{review.user_name}</span>
+                                <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[8px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                  Verified Buyer
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <StarRating rating={review.rating} size="h-3 w-3" />
+                                <span className="text-[9px] text-muted-foreground">{formattedDate}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-foreground/90 leading-relaxed font-normal whitespace-pre-line pl-1">
+                          {review.comment}
+                        </p>
+
+                        {/* Review Photos */}
+                        {review.images && review.images.length > 0 && (
+                          <div className="flex gap-2 pt-0.5 pl-1">
+                            {review.images.map((img: string, i: number) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => setLightboxImage(img)}
+                                className="h-12 w-12 overflow-hidden rounded-lg border bg-secondary/50 hover:scale-[1.03] transition-all cursor-zoom-in"
+                              >
+                                <img
+                                  src={img}
+                                  alt={`Review photo ${i + 1}`}
+                                  className="h-full w-full object-cover"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+
+      {/* Lightbox / Image Zoom Overlay */}
+      {lightboxImage && (
+        <div
+          onClick={() => setLightboxImage(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm animate-in fade-in duration-200 cursor-zoom-out animate-duration-150"
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxImage(null)}
+            className="absolute right-6 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors cursor-pointer border-0"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={lightboxImage}
+            alt="Review zoom"
+            className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+          />
+        </div>
+      )}
 
       {related.length > 0 && (
         <section className="mt-24">

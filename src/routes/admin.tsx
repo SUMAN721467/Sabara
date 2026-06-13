@@ -1521,6 +1521,7 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
       case "Pending": return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400";
       case "Paid": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
       case "Shipped": return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
+      case "Out for Delivery": return "bg-orange-500/10 text-orange-600 dark:text-orange-400";
       case "Delivered": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
       case "Cancelled":
       case "Cancelled by Customer":
@@ -1723,6 +1724,7 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
                   >
                     <option value="Pending">Pending</option>
                     <option value="Shipped">Shipped</option>
+                    <option value="Out for Delivery">Out for Delivery</option>
                     <option value="Delivered">Delivered</option>
                     <option value="Cancelled by Seller">Cancelled by Seller</option>
                     <option value="Cancelled by Customer">Cancelled by Customer</option>
@@ -1916,6 +1918,7 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
                         >
                           <option value="Pending">Pending</option>
                           <option value="Shipped">Shipped</option>
+                          <option value="Out for Delivery">Out for Delivery</option>
                           <option value="Delivered">Delivered</option>
                           <option value="Cancelled by Seller">Cancelled by Seller</option>
                           <option value="Cancelled by Customer">Cancelled by Customer</option>
@@ -1975,6 +1978,7 @@ function CustomersAdmin({
     switch (status) {
       case "Pending": return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400";
       case "Shipped": return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
+      case "Out for Delivery": return "bg-orange-500/10 text-orange-600 dark:text-orange-400";
       case "Delivered": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
       case "Cancelled":
       case "Cancelled by Customer":
@@ -2575,6 +2579,7 @@ function CouponsAdmin() {
     const newCoupon = {
       code: formattedCode,
       discount: pct,
+      showInList: true,
       ...(minOrderVal !== undefined ? { minOrder: minOrderVal } : {}),
       ...(limitVal !== undefined ? { limit: limitVal } : {})
     };
@@ -2613,6 +2618,23 @@ function CouponsAdmin() {
     }
   };
 
+  const handleToggleShowInList = async (couponCode: string, currentVal: boolean) => {
+    const updatedList = coupons.map((c) => {
+      if (c.code.toUpperCase() === couponCode.toUpperCase()) {
+        return { ...c, showInList: !currentVal };
+      }
+      return c;
+    });
+
+    try {
+      await saveCoupons(updatedList);
+      setCoupons(updatedList);
+      toast.success(`Coupon visibility updated successfully.`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update coupon visibility");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-10">
@@ -2645,6 +2667,7 @@ function CouponsAdmin() {
                 <TableHead>Discount Value</TableHead>
                 <TableHead>Min Order</TableHead>
                 <TableHead>Usage Limit / Stock</TableHead>
+                <TableHead className="text-center">Show in list</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -2677,6 +2700,16 @@ function CouponsAdmin() {
                       ) : (
                         <span className="text-xs text-muted-foreground">Unlimited</span>
                       )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={c.showInList !== false}
+                          onChange={() => handleToggleShowInList(c.code, c.showInList !== false)}
+                          className="h-4 w-4 rounded border-[#e0e0e0] text-primary focus:ring-primary bg-background cursor-pointer accent-primary"
+                        />
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <Button

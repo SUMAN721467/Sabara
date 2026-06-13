@@ -2,7 +2,8 @@
   "coupons": [
     {
       "code": "SABARA15",
-      "discount": 15
+      "discount": 15,
+      "showInList": true
     }
   ]
 }

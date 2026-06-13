@@ -79,6 +79,9 @@ export const Route = createFileRoute("/api/admin/orders")({
             const trackingNumber = streetParts[2] || null;
             const couponCode = streetParts[3] || null;
             const discountAmount = streetParts[4] ? Number(streetParts[4]) : 0;
+            const shippedAt = streetParts[5] || null;
+            const outForDeliveryAt = streetParts[6] || null;
+            const deliveredAt = streetParts[7] || null;
 
             return {
               id: o.id,
@@ -92,6 +95,9 @@ export const Route = createFileRoute("/api/admin/orders")({
               trackingNumber,
               couponCode,
               discountAmount,
+              shippedAt,
+              outForDeliveryAt,
+              deliveredAt,
               date: o.created_at,
               shippingAddress: {
                 street: baseStreet,
@@ -149,23 +155,41 @@ export const Route = createFileRoute("/api/admin/orders")({
 
           if (fetchErr) throw new Error(fetchErr.message);
 
-          let updatedStreet = currentOrder?.shipping_street || "";
           const parts = (currentOrder?.shipping_street || "").split("|");
           const baseStreet = parts[0];
           const couponCode = parts[3] || "";
           const discountAmount = parts[4] || "";
-          if (status === "Shipped" && courier && trackingNumber) {
-            updatedStreet = `${baseStreet}|${courier.trim()}|${trackingNumber.trim()}|${couponCode}|${discountAmount}`;
-          } else {
-            const courierVal = parts[1] || "";
-            const trackingVal = parts[2] || "";
-            updatedStreet = `${baseStreet}|${courierVal}|${trackingVal}|${couponCode}|${discountAmount}`;
-          }
+          let shippedAt = parts[5] || "";
+          let outForDeliveryAt = parts[6] || "";
+          let deliveredAt = parts[7] || "";
 
           let finalStatus = status;
           if (status === "Cancelled") {
             finalStatus = "Cancelled by Seller";
           }
+
+          if (finalStatus === "Pending") {
+            shippedAt = "";
+            outForDeliveryAt = "";
+            deliveredAt = "";
+          } else if (finalStatus === "Shipped") {
+            shippedAt = shippedAt || new Date().toISOString();
+            outForDeliveryAt = "";
+            deliveredAt = "";
+          } else if (finalStatus === "Out for Delivery") {
+            shippedAt = shippedAt || new Date().toISOString();
+            outForDeliveryAt = outForDeliveryAt || new Date().toISOString();
+            deliveredAt = "";
+          } else if (finalStatus === "Delivered") {
+            shippedAt = shippedAt || new Date().toISOString();
+            outForDeliveryAt = outForDeliveryAt || new Date().toISOString();
+            deliveredAt = deliveredAt || new Date().toISOString();
+          }
+
+          const courierVal = (status === "Shipped" && courier) ? courier.trim() : (parts[1] || "");
+          const trackingVal = (status === "Shipped" && trackingNumber) ? trackingNumber.trim() : (parts[2] || "");
+
+          const updatedStreet = `${baseStreet}|${courierVal}|${trackingVal}|${couponCode}|${discountAmount}|${shippedAt}|${outForDeliveryAt}|${deliveredAt}`;
 
           // Update status, customer_status, shipping_street and seller_instruction
           const { error: updateError } = await supabase
@@ -210,6 +234,9 @@ export const Route = createFileRoute("/api/admin/orders")({
             const trackingNumber = streetParts[2] || null;
             const couponCode = streetParts[3] || null;
             const discountAmount = streetParts[4] ? Number(streetParts[4]) : 0;
+            const shippedAt = streetParts[5] || null;
+            const outForDeliveryAt = streetParts[6] || null;
+            const deliveredAt = streetParts[7] || null;
 
             return {
               id: o.id,
@@ -223,6 +250,9 @@ export const Route = createFileRoute("/api/admin/orders")({
               trackingNumber,
               couponCode,
               discountAmount,
+              shippedAt,
+              outForDeliveryAt,
+              deliveredAt,
               date: o.created_at,
               shippingAddress: {
                 street: baseStreet,

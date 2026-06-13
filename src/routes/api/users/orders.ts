@@ -87,6 +87,9 @@ export const Route = createFileRoute("/api/users/orders")({
             const trackingNumber = streetParts[2] || null;
             const couponCode = streetParts[3] || null;
             const discountAmount = streetParts[4] ? Number(streetParts[4]) : 0;
+            const shippedAt = streetParts[5] || null;
+            const outForDeliveryAt = streetParts[6] || null;
+            const deliveredAt = streetParts[7] || null;
 
             return {
               id: o.id,
@@ -100,6 +103,9 @@ export const Route = createFileRoute("/api/users/orders")({
               trackingNumber,
               couponCode,
               discountAmount,
+              shippedAt,
+              outForDeliveryAt,
+              deliveredAt,
               date: o.created_at,
               shippingAddress: {
                 street: baseStreet,
@@ -162,13 +168,13 @@ export const Route = createFileRoute("/api/users/orders")({
               return Response.json({ success: false, error: `Cannot request return for order with status: ${order.status}` }, { status: 400 });
             }
 
-            // Check if it is within 7 days
+            // Check if it is within 10 days (accounting for 3 days delivery time + 7 days return window)
             const orderDate = new Date(order.created_at);
             const now = new Date();
             const diffTime = Math.abs(now.getTime() - orderDate.getTime());
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            if (diffDays > 7) {
-              return Response.json({ success: false, error: "Return period has expired (7 days from delivery/order placement)" }, { status: 400 });
+            if (diffDays > 10) {
+              return Response.json({ success: false, error: "Return period has expired (7 days from delivery)" }, { status: 400 });
             }
 
             // Update customer_status to 'Return Requested' and cancellation_reason to reason
