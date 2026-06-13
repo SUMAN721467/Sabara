@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getSiteSetting } from "./site-settings";
 
 let productsCache: { data: any[]; timestamp: number } | null = null;
-const PRODUCTS_CACHE_TTL = 30000; // 30 seconds
+const PRODUCTS_CACHE_TTL = 120000; // 120 seconds (2 minutes)
 
 export function clearProductsCache() {
   productsCache = null;
@@ -36,6 +36,43 @@ export async function getOrSeedProducts(supabase: any, filterHidden = false, byp
         return [];
       }
       rawList = data || [];
+
+      // Aggregate ratings
+      let reviewsMap: Record<string, { rating: number; count: number }> = {};
+      try {
+        const { data: reviewsData, error: reviewsErr } = await supabase
+          .from("product_reviews")
+          .select("product_id, rating");
+          
+        if (!reviewsErr && reviewsData) {
+          const groups: Record<string, number[]> = {};
+          reviewsData.forEach((r: any) => {
+            if (!groups[r.product_id]) groups[r.product_id] = [];
+            groups[r.product_id].push(r.rating);
+          });
+          
+          Object.keys(groups).forEach((prodId) => {
+            const ratings = groups[prodId];
+            const avg = ratings.reduce((sum, val) => sum + val, 0) / ratings.length;
+            reviewsMap[prodId] = {
+              rating: Number(avg.toFixed(1)),
+              count: ratings.length
+            };
+          });
+        }
+      } catch (err) {
+        console.warn("Error aggregating reviews inside getOrSeedProducts:", err);
+      }
+
+      rawList = rawList.map((p: any) => {
+        const rev = reviewsMap[p.id] || { rating: 0, count: 0 };
+        return {
+          ...p,
+          rating: rev.count > 0 ? rev.rating : null,
+          reviewsCount: rev.count
+        };
+      });
+
       if (!bypassCache) {
         productsCache = { data: rawList, timestamp: now };
       }

@@ -51,8 +51,22 @@ function groupProducts(list: Product[]): Product[] {
       return aTime - bTime;
     });
     const main = sorted[0];
+
+    // Roll up (aggregate) rating and review count across all variants of this base product
+    let totalScore = 0;
+    let totalReviews = 0;
+    all.forEach((p: any) => {
+      if (p.rating && p.reviewsCount) {
+        totalScore += p.rating * p.reviewsCount;
+        totalReviews += p.reviewsCount;
+      }
+    });
+    const averageRating = totalReviews > 0 ? Number((totalScore / totalReviews).toFixed(1)) : null;
+
     return {
       ...main,
+      rating: averageRating,
+      reviewsCount: totalReviews,
       variants: sorted,
     };
   }) as Product[];

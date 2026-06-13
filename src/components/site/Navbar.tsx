@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import logoImg from "@/assets/Sabara-logo.png";
 import {
   ShoppingBag,
+  ShoppingCart,
   Menu,
   X,
   Search,
@@ -375,7 +376,7 @@ export function Navbar() {
               aria-label="Cart"
               className="relative inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
             >
-              <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
+              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
               {count > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 sm:h-5 sm:min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[9px] sm:text-[11px] font-medium text-primary-foreground animate-in zoom-in-50 duration-300">
                   {count}

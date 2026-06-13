@@ -35,6 +35,7 @@ import { Route as ApiUsersSyncRouteImport } from './routes/api/users/sync'
 import { Route as ApiUsersProfileRouteImport } from './routes/api/users/profile'
 import { Route as ApiUsersOrdersRouteImport } from './routes/api/users/orders'
 import { Route as ApiAdminSiteSettingsRouteImport } from './routes/api/admin/site-settings'
+import { Route as ApiAdminReviewsRouteImport } from './routes/api/admin/reviews'
 import { Route as ApiAdminProductsRouteImport } from './routes/api/admin/products'
 import { Route as ApiAdminOrdersRouteImport } from './routes/api/admin/orders'
 import { Route as ApiAdminCustomersRouteImport } from './routes/api/admin/customers'
@@ -169,6 +170,11 @@ const ApiAdminSiteSettingsRoute = ApiAdminSiteSettingsRouteImport.update({
   path: '/api/admin/site-settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminReviewsRoute = ApiAdminReviewsRouteImport.update({
+  id: '/api/admin/reviews',
+  path: '/api/admin/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminProductsRoute = ApiAdminProductsRouteImport.update({
   id: '/api/admin/products',
   path: '/api/admin/products',
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/customers': typeof ApiAdminCustomersRoute
   '/api/admin/orders': typeof ApiAdminOrdersRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/reviews': typeof ApiAdminReviewsRoute
   '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
   '/api/users/orders': typeof ApiUsersOrdersRoute
   '/api/users/profile': typeof ApiUsersProfileRoute
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/api/admin/customers': typeof ApiAdminCustomersRoute
   '/api/admin/orders': typeof ApiAdminOrdersRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/reviews': typeof ApiAdminReviewsRoute
   '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
   '/api/users/orders': typeof ApiUsersOrdersRoute
   '/api/users/profile': typeof ApiUsersProfileRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/api/admin/customers': typeof ApiAdminCustomersRoute
   '/api/admin/orders': typeof ApiAdminOrdersRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/reviews': typeof ApiAdminReviewsRoute
   '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
   '/api/users/orders': typeof ApiUsersOrdersRoute
   '/api/users/profile': typeof ApiUsersProfileRoute
@@ -307,6 +316,7 @@ export interface FileRouteTypes {
     | '/api/admin/customers'
     | '/api/admin/orders'
     | '/api/admin/products'
+    | '/api/admin/reviews'
     | '/api/admin/site-settings'
     | '/api/users/orders'
     | '/api/users/profile'
@@ -338,6 +348,7 @@ export interface FileRouteTypes {
     | '/api/admin/customers'
     | '/api/admin/orders'
     | '/api/admin/products'
+    | '/api/admin/reviews'
     | '/api/admin/site-settings'
     | '/api/users/orders'
     | '/api/users/profile'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/api/admin/customers'
     | '/api/admin/orders'
     | '/api/admin/products'
+    | '/api/admin/reviews'
     | '/api/admin/site-settings'
     | '/api/users/orders'
     | '/api/users/profile'
@@ -401,6 +413,7 @@ export interface RootRouteChildren {
   ApiAdminCustomersRoute: typeof ApiAdminCustomersRoute
   ApiAdminOrdersRoute: typeof ApiAdminOrdersRoute
   ApiAdminProductsRoute: typeof ApiAdminProductsRoute
+  ApiAdminReviewsRoute: typeof ApiAdminReviewsRoute
   ApiAdminSiteSettingsRoute: typeof ApiAdminSiteSettingsRoute
   ApiUsersOrdersRoute: typeof ApiUsersOrdersRoute
   ApiUsersProfileRoute: typeof ApiUsersProfileRoute
@@ -591,6 +604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminSiteSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/reviews': {
+      id: '/api/admin/reviews'
+      path: '/api/admin/reviews'
+      fullPath: '/api/admin/reviews'
+      preLoaderRoute: typeof ApiAdminReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/products': {
       id: '/api/admin/products'
       path: '/api/admin/products'
@@ -641,6 +661,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminCustomersRoute: ApiAdminCustomersRoute,
   ApiAdminOrdersRoute: ApiAdminOrdersRoute,
   ApiAdminProductsRoute: ApiAdminProductsRoute,
+  ApiAdminReviewsRoute: ApiAdminReviewsRoute,
   ApiAdminSiteSettingsRoute: ApiAdminSiteSettingsRoute,
   ApiUsersOrdersRoute: ApiUsersOrdersRoute,
   ApiUsersProfileRoute: ApiUsersProfileRoute,

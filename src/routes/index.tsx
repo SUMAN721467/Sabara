@@ -35,8 +35,22 @@ const getFeaturedProducts = createServerFn({ method: "GET" })
           return aTime - bTime;
         });
         const main = sorted[0];
+
+        // Roll up (aggregate) rating and review count across all variants of this base product
+        let totalScore = 0;
+        let totalReviews = 0;
+        all.forEach((p: any) => {
+          if (p.rating && p.reviewsCount) {
+            totalScore += p.rating * p.reviewsCount;
+            totalReviews += p.reviewsCount;
+          }
+        });
+        const averageRating = totalReviews > 0 ? Number((totalScore / totalReviews).toFixed(1)) : null;
+
         return {
           ...main,
+          rating: averageRating,
+          reviewsCount: totalReviews,
           variants: sorted,
         };
       });
@@ -138,7 +152,7 @@ function Index() {
   return (
     <div>
       {/* HERO — full width */}
-      <section className="relative h-[60vh] min-h-[400px] lg:h-[85vh] lg:min-h-[520px] w-full overflow-hidden transition-opacity duration-500" style={{ opacity: showHero ? 1 : 0 }}>
+      <section className="relative h-[65vh] min-h-[480px] sm:min-h-[520px] lg:h-[85vh] lg:min-h-[520px] w-full overflow-hidden transition-opacity duration-500" style={{ opacity: showHero ? 1 : 0 }}>
         <img
           src={settings.imageUrl}
           alt={settings.title}
@@ -155,13 +169,13 @@ function Index() {
               <span className="text-xs font-medium uppercase tracking-[0.22em] text-primary">
                 {settings.badge}
               </span>
-              <h1 className="mt-5 font-serif text-5xl leading-[1.05] tracking-tight text-foreground md:text-6xl lg:text-7xl">
+              <h1 className="mt-3 sm:mt-5 font-serif text-4xl sm:text-5xl leading-[1.05] tracking-tight text-foreground md:text-6xl lg:text-7xl">
                 {settings.title}
               </h1>
-              <p className="mt-5 max-w-md text-base leading-relaxed text-foreground/80 whitespace-pre-line">
+              <p className="mt-3 sm:mt-5 max-w-md text-sm sm:text-base leading-relaxed text-foreground/80 whitespace-pre-line">
                 {settings.subtitle}
               </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
                 <Link
                   to="/shop"
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/95 hover:scale-105 active:scale-95 shadow-sm"

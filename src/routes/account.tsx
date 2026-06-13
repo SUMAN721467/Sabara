@@ -493,6 +493,18 @@ function AccountPage() {
     setReviewDialogOpen(true);
   };
 
+  const closeReviewForm = () => {
+    setReviewDialogOpen(false);
+    setReviewProduct(null);
+    setReviewOrderId(null);
+    setReviewRating(5);
+    setReviewComment("");
+    setSelectedReviewPhotos([]);
+    setReviewPhotoPreviews([]);
+    setExistingReviewUrls([]);
+    setEditingReviewId(null);
+  };
+
   const uploadReviewImage = async (file: File, productId: string) => {
     const ext = file.name.split(".").pop() ?? "jpg";
     const path = `reviews/${productId}-${user.id}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
@@ -1031,7 +1043,6 @@ function AccountPage() {
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
                     id="fullName"
-                    placeholder="Enter your full name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="max-w-md"
@@ -1044,7 +1055,6 @@ function AccountPage() {
                     <Input
                       id="age"
                       type="number"
-                      placeholder="e.g. 28"
                       value={age}
                       onChange={(e) => setAge(e.target.value)}
                     />
@@ -1056,7 +1066,6 @@ function AccountPage() {
                       id="phone"
                       type="tel"
                       required
-                      placeholder="+91 12345 67890"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
@@ -1115,7 +1124,6 @@ function AccountPage() {
                   <Input
                     id="street"
                     required
-                    placeholder="House number, apartment, street name"
                     value={street}
                     onChange={(e) => setStreet(e.target.value)}
                   />
@@ -1126,7 +1134,6 @@ function AccountPage() {
                   <Input
                     id="landmark"
                     required
-                    placeholder="e.g. Near Temple, Next to SBI Bank"
                     value={landmark}
                     onChange={(e) => setLandmark(e.target.value)}
                   />
@@ -1138,7 +1145,6 @@ function AccountPage() {
                     <Input
                       id="city"
                       required
-                      placeholder="e.g. Kharagpur"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                     />
@@ -1149,7 +1155,6 @@ function AccountPage() {
                     <Input
                       id="district"
                       required
-                      placeholder="e.g. Paschim Medinipur"
                       value={district}
                       onChange={(e) => setDistrict(e.target.value)}
                     />
@@ -1160,7 +1165,6 @@ function AccountPage() {
                     <Input
                       id="state"
                       required
-                      placeholder="e.g. West Bengal"
                       value={stateName}
                       onChange={(e) => setStateName(e.target.value)}
                       list="indian-states"
@@ -1185,7 +1189,6 @@ function AccountPage() {
                       <Input
                         id="zipCode"
                         required
-                        placeholder="e.g. 400001"
                         value={zipCode}
                         maxLength={6}
                         onChange={(e) => {
@@ -1431,30 +1434,207 @@ function AccountPage() {
 
                           {/* Return policy details & Inline rating */}
                           {order.status === "Delivered" && (
-                            <div className="p-4 bg-emerald-500/5 border-b border-border/40 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium flex justify-between items-center flex-wrap gap-2 text-left">
-                              <span>
-                                {(() => {
-                                  if (order.customerStatus === "Return Requested") return "Return requested.";
-                                  if (order.customerStatus === "Return Approved") return "Return request approved.";
-                                  if (order.customerStatus === "Return Rejected") return "Return request rejected.";
-                                  
-                                  const { returnExpiryDate } = getTimelineStageDates(order.date, order.shippedAt, order.outForDeliveryAt, order.deliveredAt);
-                                  const isExpired = new Date() > returnExpiryDate;
-                                  if (isExpired) {
-                                    return "Return window closed.";
-                                  }
-                                  return `Return policy valid for 7 days after delivery (till ${returnExpiryDate.toLocaleDateString("en-US", { month: 'short', day: '2-digit', year: 'numeric' })})`;
-                                })()}
-                              </span>
-                              
-                              <button
-                                onClick={() => openReviewDialog(item, order.id)}
-                                className="text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/15 px-3 py-1 rounded-full border border-primary/20 transition-all cursor-pointer flex items-center gap-1"
-                              >
-                                <Star className="h-3 w-3 fill-current" />
-                                {existingReview ? "Edit Review" : "Rate & Review Product"}
-                              </button>
-                            </div>
+                            <>
+                              <div className="p-4 bg-emerald-500/5 border-b border-border/40 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium flex justify-between items-center flex-wrap gap-2 text-left">
+                                <span>
+                                  {(() => {
+                                    if (order.customerStatus === "Return Requested") return "Return requested.";
+                                    if (order.customerStatus === "Return Approved") return "Return request approved.";
+                                    if (order.customerStatus === "Return Rejected") return "Return request rejected.";
+                                    
+                                    const { returnExpiryDate } = getTimelineStageDates(order.date, order.shippedAt, order.outForDeliveryAt, order.deliveredAt);
+                                    const isExpired = new Date() > returnExpiryDate;
+                                    if (isExpired) {
+                                      return "Return window closed.";
+                                    }
+                                    return `Return policy valid for 7 days after delivery (till ${returnExpiryDate.toLocaleDateString("en-US", { month: 'short', day: '2-digit', year: 'numeric' })})`;
+                                  })()}
+                                </span>
+                                
+                                <button
+                                  onClick={() => {
+                                    if (reviewOrderId === order.id && reviewProduct?.id === item.productId) {
+                                      closeReviewForm();
+                                    } else {
+                                      openReviewDialog(item, order.id);
+                                    }
+                                  }}
+                                  className="text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/15 px-3 py-1 rounded-full border border-primary/20 transition-all cursor-pointer flex items-center gap-1"
+                                >
+                                  <Star className="h-3 w-3 fill-current" />
+                                  {reviewOrderId === order.id && reviewProduct?.id === item.productId 
+                                    ? "Close" 
+                                    : (existingReview ? "Edit Review" : "Rate & Review Product")}
+                                </button>
+                              </div>
+
+                              {/* Collapsible Dropdown Review Form */}
+                              {reviewOrderId === order.id && reviewProduct?.id === item.productId && (
+                                <div className="p-4 sm:p-5 border-b border-border/40 bg-secondary/5 space-y-4 animate-in slide-in-from-top-4 duration-300 text-left">
+                                  <div className="flex justify-between items-center pb-2 border-b border-border/20">
+                                    <h4 className="font-serif text-xs sm:text-sm font-semibold text-foreground">
+                                      {editingReviewId ? "Edit Your Review" : "Write a Review"}
+                                    </h4>
+                                    <span className="text-[10px] text-muted-foreground">Share your honest feedback</span>
+                                  </div>
+
+                                  <div className="grid gap-4 sm:grid-cols-[140px_1fr] items-start">
+                                    {/* Star Rating Picker */}
+                                    <div className="space-y-1.5 text-center py-2.5 bg-background rounded-xl border border-border/60">
+                                      <Label className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                                        Overall Rating
+                                      </Label>
+                                      <div className="flex justify-center gap-1 mt-0.5">
+                                        {[1, 2, 3, 4, 5].map((star) => {
+                                          const isActive = star <= (reviewHoverRating ?? reviewRating);
+                                          return (
+                                            <button
+                                              key={star}
+                                              type="button"
+                                              onMouseEnter={() => setReviewHoverRating(star)}
+                                              onMouseLeave={() => setReviewHoverRating(null)}
+                                              onClick={() => setReviewRating(star)}
+                                              className="text-amber-400 hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer focus:outline-none bg-transparent border-0"
+                                            >
+                                              <Star
+                                                className={cn(
+                                                  "h-5.5 w-5.5 stroke-[1.5]",
+                                                  isActive ? "fill-amber-400 stroke-amber-400" : "text-muted-foreground/45"
+                                                )}
+                                              />
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                      <div className="text-[9px] font-medium text-foreground min-h-[14px]">
+                                        {(() => {
+                                          const current = reviewHoverRating ?? reviewRating;
+                                          if (current === 1) return <span className="text-red-500 font-semibold">Poor (1/5)</span>;
+                                          if (current === 2) return <span className="text-amber-500 font-semibold">Fair (2/5)</span>;
+                                          if (current === 3) return <span className="text-yellow-600 dark:text-yellow-400 font-semibold">Good (3/5)</span>;
+                                          if (current === 4) return <span className="text-blue-600 dark:text-blue-400 font-semibold">Very Good (4/5)</span>;
+                                          if (current === 5) return <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Excellent (5/5)</span>;
+                                          return "";
+                                        })()}
+                                      </div>
+                                    </div>
+
+                                    {/* Inputs: Comment + Photo */}
+                                    <div className="space-y-3">
+                                      {/* Comment Area */}
+                                      <div className="space-y-1">
+                                        <Label htmlFor="review-comment" className="text-[9px] font-semibold text-foreground uppercase tracking-wider block">
+                                          Your Feedback <span className="text-destructive">*</span>
+                                        </Label>
+                                        <Textarea
+                                          id="review-comment"
+                                          required
+                                          value={reviewComment}
+                                          onChange={(e) => setReviewComment(e.target.value)}
+                                          className="text-[11px] bg-background focus-visible:ring-1 resize-none leading-relaxed p-2 sm:p-2.5 min-h-[60px]"
+                                        />
+                                      </div>
+
+                                      {/* Photo Uploader */}
+                                      <div className="space-y-1">
+                                        <div className="flex justify-between items-baseline">
+                                          <Label className="text-[9px] font-semibold text-foreground uppercase tracking-wider block">
+                                            Add Photos (Max 2) (Optional)
+                                          </Label>
+                                          <span className="text-[8px] text-muted-foreground font-medium">
+                                            {existingReviewUrls.length + selectedReviewPhotos.length} / 2 uploaded
+                                          </span>
+                                        </div>
+                                        
+                                        <div className="flex flex-wrap gap-2 mt-0.5">
+                                          {/* Existing URLs (from DB) */}
+                                          {existingReviewUrls.map((url, idx) => (
+                                            <div key={`existing-${idx}`} className="group relative h-12 w-12 overflow-hidden rounded-xl border bg-secondary/30">
+                                              <img src={url} alt={`Review ${idx + 1}`} className="h-full w-full object-cover" />
+                                              <button
+                                                type="button"
+                                                onClick={() => removeExistingReviewPhoto(idx)}
+                                                className="absolute right-1 top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:scale-105 transition-transform shadow-sm"
+                                              >
+                                                <X className="h-2 w-2" />
+                                              </button>
+                                              <span className="absolute bottom-0.5 left-0.5 rounded bg-black/60 px-0.5 py-0.2 text-[6px] text-white font-medium">
+                                                Saved
+                                              </span>
+                                            </div>
+                                          ))}
+
+                                          {/* Newly selected files */}
+                                          {reviewPhotoPreviews.map((preview, idx) => (
+                                            <div key={`new-${idx}`} className="group relative h-12 w-12 overflow-hidden rounded-xl border bg-secondary/30">
+                                              <img src={preview} alt={`Preview ${idx + 1}`} className="h-full w-full object-cover" />
+                                              <button
+                                                type="button"
+                                                onClick={() => removeNewReviewPhoto(idx)}
+                                                className="absolute right-1 top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:scale-105 transition-transform shadow-sm"
+                                              >
+                                                <X className="h-2 w-2" />
+                                              </button>
+                                              <span className="absolute bottom-0.5 left-0.5 rounded bg-primary/70 px-0.5 py-0.2 text-[6px] text-white font-medium">
+                                                New
+                                              </span>
+                                            </div>
+                                          ))}
+
+                                          {/* Upload Button */}
+                                          {existingReviewUrls.length + selectedReviewPhotos.length < 2 && (
+                                            <button
+                                              type="button"
+                                              onClick={() => reviewPhotoInputRef.current?.click()}
+                                              className="flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors cursor-pointer bg-transparent"
+                                            >
+                                              <ImagePlus className="h-3.5 w-3.5" />
+                                              <span className="text-[7px] font-medium leading-none">Add Photo</span>
+                                            </button>
+                                          )}
+                                        </div>
+
+                                        <input
+                                          ref={reviewPhotoInputRef}
+                                          type="file"
+                                          accept="image/*"
+                                          multiple
+                                          className="hidden"
+                                          onChange={handleReviewFileChange}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex justify-end gap-2 border-t pt-2.5 mt-1">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      disabled={submittingReview}
+                                      onClick={closeReviewForm}
+                                      className="rounded-full text-xs h-8 px-4 cursor-pointer"
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      onClick={handleSubmitReview}
+                                      disabled={submittingReview || !reviewComment.trim()}
+                                      className="rounded-full text-xs h-8 px-4 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+                                    >
+                                      {submittingReview ? (
+                                        <>
+                                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                          Submitting...
+                                        </>
+                                      ) : (
+                                        editingReviewId ? "Update" : "Submit"
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </>
                           )}
 
                           {/* Action Buttons split */}
@@ -1529,13 +1709,11 @@ function AccountPage() {
 
                             {/* Right action: Contact Support / Chat with us */}
                             <a
-                              href="https://wa.me/916294359714"
-                              target="_blank"
-                              rel="noopener noreferrer"
+                              href="/contact"
                               className="py-3 hover:bg-primary/5 text-foreground hover:text-primary transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                             >
                               <MessageSquare className="h-3.5 w-3.5" />
-                              Chat with us
+                              Contact us
                             </a>
                           </div>
                         </div>
@@ -1707,42 +1885,46 @@ function AccountPage() {
                           <div
                             key={`${order.id}-${item.productId}-${idx}`}
                             onClick={() => setSelectedOrderItem({ order, item })}
-                            className="rounded-xl border border-border bg-card shadow-sm overflow-hidden transition-all hover:border-primary/40 cursor-pointer hover:shadow-md flex items-center p-4 gap-4"
+                            className="rounded-xl border border-border bg-card shadow-sm overflow-hidden transition-all hover:border-primary/40 cursor-pointer hover:shadow-md flex items-start sm:items-center p-4 gap-3 sm:gap-4"
                           >
                             <img
                               src={item.productImage}
                               alt={item.productName}
                               className="h-16 w-12 object-cover rounded bg-secondary shrink-0 border border-border/60"
                             />
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-serif text-sm font-bold text-foreground truncate max-w-xs sm:max-w-md">
-                                {item.productName}
-                              </h3>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                Qty: {item.qty} | Seller: Sabara
-                              </p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                Ordered on {formattedDate}
-                              </p>
+                            <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                              <div className="min-w-0">
+                                <h3 className="font-serif text-sm font-bold text-foreground truncate max-w-full">
+                                  {item.productName}
+                                </h3>
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground mt-1">
+                                  <span>Qty: {item.qty}</span>
+                                  <span>|</span>
+                                  <span>Seller: Sabara</span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  Ordered on {formattedDate}
+                                </p>
+                              </div>
+                              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 pt-2.5 sm:pt-0 border-t sm:border-0 border-border/40 shrink-0 w-full sm:w-auto">
+                                <p className="font-serif font-bold text-sm text-primary">
+                                  {formatPrice(item.price * item.qty)}
+                                </p>
+                                {(() => {
+                                  const config = getOrderStatusConfig(order);
+                                  return (
+                                    <span className={cn(
+                                      "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-semibold",
+                                      config.badgeClass
+                                    )}>
+                                      <span className={cn("h-1.5 w-1.5 rounded-full", config.dotClass)} />
+                                      {config.label}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
                             </div>
-                            <div className="text-right shrink-0">
-                              <p className="font-serif font-bold text-sm text-primary">
-                                {formatPrice(item.price * item.qty)}
-                              </p>
-                              {(() => {
-                                const config = getOrderStatusConfig(order);
-                                return (
-                                  <span className={cn(
-                                    "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-semibold mt-1.5",
-                                    config.badgeClass
-                                  )}>
-                                    <span className={cn("h-1.5 w-1.5 rounded-full", config.dotClass)} />
-                                    {config.label}
-                                  </span>
-                                );
-                              })()}
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 ml-1" />
+                            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 self-center ml-1" />
                           </div>
                         );
                       })
@@ -1770,29 +1952,28 @@ function AccountPage() {
           setCancelReasonInput("");
         }
       }}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="font-serif text-xl">Cancel Order</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
+        <DialogContent className="w-[92vw] max-w-[390px] rounded-2xl p-4 sm:p-5 gap-3.5">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="font-serif text-lg sm:text-xl text-foreground">Cancel Order</DialogTitle>
+            <DialogDescription className="text-[10px] sm:text-xs text-muted-foreground leading-normal">
               Are you sure you want to cancel this order? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="cancellation-reason" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+          <div className="py-2 sm:py-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="cancellation-reason" className="text-[10px] font-semibold text-foreground uppercase tracking-wider block">
                 Why are you cancelling? (Optional)
               </Label>
               <Textarea
                 id="cancellation-reason"
-                placeholder="Let us know why you are cancelling this order (e.g. ordered wrong item, change of mind)..."
                 value={cancelReasonInput}
                 onChange={(e) => setCancelReasonInput(e.target.value)}
                 rows={3}
-                className="text-xs bg-background resize-none focus-visible:ring-1"
+                className="text-[11px] bg-background focus-visible:ring-1 resize-none leading-relaxed p-2 sm:p-2.5 min-h-[64px] sm:min-h-[80px]"
               />
             </div>
           </div>
-          <DialogFooter className="flex gap-2 sm:gap-0">
+          <DialogFooter className="flex flex-row justify-end gap-2 border-t pt-2.5 mt-1 sm:space-x-2 space-x-0">
             <Button
               type="button"
               variant="outline"
@@ -1801,7 +1982,7 @@ function AccountPage() {
                 setOrderToCancel(null);
                 setCancelReasonInput("");
               }}
-              className="rounded-full text-xs h-9 cursor-pointer"
+              className="rounded-full text-xs h-8 px-4 cursor-pointer"
             >
               Go Back
             </Button>
@@ -1810,15 +1991,15 @@ function AccountPage() {
               variant="destructive"
               onClick={handleCancelOrder}
               disabled={cancellingId !== null}
-              className="rounded-full text-xs h-9 cursor-pointer"
+              className="rounded-full text-xs h-8 px-4 cursor-pointer"
             >
               {cancellingId !== null ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                   Cancelling...
                 </>
               ) : (
-                "Confirm Cancellation"
+                "Confirm"
               )}
             </Button>
           </DialogFooter>
@@ -1833,30 +2014,29 @@ function AccountPage() {
           setReturnReasonInput("");
         }
       }}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="font-serif text-xl">Request Return</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
+        <DialogContent className="w-[92vw] max-w-[390px] rounded-2xl p-4 sm:p-5 gap-3.5">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="font-serif text-lg sm:text-xl text-foreground">Request Return</DialogTitle>
+            <DialogDescription className="text-[10px] sm:text-xs text-muted-foreground leading-normal">
               Please let us know why you would like to return this order. Returns can be requested within 7 days of delivery.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="return-reason" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+          <div className="py-2 sm:py-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="return-reason" className="text-[10px] font-semibold text-foreground uppercase tracking-wider block">
                 Reason for Return
               </Label>
               <Textarea
                 id="return-reason"
-                placeholder="Describe the reason for return (e.g. size doesn't fit, wrong item sent, defective product)..."
                 value={returnReasonInput}
                 onChange={(e) => setReturnReasonInput(e.target.value)}
                 rows={3}
                 required
-                className="text-xs bg-background resize-none focus-visible:ring-1"
+                className="text-[11px] bg-background focus-visible:ring-1 resize-none leading-relaxed p-2 sm:p-2.5 min-h-[64px] sm:min-h-[80px]"
               />
             </div>
           </div>
-          <DialogFooter className="flex gap-2 sm:gap-0">
+          <DialogFooter className="flex flex-row justify-end gap-2 border-t pt-2.5 mt-1 sm:space-x-2 space-x-0">
             <Button
               type="button"
               variant="outline"
@@ -1865,7 +2045,7 @@ function AccountPage() {
                 setOrderToReturn(null);
                 setReturnReasonInput("");
               }}
-              className="rounded-full text-xs h-9 cursor-pointer"
+              className="rounded-full text-xs h-8 px-4 cursor-pointer"
             >
               Cancel
             </Button>
@@ -1873,224 +2053,21 @@ function AccountPage() {
               type="button"
               onClick={handleReturnOrder}
               disabled={returningId !== null || !returnReasonInput.trim()}
-              className="rounded-full text-xs h-9 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+              className="rounded-full text-xs h-8 px-4 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {returningId !== null ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                   Submitting...
                 </>
               ) : (
-                "Submit Return Request"
+                "Submit"
               )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Product Review Submission Dialog */}
-      <Dialog open={reviewDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setReviewDialogOpen(false);
-          setReviewProduct(null);
-          setReviewOrderId(null);
-          setReviewRating(5);
-          setReviewComment("");
-          setSelectedReviewPhotos([]);
-          setReviewPhotoPreviews([]);
-          setExistingReviewUrls([]);
-          setEditingReviewId(null);
-        }
-      }}>
-        <DialogContent className="sm:max-w-[480px] rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-serif text-2xl text-foreground">
-              {editingReviewId ? "Edit Review" : "Write a Review"}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Your review helps others make better choices. Share your honest feedback.
-            </DialogDescription>
-          </DialogHeader>
-
-          {reviewProduct && (
-            <div className="flex items-center gap-3 bg-secondary/20 p-3 rounded-xl border border-border/40 mt-1 mb-4">
-              <img
-                src={reviewProduct.image}
-                alt={reviewProduct.name}
-                className="h-12 w-10 object-cover rounded bg-secondary shrink-0 border"
-              />
-              <div className="min-w-0">
-                <h4 className="font-medium text-sm text-foreground truncate">{reviewProduct.name}</h4>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Verified Purchase</p>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-5 py-2">
-            {/* Star Rating Picker */}
-            <div className="space-y-2 text-center py-2 bg-secondary/5 rounded-xl border border-dashed border-border/60">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-                Overall Rating
-              </Label>
-              <div className="flex justify-center gap-2 mt-1">
-                {[1, 2, 3, 4, 5].map((star) => {
-                  const isActive = star <= (reviewHoverRating ?? reviewRating);
-                  return (
-                    <button
-                      key={star}
-                      type="button"
-                      onMouseEnter={() => setReviewHoverRating(star)}
-                      onMouseLeave={() => setReviewHoverRating(null)}
-                      onClick={() => setReviewRating(star)}
-                      className="text-amber-400 hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer focus:outline-none bg-transparent border-0"
-                    >
-                      <Star
-                        className={cn(
-                          "h-8 w-8 stroke-[1.5]",
-                          isActive ? "fill-amber-400 stroke-amber-400" : "text-muted-foreground/45"
-                        )}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="text-xs font-medium text-foreground min-h-[16px] transition-all duration-200">
-                {(() => {
-                  const current = reviewHoverRating ?? reviewRating;
-                  if (current === 1) return <span className="text-red-500 font-semibold">Poor (1/5)</span>;
-                  if (current === 2) return <span className="text-amber-500 font-semibold">Fair (2/5)</span>;
-                  if (current === 3) return <span className="text-yellow-600 dark:text-yellow-400 font-semibold">Good (3/5)</span>;
-                  if (current === 4) return <span className="text-blue-600 dark:text-blue-400 font-semibold">Very Good (4/5)</span>;
-                  if (current === 5) return <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Excellent (5/5)</span>;
-                  return "";
-                })()}
-              </div>
-            </div>
-
-            {/* Comment Area */}
-            <div className="space-y-2">
-              <Label htmlFor="review-comment" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
-                Your Feedback <span className="text-destructive">*</span>
-              </Label>
-              <Textarea
-                id="review-comment"
-                required
-                placeholder="What did you like or dislike? How does it feel? Is the weave high quality?..."
-                value={reviewComment}
-                onChange={(e) => setReviewComment(e.target.value)}
-                rows={4}
-                className="text-xs bg-background focus-visible:ring-1 resize-none leading-relaxed"
-              />
-            </div>
-
-            {/* Photo Uploader */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-baseline">
-                <Label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
-                  Add Photos (Max 2)
-                </Label>
-                <span className="text-[10px] text-muted-foreground font-medium">
-                  {existingReviewUrls.length + selectedReviewPhotos.length} / 2 uploaded
-                </span>
-              </div>
-              
-              <div className="flex flex-wrap gap-3 mt-1.5">
-                {/* Existing URLs (from DB) */}
-                {existingReviewUrls.map((url, idx) => (
-                  <div key={`existing-${idx}`} className="group relative h-20 w-20 overflow-hidden rounded-xl border bg-secondary/30">
-                    <img src={url} alt={`Review ${idx + 1}`} className="h-full w-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removeExistingReviewPhoto(idx)}
-                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:scale-105 transition-transform shadow-sm"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                    <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[8px] text-white">
-                      Saved
-                    </span>
-                  </div>
-                ))}
-
-                {/* Newly selected files */}
-                {reviewPhotoPreviews.map((preview, idx) => (
-                  <div key={`new-${idx}`} className="group relative h-20 w-20 overflow-hidden rounded-xl border bg-secondary/30">
-                    <img src={preview} alt={`Preview ${idx + 1}`} className="h-full w-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removeNewReviewPhoto(idx)}
-                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:scale-105 transition-transform shadow-sm"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                    <span className="absolute bottom-1 left-1 rounded bg-primary/70 px-1 py-0.5 text-[8px] text-white">
-                      New
-                    </span>
-                  </div>
-                ))}
-
-                {/* Upload Button */}
-                {existingReviewUrls.length + selectedReviewPhotos.length < 2 && (
-                  <button
-                    type="button"
-                    onClick={() => reviewPhotoInputRef.current?.click()}
-                    className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors cursor-pointer bg-transparent"
-                  >
-                    <ImagePlus className="h-5 w-5" />
-                    <span className="text-[9px] font-medium">Add Photo</span>
-                  </button>
-                )}
-              </div>
-
-              <input
-                ref={reviewPhotoInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleReviewFileChange}
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="flex gap-2 sm:gap-0 border-t pt-4 mt-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={submittingReview}
-              onClick={() => {
-                setReviewDialogOpen(false);
-                setReviewProduct(null);
-                setReviewOrderId(null);
-                setReviewRating(5);
-                setReviewComment("");
-                setSelectedReviewPhotos([]);
-                setReviewPhotoPreviews([]);
-                setExistingReviewUrls([]);
-                setEditingReviewId(null);
-              }}
-              className="rounded-full text-xs h-9 cursor-pointer"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSubmitReview}
-              disabled={submittingReview || !reviewComment.trim()}
-              className="rounded-full text-xs h-9 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {submittingReview ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                editingReviewId ? "Update Review" : "Submit Review"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

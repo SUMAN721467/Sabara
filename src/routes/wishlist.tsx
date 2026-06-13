@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Trash2, ShoppingBag, ArrowRight } from "lucide-react";
+import { Trash2, ShoppingCart, ArrowRight } from "lucide-react";
 import { formatPrice, useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { Button } from "@/components/ui/button";
@@ -134,7 +134,7 @@ function WishlistPage() {
                       onClick={() => handleAddToCart(product)}
                       className="flex-1 rounded-full text-sm font-medium py-5 cursor-pointer"
                     >
-                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      <ShoppingCart className="mr-2 h-4 w-4" />
                       Add to Cart
                     </Button>
                   ) : (

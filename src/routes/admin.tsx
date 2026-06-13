@@ -15,13 +15,14 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { formatPrice } from "@/lib/cart";
+import { cn } from "@/lib/utils";
 import {
   ShieldX, Plus, X, Upload, ImagePlus, Loader2, ArrowLeft,
   DollarSign, ShoppingBag, Users, Layers, Search, MapPin, ClipboardList,
   ShoppingCart, Heart, Calendar, Activity, Info, LogIn, Mail, Phone, User,
   ChevronDown, ChevronUp, Settings
 } from "lucide-react";
-import { ArrowUp, ArrowDown, Trash2, Edit, Check } from "lucide-react";
+import { ArrowUp, ArrowDown, Trash2, Edit, Check, Star } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
@@ -58,31 +59,36 @@ function AdminPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchDashboardData = async () => {
     try {
       const headers = await getAuthHeaders();
       
-      const [pRes, oRes, cRes] = await Promise.all([
+      const [pRes, oRes, cRes, rRes] = await Promise.all([
         fetch("/api/admin/products", { headers }),
         fetch("/api/admin/orders", { headers }),
-        fetch("/api/admin/customers", { headers })
+        fetch("/api/admin/customers", { headers }),
+        fetch("/api/admin/reviews", { headers })
       ]);
 
-      const [pData, oData, cData] = await Promise.all([
+      const [pData, oData, cData, rData] = await Promise.all([
         pRes.json(),
         oRes.json(),
-        cRes.json()
+        cRes.json(),
+        rRes.json()
       ]);
 
       if (!pRes.ok) throw new Error(pData.error || `Products API returned status ${pRes.status}`);
       if (!oRes.ok) throw new Error(oData.error || `Orders API returned status ${oRes.status}`);
       if (!cRes.ok) throw new Error(cData.error || `Customers API returned status ${cRes.status}`);
+      if (!rRes.ok) throw new Error(rData.error || `Reviews API returned status ${rRes.status}`);
 
       setProducts(pData.products || []);
       setOrders(oData.orders || []);
       setCustomers(cData.customers || []);
+      setReviews(rData.reviews || []);
     } catch (e: any) {
       console.error("Dashboard fetch error:", e);
       toast.error(e.message || "Failed to load dashboard data");
@@ -189,6 +195,7 @@ function AdminPage() {
             <TabsTrigger value="products">Products ({products.length})</TabsTrigger>
             <TabsTrigger value="orders">Orders ({orders.length})</TabsTrigger>
             <TabsTrigger value="customers">Customers ({customers.length})</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews ({reviews.length})</TabsTrigger>
             <TabsTrigger value="coupons">Coupons</TabsTrigger>
             <TabsTrigger value="hero">Homepage Settings</TabsTrigger>
             <TabsTrigger value="promotions">Promotions</TabsTrigger>
@@ -203,6 +210,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="customers">
           <CustomersAdmin initialCustomers={customers} orders={orders} products={products} />
+        </TabsContent>
+        <TabsContent value="reviews">
+          <ReviewsAdmin initialReviews={reviews} onRefresh={fetchDashboardData} />
         </TabsContent>
         <TabsContent value="coupons">
           <CouponsAdmin />
@@ -3771,6 +3781,336 @@ function ShippingAdmin() {
           </Button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function ReviewsAdmin({ initialReviews, onRefresh }: { initialReviews: any[]; onRefresh: () => Promise<void> }) {
+  const [reviews, setReviews] = useState<any[]>(initialReviews);
+  const [search, setSearch] = useState("");
+  const [editingReview, setEditingReview] = useState<any | null>(null);
+  const [editRating, setEditRating] = useState<number>(5);
+  const [editComment, setEditComment] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const [reviewToDelete, setReviewToDelete] = useState<any | null>(null);
+  const [deletingReview, setDeletingReview] = useState(false);
+
+  useEffect(() => {
+    setReviews(initialReviews);
+  }, [initialReviews]);
+
+  useEffect(() => {
+    if (editingReview) {
+      setEditRating(editingReview.rating || 5);
+      setEditComment(editingReview.comment || "");
+    }
+  }, [editingReview]);
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingReview) return;
+    setSavingEdit(true);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/admin/reviews", {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({
+          id: editingReview.id,
+          rating: editRating,
+          comment: editComment
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to edit review");
+
+      toast.success("Review updated successfully!");
+      setEditingReview(null);
+      await onRefresh();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update review");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!reviewToDelete) return;
+    setDeletingReview(true);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`/api/admin/reviews?id=${reviewToDelete.id}`, {
+        method: "DELETE",
+        headers
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete review");
+
+      toast.success("Review deleted successfully!");
+      setReviewToDelete(null);
+      await onRefresh();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete review");
+    } finally {
+      setDeletingReview(false);
+    }
+  };
+
+  const filteredReviews = reviews.filter((r) => {
+    const s = search.toLowerCase().trim();
+    if (!s) return true;
+    return (
+      (r.user_name || "").toLowerCase().includes(s) ||
+      (r.product_name || "").toLowerCase().includes(s) ||
+      (r.comment || "").toLowerCase().includes(s)
+    );
+  });
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+  };
+
+  return (
+    <div className="rounded-xl border bg-card p-6 shadow-sm text-left animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+        <div>
+          <h2 className="text-xl font-medium">Manage Customer Reviews</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {filteredReviews.length} review{filteredReviews.length !== 1 ? "s" : ""} listed
+          </p>
+        </div>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search reviews..."
+            className="pl-9 h-9 text-sm"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Product</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Rating</TableHead>
+              <TableHead className="max-w-xs">Comment</TableHead>
+              <TableHead>Photos</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredReviews.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                  No reviews found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredReviews.map((r) => (
+                <TableRow key={r.id} className="hover:bg-muted/30">
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {r.product_image && (
+                        <img src={r.product_image} alt={r.product_name} className="h-9 w-9 rounded object-cover bg-secondary" />
+                      )}
+                      <div>
+                        <div className="font-medium text-xs max-w-[150px] truncate">{r.product_name}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono mt-0.5 max-w-[150px] truncate">{r.product_id}</div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {r.user_avatar ? (
+                        <img src={r.user_avatar} alt={r.user_name} className="h-7 w-7 rounded-full object-cover border" />
+                      ) : (
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-[10px] border border-primary/20">
+                          {r.user_name ? r.user_name.charAt(0).toUpperCase() : "U"}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-semibold text-xs">{r.user_name}</div>
+                        {r.order_id && (
+                          <div className="text-[9px] text-muted-foreground font-mono mt-0.5 max-w-[100px] truncate" title={`Order ID: ${r.order_id}`}>
+                            Order: {r.order_id.slice(0, 8)}...
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={cn(
+                            "h-3.5 w-3.5",
+                            star <= r.rating
+                              ? "fill-amber-400 text-amber-400 stroke-amber-400"
+                              : "text-muted-foreground/35 stroke-[1.5]"
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell className="max-w-xs text-xs whitespace-pre-wrap font-normal leading-relaxed text-foreground/95">
+                    {r.comment || <span className="text-muted-foreground italic">No written comment</span>}
+                  </TableCell>
+                  <TableCell>
+                    {r.images && r.images.length > 0 ? (
+                      <div className="flex gap-1">
+                        {r.images.map((img: string, idx: number) => (
+                          <a
+                            key={idx}
+                            href={img}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-8 w-8 rounded border overflow-hidden hover:scale-105 transition-transform inline-block bg-secondary"
+                          >
+                            <img src={img} alt="review" className="h-full w-full object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-[10px]">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {formatDate(r.created_at)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingReview(r)}
+                        className="h-8 px-2 text-xs cursor-pointer"
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setReviewToDelete(r)}
+                        className="h-8 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Edit Review Dialog */}
+      {editingReview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-2xl border bg-card p-6 shadow-lg animate-in zoom-in-95 duration-200 text-left">
+            <h3 className="font-serif text-2xl text-foreground mb-2">Edit Review</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Modify the rating and feedback for the review submitted by {editingReview.user_name}.
+            </p>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Rating</Label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setEditRating(star)}
+                      className="p-1 hover:scale-110 transition-transform cursor-pointer"
+                    >
+                      <Star
+                        className={cn(
+                          "h-6 w-6",
+                          star <= editRating
+                            ? "fill-amber-400 text-amber-400 stroke-amber-400"
+                            : "text-muted-foreground/35 stroke-[1.5]"
+                        )}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-comment">Comment</Label>
+                <Textarea
+                  id="edit-comment"
+                  rows={4}
+                  value={editComment}
+                  onChange={(e) => setEditComment(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-2.5 pt-2 border-t mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-1/2 rounded-full cursor-pointer"
+                  onClick={() => setEditingReview(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="w-1/2 rounded-full cursor-pointer bg-primary text-primary-foreground hover:bg-primary/95"
+                >
+                  {savingEdit ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Review Confirmation Dialog */}
+      {reviewToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm rounded-2xl border bg-card p-6 shadow-lg animate-in zoom-in-95 duration-200 text-left">
+            <h3 className="font-serif text-xl text-foreground mb-2">Delete Review</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Are you sure you want to delete the review written by <span className="font-semibold text-foreground">"{reviewToDelete.user_name}"</span>? This action cannot be undone.
+            </p>
+
+            <div className="flex gap-2.5 pt-2 mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-1/2 rounded-full cursor-pointer"
+                onClick={() => setReviewToDelete(null)}
+                disabled={deletingReview}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={deletingReview}
+                onClick={handleDeleteConfirm}
+                className="w-1/2 rounded-full cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/95"
+              >
+                {deletingReview ? "Deleting..." : "Delete Review"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

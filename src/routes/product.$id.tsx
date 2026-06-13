@@ -55,8 +55,22 @@ const getProductDetails = createServerFn({ method: "GET" })
           return aTime - bTime;
         });
         const main = sorted[0];
+
+        // Roll up (aggregate) rating and review count across all variants of this base product
+        let totalScore = 0;
+        let totalReviews = 0;
+        all.forEach((p: any) => {
+          if (p.rating && p.reviewsCount) {
+            totalScore += p.rating * p.reviewsCount;
+            totalReviews += p.reviewsCount;
+          }
+        });
+        const averageRating = totalReviews > 0 ? Number((totalScore / totalReviews).toFixed(1)) : null;
+
         return {
           ...main,
+          rating: averageRating,
+          reviewsCount: totalReviews,
           variants: sorted,
         };
       })
@@ -325,6 +339,33 @@ function ProductPage() {
           <h1 className="mt-3 font-serif text-2xl leading-tight text-foreground md:text-3xl">
             {product.name.split(" - ")[0]}
           </h1>
+
+          {/* Average Rating Banner */}
+          <div className="mt-2.5 flex items-center gap-2 text-xs">
+            {reviewsLoading ? (
+              <span className="text-muted-foreground animate-pulse text-[11px]">Loading rating...</span>
+            ) : reviews.length > 0 ? (
+              <>
+                <div className="flex items-center gap-1 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold px-2 py-0.5 rounded">
+                  <span>{((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) || 0).toFixed(1)}</span>
+                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                </div>
+                <span className="text-muted-foreground font-medium">
+                  Based on {reviews.length} {reviews.length === 1 ? "rating" : "ratings"}
+                </span>
+              </>
+            ) : (
+              <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                <div className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} className="h-3 w-3 text-muted-foreground/35 stroke-[1.5]" />
+                  ))}
+                </div>
+                <span>No ratings yet</span>
+              </div>
+            )}
+          </div>
+
           {product.original_price && product.original_price > product.price ? (
             <div className="mt-3 flex items-center gap-3">
               <span className="text-2xl font-semibold text-red-600 dark:text-red-400">

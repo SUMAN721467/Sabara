@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { formatPrice } from "@/lib/cart";
 import type { Product } from "@/data/products";
-import { Heart } from "lucide-react";
+import { Heart, Star } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -99,7 +99,29 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="text-sm font-medium text-muted-foreground shrink-0">{formatPrice(product.price)}</span>
         )}
       </div>
-      <p className="mt-0.5 text-xs uppercase tracking-wider text-muted-foreground/80 px-1 pb-1">
+      {(product as any).rating && (
+        <div className="flex items-center gap-1 px-1 mt-1 text-xs text-amber-600 dark:text-amber-400 font-semibold">
+          <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                className={cn(
+                  "h-3 w-3",
+                  star <= Math.round((product as any).rating)
+                    ? "fill-amber-400 text-amber-400 stroke-amber-400"
+                    : "text-muted-foreground/35 stroke-[1.5]"
+                )}
+              />
+            ))}
+          </div>
+          <span className="text-foreground/80 font-bold ml-0.5">{(product as any).rating}</span>
+          <span className="text-muted-foreground font-normal">({(product as any).reviewsCount})</span>
+        </div>
+      )}
+      <p className={cn(
+        "text-xs uppercase tracking-wider text-muted-foreground/80 px-1 pb-1",
+        (product as any).rating ? "mt-1.5" : "mt-0.5"
+      )}>
         {product.category} · {product.materials}
       </p>
     </Link>

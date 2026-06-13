@@ -13,9 +13,9 @@ interface ScrollRevealProps extends React.HTMLAttributes<HTMLDivElement> {
 export function ScrollReveal({
   children,
   variant = "fade-up",
-  duration = 800,
+  duration = 700,
   delay = 0,
-  threshold = 0.05,
+  threshold = 0.02,
   once = true,
   className,
   ...props
@@ -56,14 +56,18 @@ export function ScrollReveal({
     };
   }, [threshold, once]);
 
+  // Make animations twice as fast and snappy for premium feel
+  const optimizedDuration = Math.round(duration * 0.5);
+  const optimizedDelay = Math.round(delay * 0.5);
+
   const variantStyles = {
     fade: "opacity-0 data-[visible=true]:opacity-100",
-    "fade-up": "opacity-0 translate-y-8 data-[visible=true]:opacity-100 data-[visible=true]:translate-y-0",
-    "fade-down": "opacity-0 -translate-y-8 data-[visible=true]:opacity-100 data-[visible=true]:translate-y-0",
-    "fade-left": "opacity-0 translate-x-8 data-[visible=true]:opacity-100 data-[visible=true]:translate-x-0",
-    "fade-right": "opacity-0 -translate-x-8 data-[visible=true]:opacity-100 data-[visible=true]:translate-x-0",
-    "zoom-in": "opacity-0 scale-[0.97] data-[visible=true]:opacity-100 data-[visible=true]:scale-100",
-    "zoom-out": "opacity-0 scale-[1.03] data-[visible=true]:opacity-100 data-[visible=true]:scale-100",
+    "fade-up": "opacity-0 translate-y-4 data-[visible=true]:opacity-100 data-[visible=true]:translate-y-0",
+    "fade-down": "opacity-0 -translate-y-4 data-[visible=true]:opacity-100 data-[visible=true]:translate-y-0",
+    "fade-left": "opacity-0 translate-x-4 data-[visible=true]:opacity-100 data-[visible=true]:translate-x-0",
+    "fade-right": "opacity-0 -translate-x-4 data-[visible=true]:opacity-100 data-[visible=true]:translate-x-0",
+    "zoom-in": "opacity-0 scale-[0.98] data-[visible=true]:opacity-100 data-[visible=true]:scale-100",
+    "zoom-out": "opacity-0 scale-[1.02] data-[visible=true]:opacity-100 data-[visible=true]:scale-100",
   };
 
   return (
@@ -76,8 +80,8 @@ export function ScrollReveal({
         className
       )}
       style={{
-        transitionDuration: `${duration}ms`,
-        transitionDelay: `${delay}ms`,
+        transitionDuration: `${optimizedDuration}ms`,
+        transitionDelay: `${optimizedDelay}ms`,
         willChange: "transform, opacity",
         ...props.style
       }}

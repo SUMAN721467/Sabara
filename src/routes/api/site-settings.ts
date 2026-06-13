@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
 let settingsCache: Record<string, { value: any; timestamp: number }> = {};
-const SETTINGS_CACHE_TTL = 30000; // 30 seconds
+const SETTINGS_CACHE_TTL = 120000; // 120 seconds (2 minutes)
 
 export function clearSettingsCache(key?: string) {
   if (key) {
