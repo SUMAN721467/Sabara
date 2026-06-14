@@ -2213,39 +2213,77 @@ function CustomersAdmin({
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Product</TableHead>
-                        <TableHead className="text-center">Quantity</TableHead>
-                        <TableHead>Unit Price</TableHead>
-                        <TableHead className="text-right">Total Spent</TableHead>
-                        <TableHead className="text-right">Last Ordered</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {purchasedProducts.map((p) => (
-                        <TableRow key={p.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              {p.image ? (
-                                <img src={p.image} alt={p.name} className="h-10 w-9 object-cover rounded bg-secondary" />
-                              ) : (
-                                <div className="h-10 w-9 rounded bg-secondary flex items-center justify-center text-muted-foreground">
-                                  <Layers className="h-4 w-4" />
-                                </div>
-                              )}
-                              <span className="font-medium text-sm line-clamp-1">{p.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center font-semibold text-sm">{p.qty}</TableCell>
-                          <TableCell className="text-sm">{formatPrice(p.price)}</TableCell>
-                          <TableCell className="text-right font-medium text-sm">{formatPrice(p.totalSpent)}</TableCell>
-                          <TableCell className="text-right text-xs text-muted-foreground">{formatDate(p.lastOrdered)}</TableCell>
+                  {/* Desktop View */}
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Product</TableHead>
+                          <TableHead className="text-center">Quantity</TableHead>
+                          <TableHead>Unit Price</TableHead>
+                          <TableHead className="text-right">Total Spent</TableHead>
+                          <TableHead className="text-right">Last Ordered</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {purchasedProducts.map((p) => (
+                          <TableRow key={p.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                {p.image ? (
+                                  <img src={p.image} alt={p.name} className="h-10 w-9 object-cover rounded bg-secondary" />
+                                ) : (
+                                  <div className="h-10 w-9 rounded bg-secondary flex items-center justify-center text-muted-foreground">
+                                    <Layers className="h-4 w-4" />
+                                  </div>
+                                )}
+                                <span className="font-medium text-sm line-clamp-1">{p.name}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center font-semibold text-sm">{p.qty}</TableCell>
+                            <TableCell className="text-sm">{formatPrice(p.price)}</TableCell>
+                            <TableCell className="text-right font-medium text-sm">{formatPrice(p.totalSpent)}</TableCell>
+                            <TableCell className="text-right text-xs text-muted-foreground">{formatDate(p.lastOrdered)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile View */}
+                  <div className="md:hidden space-y-4">
+                    {purchasedProducts.map((p) => (
+                      <div key={p.id} className="p-4 rounded-xl border bg-card/50 space-y-3 shadow-sm">
+                        <div className="flex items-center gap-3">
+                          {p.image ? (
+                            <img src={p.image} alt={p.name} className="h-12 w-11 object-cover rounded bg-secondary shrink-0" />
+                          ) : (
+                            <div className="h-12 w-11 rounded bg-secondary flex items-center justify-center text-muted-foreground shrink-0">
+                              <Layers className="h-4 w-4" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <span className="font-semibold text-sm block truncate">{p.name}</span>
+                            <span className="text-xs text-muted-foreground">{formatPrice(p.price)} per unit</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 pt-2 border-t text-xs">
+                          <div>
+                            <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Qty</span>
+                            <span className="font-semibold text-sm">{p.qty}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Total</span>
+                            <span className="font-semibold text-sm text-foreground">{formatPrice(p.totalSpent)}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Last Ordered</span>
+                            <span className="font-medium text-muted-foreground text-sm">{formatDate(p.lastOrdered)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -2263,37 +2301,76 @@ function CustomersAdmin({
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Order #</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {customerOrders.map((o) => (
-                        <TableRow key={o.id}>
-                          <TableCell className="font-mono font-medium text-sm">{o.orderNumber}</TableCell>
-                          <TableCell className="text-sm">{formatDate(o.date)}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-0.5">
+                  {/* Desktop View */}
+                  <div className="hidden sm:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order #</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {customerOrders.map((o) => (
+                          <TableRow key={o.id}>
+                            <TableCell className="font-mono font-medium text-sm">{o.orderNumber}</TableCell>
+                            <TableCell className="text-sm">{formatDate(o.date)}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-0.5">
+                                <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold w-fit ${getStatusColor(o.status)}`}>
+                                  {o.status}
+                                </span>
+                                {o.cancellationReason && (
+                                  <span className="text-[10px] text-destructive/80 font-medium max-w-[180px] truncate" title={o.cancellationReason}>
+                                    Reason: {o.cancellationReason}
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-medium text-sm">{formatPrice(o.total)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile View */}
+                  <div className="sm:hidden space-y-4">
+                    {customerOrders.map((o) => (
+                      <div key={o.id} className="p-4 rounded-xl border bg-card/50 space-y-3 shadow-sm">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Order #</span>
+                            <span className="font-mono font-bold text-sm text-foreground">{o.orderNumber}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Total</span>
+                            <span className="font-bold text-sm text-foreground">{formatPrice(o.total)}</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center pt-2 border-t text-xs">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Date</span>
+                            <span className="text-muted-foreground text-sm">{formatDate(o.date)}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex flex-col gap-0.5 items-end">
                               <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold w-fit ${getStatusColor(o.status)}`}>
                                 {o.status}
                               </span>
                               {o.cancellationReason && (
-                                <span className="text-[10px] text-destructive/80 font-medium max-w-[180px] truncate" title={o.cancellationReason}>
+                                <span className="text-[10px] text-destructive/80 font-medium max-w-[140px] truncate" title={o.cancellationReason}>
                                   Reason: {o.cancellationReason}
                                 </span>
                               )}
                             </div>
-                          </TableCell>
-                          <TableCell className="text-right font-medium text-sm">{formatPrice(o.total)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -2326,7 +2403,7 @@ function CustomersAdmin({
               ) : (
                 <ul className="divide-y max-h-60 overflow-y-auto pr-1 space-y-3">
                   {cartItems.map((item: any, idx: number) => (
-                    <li key={idx} className="flex items-center gap-3 pt-3 first:pt-0">
+                    <li key={idx} className="flex items-start gap-3 pt-3 first:pt-0">
                       {item.product.image ? (
                         <img src={item.product.image} alt={item.product.name} className="h-10 w-9 object-cover rounded bg-secondary shrink-0" />
                       ) : (
@@ -2336,10 +2413,12 @@ function CustomersAdmin({
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{item.product.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.qty} units × {formatPrice(item.product.price)}</p>
-                      </div>
-                      <div className="text-sm font-semibold font-mono whitespace-nowrap">
-                        {formatPrice(item.product.price * item.qty)}
+                        <div className="flex flex-wrap items-center justify-between gap-1 mt-0.5">
+                          <p className="text-xs text-muted-foreground">{item.qty} units × {formatPrice(item.product.price)}</p>
+                          <div className="text-sm font-semibold font-mono text-foreground">
+                            {formatPrice(item.product.price * item.qty)}
+                          </div>
+                        </div>
                       </div>
                     </li>
                   ))}
@@ -2371,7 +2450,7 @@ function CustomersAdmin({
               ) : (
                 <ul className="divide-y max-h-60 overflow-y-auto pr-1">
                   {wishlistItems.map((prod: any, idx: number) => (
-                    <li key={idx} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                    <li key={idx} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
                       {prod.image ? (
                         <img src={prod.image} alt={prod.name} className="h-10 w-9 object-cover rounded bg-secondary shrink-0" />
                       ) : (
@@ -2381,10 +2460,12 @@ function CustomersAdmin({
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{prod.name}</p>
-                        <p className="text-xs text-muted-foreground">{prod.category}</p>
-                      </div>
-                      <div className="text-sm font-semibold font-mono text-primary">
-                        {formatPrice(prod.price)}
+                        <div className="flex flex-wrap items-center justify-between gap-1 mt-0.5">
+                          <p className="text-xs text-muted-foreground">{prod.category}</p>
+                          <div className="text-sm font-semibold font-mono text-primary">
+                            {formatPrice(prod.price)}
+                          </div>
+                        </div>
                       </div>
                     </li>
                   ))}
@@ -2670,72 +2751,143 @@ function CouponsAdmin() {
         </div>
 
         <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Coupon Code</TableHead>
-                <TableHead>Discount Value</TableHead>
-                <TableHead>Min Order</TableHead>
-                <TableHead>Usage Limit / Stock</TableHead>
-                <TableHead className="text-center">Show in list</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {coupons.length === 0 ? (
+          {/* Desktop View */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                    No active coupons found. Add one on the right!
-                  </TableCell>
+                  <TableHead>Coupon Code</TableHead>
+                  <TableHead>Discount Value</TableHead>
+                  <TableHead>Min Order</TableHead>
+                  <TableHead>Usage Limit / Stock</TableHead>
+                  <TableHead className="text-center">Show in list</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : (
-                coupons.map((c) => (
-                  <TableRow key={c.code}>
-                    <TableCell>
-                      <span className="font-mono font-bold text-sm bg-secondary/80 text-secondary-foreground px-3 py-1.5 rounded-lg border">
-                        {c.code}
-                      </span>
-                    </TableCell>
-                    <TableCell className="font-medium text-emerald-600 dark:text-emerald-400">
-                      {c.discount}% Discount
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground font-medium">
-                      {c.minOrder !== undefined && c.minOrder !== null ? `₹${c.minOrder}` : "—"}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {c.limit !== undefined && c.limit !== null ? (
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${c.limit <= 0 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"}`}>
-                          {c.limit} left
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Unlimited</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center">
-                        <input
-                          type="checkbox"
-                          checked={c.showInList !== false}
-                          onChange={() => handleToggleShowInList(c.code, c.showInList !== false)}
-                          className="h-4 w-4 rounded border-[#e0e0e0] text-primary focus:ring-primary bg-background cursor-pointer accent-primary"
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteCoupon(c.code)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full h-8 w-8 p-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {coupons.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                      No active coupons found. Add one on the right!
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  coupons.map((c) => (
+                    <TableRow key={c.code}>
+                      <TableCell>
+                        <span className="font-mono font-bold text-sm bg-secondary/80 text-secondary-foreground px-3 py-1.5 rounded-lg border">
+                          {c.code}
+                        </span>
+                      </TableCell>
+                      <TableCell className="font-medium text-emerald-600 dark:text-emerald-400">
+                        {c.discount}% Discount
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground font-medium">
+                        {c.minOrder !== undefined && c.minOrder !== null ? `₹${c.minOrder}` : "—"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {c.limit !== undefined && c.limit !== null ? (
+                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${c.limit <= 0 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"}`}>
+                            {c.limit} left
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Unlimited</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            checked={c.showInList !== false}
+                            onChange={() => handleToggleShowInList(c.code, c.showInList !== false)}
+                            className="h-4 w-4 rounded border-[#e0e0e0] text-primary focus:ring-primary bg-background cursor-pointer accent-primary"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteCoupon(c.code)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile View */}
+          <div className="md:hidden space-y-4">
+            {coupons.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground text-sm border rounded-lg bg-card/50">
+                No active coupons found. Add one on the right/below!
+              </div>
+            ) : (
+              coupons.map((c) => (
+                <div key={c.code} className="p-4 rounded-xl border bg-card/50 space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-sm bg-secondary/80 text-secondary-foreground px-3 py-1.5 rounded-lg border">
+                      {c.code}
+                    </span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-sm">
+                      {c.discount}% Discount
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t text-xs">
+                    <div>
+                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Min Order</span>
+                      <span className="font-medium text-foreground text-sm">
+                        {c.minOrder !== undefined && c.minOrder !== null ? `₹${c.minOrder}` : "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Limit / Stock</span>
+                      <div className="mt-0.5">
+                        {c.limit !== undefined && c.limit !== null ? (
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${c.limit <= 0 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"}`}>
+                            {c.limit} left
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground text-sm">Unlimited</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-2 border-t text-xs">
+                    <div className="flex items-center gap-2">
+                      <input
+                        id={`show-list-mob-${c.code}`}
+                        type="checkbox"
+                        checked={c.showInList !== false}
+                        onChange={() => handleToggleShowInList(c.code, c.showInList !== false)}
+                        className="h-4 w-4 rounded border-[#e0e0e0] text-primary focus:ring-primary bg-background cursor-pointer accent-primary"
+                      />
+                      <label htmlFor={`show-list-mob-${c.code}`} className="text-muted-foreground cursor-pointer font-semibold">
+                        Show in list
+                      </label>
+                    </div>
+                    <div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteCoupon(c.code)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg flex items-center gap-1.5 h-8 py-1 px-3"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Delete
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
@@ -3468,99 +3620,187 @@ function PromotionsAdmin() {
         <div className="rounded-xl border bg-card p-6 shadow-sm">
           <h3 className="text-lg font-medium mb-4">Promotions List</h3>
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[80px]">Order</TableHead>
-                  <TableHead>Promotion Text</TableHead>
-                  <TableHead>Link</TableHead>
-                  <TableHead className="w-[100px] text-center">Status</TableHead>
-                  <TableHead className="w-[120px] text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.length === 0 ? (
+            {/* Desktop View */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-10 text-muted-foreground text-sm">
-                      No promotions created yet. Add one on the right!
-                    </TableCell>
+                    <TableHead className="w-[80px]">Order</TableHead>
+                    <TableHead>Promotion Text</TableHead>
+                    <TableHead>Link</TableHead>
+                    <TableHead className="w-[100px] text-center">Status</TableHead>
+                    <TableHead className="w-[120px] text-right">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  items.map((item, idx) => (
-                    <TableRow key={item.id} className={editingId === item.id ? "bg-primary/5" : ""}>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleMove(idx, "up")}
-                            disabled={idx === 0}
-                            className="h-7 w-7 p-0 cursor-pointer"
-                          >
-                            <ArrowUp className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleMove(idx, "down")}
-                            disabled={idx === items.length - 1}
-                            className="h-7 w-7 p-0 cursor-pointer"
-                          >
-                            <ArrowDown className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm font-medium leading-relaxed block break-words max-w-[300px]">
-                          {item.text}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {item.link ? (
-                          <span className="text-xs font-mono bg-secondary px-2 py-1 rounded text-secondary-foreground truncate max-w-[150px] inline-block" title={item.link}>
-                            {item.link}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">None</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <button
-                          onClick={() => handleToggleActive(item.id)}
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer border transition-colors ${
-                            item.isActive
-                              ? "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/30"
-                              : "bg-muted text-muted-foreground border-transparent"
-                          }`}
-                        >
-                          {item.isActive ? "Active" : "Inactive"}
-                        </button>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1.5">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStartEdit(item)}
-                            className="h-8 w-8 p-0 hover:bg-secondary cursor-pointer"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(item.id)}
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                </TableHeader>
+                <TableBody>
+                  {items.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-10 text-muted-foreground text-sm">
+                        No promotions created yet. Add one on the right!
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    items.map((item, idx) => (
+                      <TableRow key={item.id} className={editingId === item.id ? "bg-primary/5" : ""}>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleMove(idx, "up")}
+                              disabled={idx === 0}
+                              className="h-7 w-7 p-0 cursor-pointer"
+                            >
+                              <ArrowUp className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleMove(idx, "down")}
+                              disabled={idx === items.length - 1}
+                              className="h-7 w-7 p-0 cursor-pointer"
+                            >
+                              <ArrowDown className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm font-medium leading-relaxed block break-words max-w-[300px]">
+                            {item.text}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {item.link ? (
+                            <span className="text-xs font-mono bg-secondary px-2 py-1 rounded text-secondary-foreground truncate max-w-[150px] inline-block" title={item.link}>
+                              {item.link}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">None</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <button
+                            onClick={() => handleToggleActive(item.id)}
+                            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer border transition-colors ${
+                              item.isActive
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/30"
+                                : "bg-muted text-muted-foreground border-transparent"
+                            }`}
+                          >
+                            {item.isActive ? "Active" : "Inactive"}
+                          </button>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleStartEdit(item)}
+                              className="h-8 w-8 p-0 hover:bg-secondary cursor-pointer"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(item.id)}
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+ 
+            {/* Mobile View */}
+            <div className="md:hidden space-y-4">
+              {items.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground text-sm border rounded-lg bg-card/50">
+                  No promotions created yet. Add one below!
+                </div>
+              ) : (
+                items.map((item, idx) => (
+                  <div key={item.id} className={`p-4 rounded-xl border bg-card/50 space-y-3 shadow-sm ${editingId === item.id ? "border-primary/50 bg-primary/5" : ""}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] uppercase font-semibold text-muted-foreground">Order:</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMove(idx, "up")}
+                          disabled={idx === 0}
+                          className="h-7 w-7 p-0 cursor-pointer bg-background"
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMove(idx, "down")}
+                          disabled={idx === items.length - 1}
+                          className="h-7 w-7 p-0 cursor-pointer bg-background"
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      
+                      <button
+                        onClick={() => handleToggleActive(item.id)}
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer border transition-colors ${
+                          item.isActive
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/30"
+                            : "bg-muted text-muted-foreground border-transparent"
+                        }`}
+                      >
+                        {item.isActive ? "Active" : "Inactive"}
+                      </button>
+                    </div>
+ 
+                    <div className="space-y-1 pt-2 border-t">
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground block">Promotion Text</span>
+                      <p className="text-sm font-medium leading-relaxed break-words text-foreground">
+                        {item.text}
+                      </p>
+                    </div>
+ 
+                    {item.link && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">Link URL</span>
+                        <div>
+                          <span className="text-xs font-mono bg-secondary px-2 py-1 rounded text-secondary-foreground break-all inline-block">
+                            {item.link}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+ 
+                    <div className="flex justify-end gap-2 pt-2 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStartEdit(item)}
+                        className="flex items-center gap-1.5 h-8 py-1 px-3 hover:bg-secondary cursor-pointer bg-background"
+                      >
+                        <Edit className="h-3.5 w-3.5" /> Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(item.id)}
+                        className="flex items-center gap-1.5 h-8 py-1 px-3 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer bg-background"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>

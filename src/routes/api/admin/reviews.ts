@@ -46,6 +46,15 @@ async function assertAdmin(request: Request, context: any) {
   }
 }
 
+function getStoragePathFromUrl(url: string, bucketName: string = "product-images"): string | null {
+  if (!url) return null;
+  const marker = `/${bucketName}/`;
+  const index = url.indexOf(marker);
+  if (index === -1) return null;
+  const pathWithQuery = url.substring(index + marker.length);
+  return pathWithQuery.split("?")[0];
+}
+
 export const Route = createFileRoute("/api/admin/reviews")({
   server: {
     middlewares: [requireSupabaseAuth],
@@ -60,6 +69,14 @@ export const Route = createFileRoute("/api/admin/reviews")({
             .order("created_at", { ascending: false });
 
           if (error) throw new Error(error.message);
+
+          // Write reviews log for debugging
+          try {
+            const fs = await import("fs");
+            fs.writeFileSync("C:/Users/hp/OneDrive/Desktop/Sabara-Test-new/reviews-debug.log", JSON.stringify(reviews, null, 2));
+          } catch (logErr) {
+            console.error("Failed to write reviews-debug.log:", logErr);
+          }
 
           const dbProducts = await getOrSeedProducts(supabaseAdmin, false, true);
           const productsMap = new Map(dbProducts.map((p) => [p.id, p]));
@@ -110,26 +127,92 @@ export const Route = createFileRoute("/api/admin/reviews")({
         }
       },
       DELETE: async ({ request, context }) => {
+        const url = new URL(request.url);
+        const id = url.searchParams.get("id");
+        let logMsg = `[${new Date().toISOString()}] Deleting review ID: ${id}\n`;
+
         try {
           await assertAdmin(request, context);
-          const url = new URL(request.url);
-          const id = url.searchParams.get("id");
 
           if (!id) {
             return Response.json({ success: false, error: "Missing review ID" }, { status: 400 });
           }
 
-          const { error } = await supabaseAdmin
+          // Fetch the review's images before deleting it
+          const { data: review, error: fetchErr } = await supabaseAdmin
+            .from("product_reviews")
+            .select("images")
+            .eq("id", id)
+            .single();
+
+          logMsg += `Fetch review result: ${JSON.stringify(review)}\n`;
+          if (fetchErr) {
+            logMsg += `Fetch review error: ${JSON.stringify(fetchErr)}\n`;
+            throw new Error(`Fetch review error: ${fetchErr.message}`);
+          }
+
+          let storageResults = null;
+          let pathsToDelete: string[] = [];
+
+          // Delete image files from storage bucket if they exist
+          if (review && review.images && review.images.length > 0) {
+            review.images.forEach((imgUrl: string) => {
+              const path = getStoragePathFromUrl(imgUrl, "product-images");
+              if (path) {
+                pathsToDelete.push(path);
+              }
+            });
+            logMsg += `Parsed storage paths to delete: ${JSON.stringify(pathsToDelete)}\n`;
+
+            if (pathsToDelete.length > 0) {
+              const { data: storageData, error: storageErr } = await supabaseAdmin.storage
+                .from("product-images")
+                .remove(pathsToDelete);
+              
+              if (storageErr) {
+                logMsg += `Storage remove error: ${JSON.stringify(storageErr)}\n`;
+                throw new Error(`Storage remove error: ${storageErr.message}`);
+              } else {
+                logMsg += `Storage remove success: ${JSON.stringify(storageData)}\n`;
+                storageResults = { success: true, deleted: storageData };
+              }
+            }
+          } else {
+            logMsg += `No images found to delete for this review.\n`;
+          }
+
+          // Delete review from database
+          const { error: dbErr } = await supabaseAdmin
             .from("product_reviews")
             .delete()
             .eq("id", id);
 
-          if (error) throw new Error(error.message);
+          if (dbErr) {
+            logMsg += `Database delete error: ${JSON.stringify(dbErr)}\n`;
+            throw new Error(dbErr.message);
+          } else {
+            logMsg += `Database delete success.\n`;
+          }
 
           clearProductsCache();
 
-          return Response.json({ success: true });
+          // Write log to file
+          try {
+            const fs = await import("fs");
+            fs.appendFileSync("C:/Users/hp/OneDrive/Desktop/Sabara-Test-new/delete-reviews.log", logMsg + "\n");
+          } catch (logErr) {
+            console.error("Failed to write log file:", logErr);
+          }
+
+          return Response.json({ success: true, storageResults });
         } catch (err: any) {
+          logMsg += `Handler caught error: ${err.message}\n`;
+          try {
+            const fs = await import("fs");
+            fs.appendFileSync("C:/Users/hp/OneDrive/Desktop/Sabara-Test-new/delete-reviews.log", logMsg + "\n");
+          } catch (logErr) {
+            console.error("Failed to write error log file:", logErr);
+          }
           console.error("[api/admin/reviews DELETE error]", err);
           return Response.json({ success: false, error: err.message }, { status: 500 });
         }
