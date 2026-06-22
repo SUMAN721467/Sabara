@@ -18,6 +18,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { AnnouncementBar } from "@/components/site/AnnouncementBar";
+import { FaqChatBot } from "@/components/site/FaqChatBot";
 
 function NotFoundComponent() {
   return (
@@ -178,6 +179,7 @@ function RootComponent() {
               <Footer />
             </div>
             <Toaster richColors position="top-right" />
+            <FaqChatBot />
           </WishlistProvider>
         </CartProvider>
       </AuthProvider>

@@ -200,6 +200,7 @@ function AdminPage() {
             <TabsTrigger value="hero">Homepage Settings</TabsTrigger>
             <TabsTrigger value="promotions">Promotions</TabsTrigger>
             <TabsTrigger value="shipping">Shipping</TabsTrigger>
+            <TabsTrigger value="faqs">FAQs</TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="products">
@@ -225,6 +226,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="shipping">
           <ShippingAdmin />
+        </TabsContent>
+        <TabsContent value="faqs">
+          <FaqsAdmin />
         </TabsContent>
       </Tabs>
     </div>
@@ -4354,4 +4358,329 @@ function ReviewsAdmin({ initialReviews, onRefresh }: { initialReviews: any[]; on
     </div>
   );
 }
+
+function FaqsAdmin() {
+  const [faqs, setFaqs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editingFaq, setEditingFaq] = useState<any | null>(null);
+
+  // Add form fields
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+
+  // Edit form fields
+  const [editQuestion, setEditQuestion] = useState("");
+  const [editAnswer, setEditAnswer] = useState("");
+
+  const fetchFaqs = async () => {
+    try {
+      const res = await fetch("/api/site-settings?key=faqs");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.value?.faqs) {
+          setFaqs(json.value.faqs);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to load FAQs");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFaqs();
+  }, []);
+
+  const saveFaqs = async (updatedList: any[]) => {
+    setSaving(true);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/admin/site-settings", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          key: "faqs",
+          value: { faqs: updatedList }
+        })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Failed to update FAQs settings");
+      }
+      setFaqs(updatedList);
+      toast.success("FAQs updated successfully!");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "Failed to save FAQs");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddFaq = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = question.trim();
+    const a = answer.trim();
+
+    if (!q || !a) {
+      toast.error("Both question and answer are required");
+      return;
+    }
+
+    const newFaq = {
+      id: `faq_${Date.now()}`,
+      question: q,
+      answer: a
+    };
+    const updatedList = [...faqs, newFaq];
+    await saveFaqs(updatedList);
+
+    setQuestion("");
+    setAnswer("");
+  };
+
+  const handleStartEdit = (faq: any) => {
+    setEditingFaq(faq);
+    setEditQuestion(faq.question);
+    setEditAnswer(faq.answer);
+  };
+
+  const handleUpdateFaq = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingFaq) return;
+
+    const q = editQuestion.trim();
+    const a = editAnswer.trim();
+
+    if (!q || !a) {
+      toast.error("Both question and answer are required");
+      return;
+    }
+
+    const updatedList = faqs.map((f) =>
+      f.id === editingFaq.id ? { ...f, question: q, answer: a } : f
+    );
+    await saveFaqs(updatedList);
+    setEditingFaq(null);
+  };
+
+  const handleDeleteFaq = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this FAQ?")) return;
+    const updatedList = faqs.filter((f) => f.id !== id);
+    await saveFaqs(updatedList);
+    if (editingFaq?.id === id) {
+      setEditingFaq(null);
+    }
+  };
+
+  const handleMoveFaq = async (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= faqs.length) return;
+
+    const updatedList = [...faqs];
+    const temp = updatedList[index];
+    updatedList[index] = updatedList[targetIndex];
+    updatedList[targetIndex] = temp;
+    await saveFaqs(updatedList);
+  };
+
+  const handleInitializeDefaultFaqs = async () => {
+    if (faqs.length > 0 && !confirm("This will overwrite your current FAQs. Continue?")) return;
+    const defaultFaqsList = [
+      {
+        id: "1",
+        question: "What materials do you use for your mats?",
+        answer: "We use 100% natural and sustainable fibres, including river grass, water hyacinth, jute, and coir, sourced locally from traditional weavers."
+      },
+      {
+        id: "2",
+        question: "How long does shipping take?",
+        answer: "Standard shipping takes 3-7 business days across India. You will receive a tracking link via email as soon as your order ships."
+      },
+      {
+        id: "3",
+        question: "What is your return/refund policy?",
+        answer: "We offer a 7-day return policy for unused items in original packaging. If you receive a damaged product, please contact us within 48 hours."
+      },
+      {
+        id: "4",
+        question: "Can I customize the size of a mat?",
+        answer: "Currently, we only offer the standard sizes listed in our shop. For bulk inquiries or special event requests, please drop us an email at contact.sabara@gmail.com."
+      },
+      {
+        id: "5",
+        question: "Are your mats anti-slip?",
+        answer: "Yes, our mats have natural grip, and some collections feature a natural rubber backing for extra anti-slip protection."
+      }
+    ];
+    await saveFaqs(defaultFaqsList);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-10">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border bg-card p-6 shadow-sm space-y-8 animate-page-enter">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h2 className="text-xl font-medium">Manage FAQs</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Configure questions and answers displayed in the floating chat assistant.
+          </p>
+        </div>
+        {faqs.length === 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleInitializeDefaultFaqs}
+            className="h-9 text-xs cursor-pointer border-dashed hover:border-primary"
+            disabled={saving}
+          >
+            Initialize with Default FAQs
+          </Button>
+        )}
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-12">
+        {/* Left Side: Add or Edit FAQ form */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="rounded-xl border bg-muted/20 p-5">
+            <h3 className="font-serif text-lg text-foreground mb-4">
+              {editingFaq ? "Edit FAQ Item" : "Add FAQ Item"}
+            </h3>
+            
+            <form onSubmit={editingFaq ? handleUpdateFaq : handleAddFaq} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="faq-question">Question</Label>
+                <Input
+                  id="faq-question"
+                  placeholder="e.g., How do I clean my mat?"
+                  value={editingFaq ? editQuestion : question}
+                  onChange={(e) => editingFaq ? setEditQuestion(e.target.value) : setQuestion(e.target.value)}
+                  className="bg-background text-sm"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="faq-answer">Answer</Label>
+                <Textarea
+                  id="faq-answer"
+                  placeholder="e.g., Vacuum lightly or shake out dry dirt. Wipe with a damp cloth if necessary..."
+                  value={editingFaq ? editAnswer : answer}
+                  onChange={(e) => editingFaq ? setEditAnswer(e.target.value) : setAnswer(e.target.value)}
+                  className="bg-background text-sm min-h-[120px] resize-y"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                {editingFaq && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-1/2 rounded-full cursor-pointer h-9 text-xs"
+                    onClick={() => setEditingFaq(null)}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className={`rounded-full cursor-pointer h-9 text-xs ${
+                    editingFaq ? "w-1/2" : "w-full"
+                  } bg-primary text-primary-foreground hover:bg-primary/95`}
+                >
+                  {saving ? "Saving..." : editingFaq ? "Save Changes" : "Add FAQ"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Right Side: FAQs List */}
+        <div className="lg:col-span-7 space-y-4">
+          <h3 className="font-serif text-lg text-foreground">FAQ List ({faqs.length})</h3>
+
+          {faqs.length === 0 ? (
+            <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+              No FAQ items added yet. Use the form on the left or initialize default FAQs to get started.
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+              {faqs.map((faq, index) => (
+                <div
+                  key={faq.id}
+                  className={`rounded-xl border p-4 bg-background/50 hover:bg-background/80 transition-colors flex justify-between gap-4 items-start ${
+                    editingFaq?.id === faq.id ? "ring-2 ring-primary border-transparent" : ""
+                  }`}
+                >
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="font-semibold text-sm text-foreground flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground font-mono">#{index + 1}</span>
+                      <span className="truncate">{faq.question}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {faq.answer}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-1 shrink-0 items-center">
+                    <button
+                      type="button"
+                      disabled={index === 0 || saving}
+                      onClick={() => handleMoveFaq(index, "up")}
+                      className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      title="Move Up"
+                    >
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={index === faqs.length - 1 || saving}
+                      onClick={() => handleMoveFaq(index, "down")}
+                      className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      title="Move Down"
+                    >
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => handleStartEdit(faq)}
+                      className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title="Edit FAQ"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => handleDeleteFaq(faq.id)}
+                      className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive transition-colors cursor-pointer"
+                      title="Delete FAQ"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
