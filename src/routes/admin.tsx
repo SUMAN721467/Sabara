@@ -4529,7 +4529,7 @@ function FaqsAdmin() {
   }
 
   return (
-    <div className="rounded-xl border bg-card p-6 shadow-sm space-y-8 animate-page-enter">
+    <div className="rounded-xl border bg-card p-4 sm:p-6 shadow-sm space-y-8 animate-page-enter">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-medium">Manage FAQs</h2>
@@ -4553,7 +4553,7 @@ function FaqsAdmin() {
       <div className="grid gap-8 lg:grid-cols-12">
         {/* Left Side: Add or Edit FAQ form */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="rounded-xl border bg-muted/20 p-5">
+          <div className="rounded-xl border bg-muted/20 p-4 sm:p-5">
             <h3 className="font-serif text-lg text-foreground mb-4">
               {editingFaq ? "Edit FAQ Item" : "Add FAQ Item"}
             </h3>
@@ -4621,21 +4621,21 @@ function FaqsAdmin() {
               {faqs.map((faq, index) => (
                 <div
                   key={faq.id}
-                  className={`rounded-xl border p-4 bg-background/50 hover:bg-background/80 transition-colors flex justify-between gap-4 items-start ${
+                  className={`rounded-xl border p-4 bg-background/50 hover:bg-background/80 transition-colors flex flex-col sm:flex-row justify-between gap-4 items-start ${
                     editingFaq?.id === faq.id ? "ring-2 ring-primary border-transparent" : ""
                   }`}
                 >
-                  <div className="space-y-1.5 flex-1 min-w-0">
-                    <div className="font-semibold text-sm text-foreground flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground font-mono">#{index + 1}</span>
-                      <span className="truncate">{faq.question}</span>
+                  <div className="space-y-1.5 flex-1 min-w-0 w-full">
+                    <div className="font-semibold text-sm text-foreground flex items-start gap-2">
+                      <span className="text-xs text-muted-foreground font-mono mt-0.5">#{index + 1}</span>
+                      <span className="break-words whitespace-normal">{faq.question}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
                       {faq.answer}
                     </p>
                   </div>
 
-                  <div className="flex gap-1 shrink-0 items-center">
+                  <div className="flex gap-1 shrink-0 items-center w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-border/40">
                     <button
                       type="button"
                       disabled={index === 0 || saving}

@@ -238,8 +238,8 @@ function ProductPage() {
 
   const handleShare = async () => {
     const shareData = {
-      title: product.name,
-      text: product.story || `Check out ${product.name} on Sabara!`,
+      title: product.name.split(" - ")[0],
+      text: product.name.split(" - ")[0],
       url: window.location.href,
     };
 
