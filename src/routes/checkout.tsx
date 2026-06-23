@@ -494,7 +494,7 @@ function CheckoutPage() {
           </div>
           <div>
             <span className="text-xs uppercase tracking-wider text-muted-foreground block">Estimated Total</span>
-            <span className="font-serif text-lg text-primary">{formatPrice(orderSuccess.total)}</span>
+            <span className="text-lg text-primary font-bold">{formatPrice(orderSuccess.total)}</span>
           </div>
         </div>
         <div className="flex flex-col gap-3">
@@ -1063,7 +1063,7 @@ function CheckoutPage() {
 
                 <div className="mt-4 flex justify-between border-t border-[#f0f0f0] pt-4 text-sm sm:text-base mb-6 font-bold">
                   <span className="text-foreground text-[14px] sm:text-[16px]">Total Amount</span>
-                  <span className="text-[16px] sm:text-[18px] text-foreground font-serif">
+                  <span className="text-[16px] sm:text-[18px] text-foreground">
                     {formatPrice(totalAmount)}
                   </span>
                 </div>
@@ -1100,7 +1100,7 @@ function CheckoutPage() {
               {checkoutStep === 2 && (
                 <div className="bg-white border border-[#e0e0e0] rounded-lg p-3 sm:p-4 flex items-center justify-between shadow-sm sticky bottom-4 z-20 w-full">
                   <div className="flex items-center gap-1">
-                    <span className="text-lg sm:text-xl font-bold text-foreground font-serif">{formatPrice(totalAmount)}</span>
+                    <span className="text-lg sm:text-xl font-bold text-foreground">{formatPrice(totalAmount)}</span>
                     <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageCircle, X, HelpCircle, Bot, User, Sparkles, RefreshCw } from "lucide-react";
+import { MessageCircle, X, HelpCircle, User, Sparkles, RefreshCw } from "lucide-react";
+import roundLogo from "@/assets/round logo.png";
 
 interface FAQItem {
   id: string;
@@ -129,15 +130,15 @@ export function FaqChatBot() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[999] flex flex-col items-end">
+    <div className="fixed bottom-20 right-6 z-[999] flex flex-col items-end">
       {/* Chat Window */}
       {isOpen && (
         <div className="mb-4 flex h-[500px] w-[350px] sm:w-[380px] flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden transition-all duration-300 transform scale-100 origin-bottom-right">
           {/* Header */}
           <div className="flex items-center justify-between bg-primary px-4 py-3.5 text-primary-foreground">
             <div className="flex items-center gap-2.5">
-              <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/15 text-primary-foreground">
-                <Bot className="h-5 w-5" />
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-full overflow-hidden border border-primary-foreground/20 bg-primary-foreground/15">
+                <img src={roundLogo} alt="Logo" className="h-full w-full object-cover" />
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-primary" />
               </div>
               <div>
@@ -173,8 +174,8 @@ export function FaqChatBot() {
                 }`}
               >
                 {msg.sender === "bot" && (
-                  <div className="flex h-7 w-7 shrink-0 select-none items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-                    <Bot className="h-4 w-4" />
+                  <div className="flex h-7 w-7 shrink-0 select-none items-center justify-center rounded-full overflow-hidden border border-border/30 bg-secondary text-secondary-foreground">
+                    <img src={roundLogo} alt="Logo" className="h-full w-full object-cover" />
                   </div>
                 )}
                 <div
@@ -197,8 +198,8 @@ export function FaqChatBot() {
             {/* Typing Indicator */}
             {isTyping && (
               <div className="flex w-full items-start gap-2.5 justify-start">
-                <div className="flex h-7 w-7 shrink-0 select-none items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-                  <Bot className="h-4 w-4" />
+                <div className="flex h-7 w-7 shrink-0 select-none items-center justify-center rounded-full overflow-hidden border border-border/30 bg-secondary text-secondary-foreground">
+                  <img src={roundLogo} alt="Logo" className="h-full w-full object-cover" />
                 </div>
                 <div className="bg-secondary/60 text-secondary-foreground rounded-2xl rounded-tl-none px-3.5 py-2.5 border border-border/30">
                   <div className="flex gap-1 items-center h-3">
@@ -263,7 +264,14 @@ export function FaqChatBot() {
           <X className="h-6 w-6 transition-transform duration-300 rotate-90" />
         ) : (
           <>
-            <MessageCircle className="h-6 w-6 transition-transform duration-300 group-hover:scale-110" />
+            {/* Logo container inside the speech bubble */}
+            <div className="h-10 w-10 rounded-full overflow-hidden border border-primary-foreground/10 bg-white flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+              <img src={roundLogo} alt="Sabara Support Logo" className="h-full w-full object-cover" />
+            </div>
+            {/* Speech bubble tail */}
+            <span className="absolute bottom-[-6px] left-[10px] w-0 h-0 border-r-[14px] border-r-transparent border-t-[14px] border-t-primary" />
+            
+            {/* Notification Dot */}
             <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 border border-primary-foreground">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             </span>

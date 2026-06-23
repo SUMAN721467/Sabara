@@ -396,7 +396,7 @@ function CartPage() {
 
               <div className="mt-4 flex justify-between border-t border-[#f0f0f0] pt-4 text-sm sm:text-base mb-6 font-bold">
                 <span className="text-foreground text-[14px] sm:text-[16px]">Total Amount</span>
-                <span className="text-[16px] sm:text-[18px] text-foreground font-serif">
+                <span className="text-[16px] sm:text-[18px] text-foreground">
                   {formatPrice(totalAmount)}
                 </span>
               </div>

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ArrowLeft, Minus, Plus, Heart, Star, MessageSquare, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Heart, Star, MessageSquare, X, Loader2, Share2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { formatPrice, useCart } from "@/lib/cart";
@@ -236,6 +236,33 @@ function ProductPage() {
   const isOutOfStock = maxStock <= 0;
   const [qty, setQty] = useState(1);
 
+  const handleShare = async () => {
+    const shareData = {
+      title: product.name,
+      text: product.story || `Check out ${product.name} on Sabara!`,
+      url: window.location.href,
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+        toast.success("Shared successfully!");
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.error("Error sharing:", err);
+          fallbackCopy();
+        }
+      }
+    } else {
+      fallbackCopy();
+    }
+  };
+
+  const fallbackCopy = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Product link copied to clipboard!");
+  };
+
   // Reviews states
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -469,6 +496,13 @@ function ProductPage() {
               aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
             >
               <Heart className={cn("h-5 w-5", isWishlisted && "fill-current")} />
+            </button>
+            <button
+              onClick={handleShare}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-all active:scale-90 cursor-pointer"
+              aria-label="Share product"
+            >
+              <Share2 className="h-5 w-5" />
             </button>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">Free shipping on all orders</p>
