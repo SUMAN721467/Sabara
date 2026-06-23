@@ -2989,6 +2989,12 @@ function HomepageAdmin() {
     title: "",
     subtitle: "",
     imageUrl: "",
+    mobileImageUrl: "",
+    slides: [
+      { imageUrl: "", mobileImageUrl: "" },
+      { imageUrl: "", mobileImageUrl: "" },
+      { imageUrl: "", mobileImageUrl: "" }
+    ],
     ...heroSettings
   });
   const [homepageForm, setHomepageForm] = useState({
@@ -3007,12 +3013,19 @@ function HomepageAdmin() {
 
   useEffect(() => {
     if (heroLoaded && heroSettings) {
+      const loadedSlides = heroSettings.slides || [];
+      const slides = [
+        { imageUrl: loadedSlides[0]?.imageUrl || heroSettings.imageUrl || "", mobileImageUrl: loadedSlides[0]?.mobileImageUrl || heroSettings.mobileImageUrl || "" },
+        { imageUrl: loadedSlides[1]?.imageUrl || "", mobileImageUrl: loadedSlides[1]?.mobileImageUrl || "" },
+        { imageUrl: loadedSlides[2]?.imageUrl || "", mobileImageUrl: loadedSlides[2]?.mobileImageUrl || "" }
+      ];
       setHeroForm({
-        badge: "",
-        title: "",
-        subtitle: "",
-        imageUrl: "",
-        ...heroSettings
+        badge: heroSettings.badge || "",
+        title: heroSettings.title || "",
+        subtitle: heroSettings.subtitle || "",
+        imageUrl: heroSettings.imageUrl || "",
+        mobileImageUrl: heroSettings.mobileImageUrl || "",
+        slides,
       });
     }
   }, [heroLoaded, heroSettings]);
@@ -3036,9 +3049,12 @@ function HomepageAdmin() {
   }, [homepageLoaded, homepageSettings]);
 
   const heroFileRef = useRef<HTMLInputElement>(null);
+  const heroMobileFileRef = useRef<HTMLInputElement>(null);
   const craftFileRef = useRef<HTMLInputElement>(null);
   const [uploadingHero, setUploadingHero] = useState(false);
+  const [uploadingHeroMobile, setUploadingHeroMobile] = useState(false);
   const [uploadingCraft, setUploadingCraft] = useState(false);
+  const [uploadingSlide, setUploadingSlide] = useState<{ index: number; type: 'desktop' | 'mobile' } | null>(null);
 
   const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -3052,6 +3068,53 @@ function HomepageAdmin() {
       toast.error(err.message || "Hero image upload failed");
     } finally {
       setUploadingHero(false);
+    }
+  };
+
+  const handleHeroMobileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingHeroMobile(true);
+    try {
+      const url = await uploadImage(file);
+      setHeroForm((prev) => ({ ...prev, mobileImageUrl: url }));
+      toast.success("Mobile hero image uploaded successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Mobile hero image upload failed");
+    } finally {
+      setUploadingHeroMobile(false);
+    }
+  };
+
+  const handleSlideImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, slideIndex: number, type: 'desktop' | 'mobile') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingSlide({ index: slideIndex, type });
+    try {
+      const url = await uploadImage(file);
+      
+      const newSlides = [...(heroForm.slides || [])];
+      if (!newSlides[slideIndex]) {
+        newSlides[slideIndex] = { imageUrl: "", mobileImageUrl: "" };
+      }
+      newSlides[slideIndex] = {
+        ...newSlides[slideIndex],
+        [type === 'desktop' ? 'imageUrl' : 'mobileImageUrl']: url
+      };
+      
+      setHeroForm((prev) => ({
+        ...prev,
+        slides: newSlides,
+        // If it is Slide 1, update legacy fields for compatibility
+        ...(slideIndex === 0 ? {
+          [type === 'desktop' ? 'imageUrl' : 'mobileImageUrl']: url
+        } : {})
+      }));
+      toast.success(`${type === 'desktop' ? 'Desktop' : 'Mobile'} slide ${slideIndex + 1} image uploaded successfully`);
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploadingSlide(null);
     }
   };
 
@@ -3126,61 +3189,125 @@ function HomepageAdmin() {
             1. Hero Section
           </AccordionTrigger>
           <AccordionContent className="pt-4 pb-6 space-y-4">
-            <form onSubmit={handleSaveHero} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="hero-badge">Badge Text</Label>
-                <Input
-                  id="hero-badge"
-                  value={heroForm.badge}
-                  onChange={(e) => setHeroForm({ ...heroForm, badge: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hero-title">Main Title</Label>
-                <Textarea
-                  id="hero-title"
-                  value={heroForm.title}
-                  onChange={(e) => setHeroForm({ ...heroForm, title: e.target.value })}
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hero-subtitle">Subtitle / Description</Label>
-                <Textarea
-                  id="hero-subtitle"
-                  value={heroForm.subtitle}
-                  onChange={(e) => setHeroForm({ ...heroForm, subtitle: e.target.value })}
-                  rows={4}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Background Image</Label>
-                <div className="flex items-start gap-4">
-                  {heroForm.imageUrl ? (
-                    <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-xl border bg-secondary/30">
-                      <img src={heroForm.imageUrl} alt="Hero preview" className="h-full w-full object-cover" />
-                      <button type="button" onClick={() => setHeroForm((prev) => ({ ...prev, imageUrl: "" }))}
-                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
-                        <X className="h-3 w-3" />
-                      </button>
+            <form onSubmit={handleSaveHero} className="space-y-6">
+              <div className="space-y-6">
+                {Array.from({ length: 3 }).map((_, idx) => {
+                  const slide = heroForm.slides?.[idx] || { imageUrl: "", mobileImageUrl: "" };
+                  const isUploadingDesktop = uploadingSlide?.index === idx && uploadingSlide?.type === 'desktop';
+                  const isUploadingMobile = uploadingSlide?.index === idx && uploadingSlide?.type === 'mobile';
+
+                  return (
+                    <div key={idx} className="p-5 border border-border/80 rounded-2xl bg-secondary/15 space-y-4">
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <h4 className="font-serif text-base font-semibold text-foreground uppercase tracking-wide">
+                          Banner Slide {idx + 1}
+                        </h4>
+                        <span className="text-xs text-muted-foreground">Clickable banner leading to /shop</span>
+                      </div>
+
+                      <div className="grid gap-6 md:grid-cols-2">
+                        {/* Laptop Image (Desktop) */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Laptop Image (Landscape - e.g. 1600 x 650)
+                          </Label>
+                          <div className="flex items-start gap-4">
+                            {slide.imageUrl ? (
+                              <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border bg-secondary/30 shadow-sm">
+                                <img src={slide.imageUrl} alt={`Slide ${idx + 1} laptop preview`} className="h-full w-full object-cover" />
+                                <button type="button" onClick={() => {
+                                  const newSlides = [...(heroForm.slides || [])];
+                                  newSlides[idx] = { ...newSlides[idx], imageUrl: "" };
+                                  setHeroForm((prev) => ({
+                                    ...prev,
+                                    slides: newSlides,
+                                    ...(idx === 0 ? { imageUrl: "" } : {})
+                                  }));
+                                }}
+                                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md cursor-pointer hover:bg-destructive/90">
+                                  <X className="h-2.5 w-2.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button type="button" onClick={() => document.getElementById(`slide-upload-${idx}-desktop`)?.click()}
+                                disabled={uploadingSlide !== null}
+                                className="flex h-28 w-28 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-background cursor-pointer hover:scale-105 active:scale-95 shadow-sm">
+                                {isUploadingDesktop ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+                                <span className="text-[10px] font-medium">Upload Desktop</span>
+                              </button>
+                            )}
+                            <input id={`slide-upload-${idx}-desktop`} type="file" accept="image/*" className="hidden"
+                              onChange={(e) => handleSlideImageUpload(e, idx, 'desktop')} />
+                            <div className="flex-1 text-xs text-muted-foreground pt-1">
+                              <p className="text-[10px]">Upload banner file or paste a URL below:</p>
+                              <Input className="mt-2 text-xs h-8" placeholder="https://…" value={slide.imageUrl || ""}
+                                onChange={(e) => {
+                                  const newSlides = [...(heroForm.slides || [])];
+                                  newSlides[idx] = { ...newSlides[idx], imageUrl: e.target.value };
+                                  setHeroForm((prev) => ({
+                                    ...prev,
+                                    slides: newSlides,
+                                    ...(idx === 0 ? { imageUrl: e.target.value } : {})
+                                  }));
+                                }} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Mobile Image (Portrait) */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Mobile Image (Portrait - e.g. 414 x 650)
+                          </Label>
+                          <div className="flex items-start gap-4">
+                            {slide.mobileImageUrl ? (
+                              <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border bg-secondary/30 shadow-sm">
+                                <img src={slide.mobileImageUrl} alt={`Slide ${idx + 1} mobile preview`} className="h-full w-full object-cover" />
+                                <button type="button" onClick={() => {
+                                  const newSlides = [...(heroForm.slides || [])];
+                                  newSlides[idx] = { ...newSlides[idx], mobileImageUrl: "" };
+                                  setHeroForm((prev) => ({
+                                    ...prev,
+                                    slides: newSlides,
+                                    ...(idx === 0 ? { mobileImageUrl: "" } : {})
+                                  }));
+                                }}
+                                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md cursor-pointer hover:bg-destructive/90">
+                                  <X className="h-2.5 w-2.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button type="button" onClick={() => document.getElementById(`slide-upload-${idx}-mobile`)?.click()}
+                                disabled={uploadingSlide !== null}
+                                className="flex h-28 w-28 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-background cursor-pointer hover:scale-105 active:scale-95 shadow-sm">
+                                {isUploadingMobile ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+                                <span className="text-[10px] font-medium">Upload Mobile</span>
+                              </button>
+                            )}
+                            <input id={`slide-upload-${idx}-mobile`} type="file" accept="image/*" className="hidden"
+                              onChange={(e) => handleSlideImageUpload(e, idx, 'mobile')} />
+                            <div className="flex-1 text-xs text-muted-foreground pt-1">
+                              <p className="text-[10px]">Upload mobile banner or paste a URL below:</p>
+                              <Input className="mt-2 text-xs h-8" placeholder="https://…" value={slide.mobileImageUrl || ""}
+                                onChange={(e) => {
+                                  const newSlides = [...(heroForm.slides || [])];
+                                  newSlides[idx] = { ...newSlides[idx], mobileImageUrl: e.target.value };
+                                  setHeroForm((prev) => ({
+                                    ...prev,
+                                    slides: newSlides,
+                                    ...(idx === 0 ? { mobileImageUrl: e.target.value } : {})
+                                  }));
+                                }} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  ) : (
-                    <button type="button" onClick={() => heroFileRef.current?.click()}
-                      disabled={uploadingHero}
-                      className="flex h-32 w-32 shrink-0 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors bg-background">
-                      {uploadingHero ? <Loader2 className="h-6 w-6 animate-spin" /> : <Upload className="h-6 w-6" />}
-                      <span className="text-xs">Upload</span>
-                    </button>
-                  )}
-                  <input ref={heroFileRef} type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} />
-                  <div className="flex-1 text-xs text-muted-foreground pt-1">
-                    <p>Upload from your computer or paste an external URL below:</p>
-                    <Input className="mt-2" placeholder="https://…" value={heroForm.imageUrl}
-                      onChange={(e) => setHeroForm((prev) => ({ ...prev, imageUrl: e.target.value }))} />
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-              <Button type="submit" className="w-full">Save Hero Changes</Button>
+
+              <Button type="submit" className="w-full">Save Hero Carousel Changes</Button>
             </form>
           </AccordionContent>
         </AccordionItem>

@@ -8,6 +8,7 @@ export type HeroSettings = {
   subtitle: string;
   badge: string;
   imageUrl: string;
+  mobileImageUrl?: string;
 };
 
 const defaultSettings: HeroSettings = {
@@ -15,6 +16,7 @@ const defaultSettings: HeroSettings = {
   subtitle: "A collection of natural-fibre floor mats, yoga mats, doormats and table linens - each piece worked on a wooden loom by a single pair of hands.",
   badge: "Small batch · Handwoven",
   imageUrl: heroImg,
+  mobileImageUrl: heroImg,
 };
 
 export function useHeroSettings() {

@@ -133,7 +133,7 @@ export function FaqChatBot() {
     <div className="fixed bottom-20 right-6 z-[999] flex flex-col items-end">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-4 flex h-[500px] w-[350px] sm:w-[380px] flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden transition-all duration-300 transform scale-100 origin-bottom-right">
+        <div className="mb-4 flex h-[500px] sm:h-[530px] max-h-[calc(100vh-180px)] w-[350px] sm:w-[385px] flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden transition-all duration-300 transform scale-100 origin-bottom-right">
           {/* Header */}
           <div className="flex items-center justify-between bg-primary px-4 py-3.5 text-primary-foreground">
             <div className="flex items-center gap-2.5">
@@ -215,7 +215,7 @@ export function FaqChatBot() {
           </div>
 
           {/* Quick Reply Questions Area */}
-          <div className="border-t bg-card px-4 py-3 space-y-2 max-h-[160px] overflow-y-auto">
+          <div className="border-t bg-card px-4 py-3 space-y-2 max-h-[140px] overflow-y-auto">
             <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1">
               <Sparkles className="h-3 w-3 text-primary" /> Select a question to ask:
             </div>
