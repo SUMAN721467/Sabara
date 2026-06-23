@@ -4035,6 +4035,7 @@ function ReviewsAdmin({ initialReviews, onRefresh }: { initialReviews: any[]; on
   const [editingReview, setEditingReview] = useState<any | null>(null);
   const [editRating, setEditRating] = useState<number>(5);
   const [editComment, setEditComment] = useState("");
+  const [editAdminReply, setEditAdminReply] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [reviewToDelete, setReviewToDelete] = useState<any | null>(null);
@@ -4048,6 +4049,7 @@ function ReviewsAdmin({ initialReviews, onRefresh }: { initialReviews: any[]; on
     if (editingReview) {
       setEditRating(editingReview.rating || 5);
       setEditComment(editingReview.comment || "");
+      setEditAdminReply(editingReview.admin_reply || "");
     }
   }, [editingReview]);
 
@@ -4063,7 +4065,8 @@ function ReviewsAdmin({ initialReviews, onRefresh }: { initialReviews: any[]; on
         body: JSON.stringify({
           id: editingReview.id,
           rating: editRating,
-          comment: editComment
+          comment: editComment,
+          adminReply: editAdminReply
         })
       });
       const data = await res.json();
@@ -4296,9 +4299,20 @@ function ReviewsAdmin({ initialReviews, onRefresh }: { initialReviews: any[]; on
                 <Label htmlFor="edit-comment">Comment</Label>
                 <Textarea
                   id="edit-comment"
-                  rows={4}
+                  rows={3}
                   value={editComment}
                   onChange={(e) => setEditComment(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-admin-reply" className="font-semibold text-primary">Admin Reply</Label>
+                <Textarea
+                  id="edit-admin-reply"
+                  placeholder="Type your official admin response here..."
+                  rows={3}
+                  value={editAdminReply}
+                  onChange={(e) => setEditAdminReply(e.target.value)}
                 />
               </div>
 

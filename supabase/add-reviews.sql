@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS product_reviews (
   user_avatar TEXT,
   rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
   comment TEXT,
+  admin_reply TEXT,
   images TEXT[] DEFAULT '{}',
   order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()

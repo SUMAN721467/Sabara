@@ -749,6 +749,19 @@ function ProductPage() {
                             ))}
                           </div>
                         )}
+
+                        {/* Admin Reply Section */}
+                        {review.admin_reply && (
+                          <div className="mt-3 ml-4 p-3 bg-primary/5 border-l-2 border-primary rounded-r-xl space-y-1 text-left">
+                            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-primary">
+                              <span className="bg-primary/10 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold">Official Response</span>
+                              <span>Sabara Team</span>
+                            </div>
+                            <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap font-normal">
+                              {review.admin_reply}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

@@ -100,18 +100,20 @@ export const Route = createFileRoute("/api/admin/reviews")({
         try {
           await assertAdmin(request, context);
           const body = await request.json();
-          const { id, rating, comment } = body;
+          const { id, rating, comment, adminReply } = body;
 
-          if (!id || rating === undefined) {
-            return Response.json({ success: false, error: "Missing ID or rating" }, { status: 400 });
+          if (!id) {
+            return Response.json({ success: false, error: "Missing ID" }, { status: 400 });
           }
+
+          const updateData: any = {};
+          if (rating !== undefined) updateData.rating = Number(rating);
+          if (comment !== undefined) updateData.comment = comment ?? null;
+          if (adminReply !== undefined) updateData.admin_reply = adminReply ?? null;
 
           const { data, error } = await supabaseAdmin
             .from("product_reviews")
-            .update({
-              rating: Number(rating),
-              comment: comment ?? null,
-            })
+            .update(updateData)
             .eq("id", id)
             .select("*")
             .single();
