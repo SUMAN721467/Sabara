@@ -1285,6 +1285,12 @@ function AccountPage() {
                               </h3>
                               <p className="text-xs text-muted-foreground">Qty: {item.qty}</p>
                               <p className="text-xs text-primary font-semibold">Seller: Sabara</p>
+                              {order.sellerInstruction && (
+                                <div className="mt-2.5 p-3 rounded-lg border border-primary/20 bg-primary/5 text-xs text-foreground/90 text-left leading-relaxed max-w-md">
+                                  <span className="font-semibold block mb-1 text-primary">Message from Sabara:</span>
+                                  <span className="whitespace-pre-wrap">{order.sellerInstruction}</span>
+                                </div>
+                              )}
                               <p className="text-base font-serif font-bold text-foreground mt-2">
                                 {formatPrice(item.price)}
                               </p>
@@ -1720,21 +1726,6 @@ function AccountPage() {
                       );
                     })()}
 
-                    {/* Feedback cards like in Flipkart layout */}
-                    <div className="rounded-xl border border-border bg-card p-5 space-y-4 shadow-sm">
-                      <h4 className="font-serif text-sm font-semibold text-foreground">Rate your experience</h4>
-                      
-                      <div className="divide-y divide-border/40 text-xs">
-                        <div className="flex justify-between items-center py-2.5 hover:text-primary cursor-pointer transition-colors" onClick={() => navigate({ to: "/contact" })}>
-                          <span className="font-medium text-foreground/80">Did you find this page helpful?</span>
-                          <span className="text-muted-foreground font-semibold">&gt;</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2.5 hover:text-primary cursor-pointer transition-colors" onClick={() => navigate({ to: "/contact" })}>
-                          <span className="font-medium text-foreground/80">How was your delivery experience?</span>
-                          <span className="text-muted-foreground font-semibold">&gt;</span>
-                        </div>
-                      </div>
-                    </div>
 
                     {/* Footer Order Info with copy */}
                     <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex items-center justify-between text-xs text-muted-foreground">
