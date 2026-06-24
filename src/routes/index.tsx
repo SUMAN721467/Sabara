@@ -240,10 +240,6 @@ function Index() {
       icon: "Grid",
       title: "Heirloom Crafts",
     },
-    {
-      icon: "RotateCcw",
-      title: "Easy Returns",
-    },
   ];
 
   return (
@@ -305,18 +301,18 @@ function Index() {
       </section>
 
       {/* VALUES BAND */}
-      <section className="border-y border-border/60 bg-secondary/20 py-8">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid grid-cols-2 gap-y-6 gap-x-4 sm:flex sm:flex-wrap sm:justify-around sm:gap-x-6 md:grid md:grid-cols-5 md:gap-4">
+      <section className="border-y border-border/60 bg-secondary/20 py-3">
+        <div className="mx-auto max-w-2xl px-2 sm:px-6">
+          <div className="grid grid-cols-4 gap-x-1.5 sm:gap-x-4 justify-items-center">
             {values.map((v, i) => {
               const IconComponent = (LucideIcons as any)[v.icon] || LucideIcons.HelpCircle;
               return (
                 <ScrollReveal key={i} variant="fade-up" delay={i * 80} duration={500}>
                   <div className="flex flex-col items-center text-center group cursor-default">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-card text-primary transition-all duration-300 group-hover:scale-110 group-hover:border-primary group-hover:bg-primary/5 shadow-sm">
-                      <IconComponent className="h-6 w-6 transition-transform duration-500 group-hover:rotate-12 text-primary" />
+                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-border bg-card text-primary transition-all duration-300 group-hover:scale-110 group-hover:border-primary group-hover:bg-primary/5 shadow-sm">
+                      <IconComponent className="h-4.5 w-4.5 sm:h-5 sm:w-5 transition-transform duration-500 group-hover:rotate-12 text-primary" />
                     </div>
-                    <span className="mt-3 font-serif text-[11px] font-semibold tracking-wider text-foreground uppercase max-w-[120px] leading-tight transition-colors duration-300 group-hover:text-primary">
+                    <span className="mt-2 font-serif text-[8.5px] min-[375px]:text-[9.5px] sm:text-[10px] font-semibold tracking-wide sm:tracking-wider text-foreground uppercase max-w-[80px] sm:max-w-[120px] leading-tight transition-colors duration-300 group-hover:text-primary">
                       {v.title}
                     </span>
                   </div>
@@ -328,7 +324,7 @@ function Index() {
       </section>
 
       {/* COLLECTIONS GRID */}
-      <section className="bg-background py-16 border-b border-border/60">
+      <section className="bg-background pt-16 pb-10 border-b border-border/60">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <ScrollReveal variant="fade-up" duration={700}>
             <div className="text-center mb-12">
@@ -373,7 +369,7 @@ function Index() {
       </section>
 
       {/* FEATURED */}
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+      <section className="mx-auto max-w-6xl px-4 pt-10 pb-16 sm:px-6">
         <ScrollReveal variant="fade-up" duration={700}>
           <div className="flex items-end justify-between gap-4">
             <div>
