@@ -181,9 +181,10 @@ export type HomepageSettings = {
 
 export const defaultHomepageSettings: HomepageSettings = {
   valuesBand: [
-    { icon: "Hand", title: "Hand-made", text: "Woven by a single artisan on a wooden loom." },
-    { icon: "Leaf", title: "Natural fibres", text: "Jute, cotton, coir and seagrass. Nothing synthetic." },
-    { icon: "Package", title: "Plastic-free shipping", text: "Wrapped in cotton and recycled paper." },
+    { icon: "Heart", title: "Women Empowerment", text: "Supporting female weavers." },
+    { icon: "RefreshCw", title: "Circular Fashion", text: "Woven to last and biodegrade." },
+    { icon: "Leaf", title: "Sustainable", text: "100% natural, biodegradable fibres." },
+    { icon: "Grid", title: "Heirloom Crafts", text: "Handloomed slowly on pit looms." },
   ],
   featuredSection: {
     badge: "The collection",

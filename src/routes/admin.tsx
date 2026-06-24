@@ -3015,9 +3015,36 @@ function HomepageAdmin() {
     if (heroLoaded && heroSettings) {
       const loadedSlides = heroSettings.slides || [];
       const slides = [
-        { imageUrl: loadedSlides[0]?.imageUrl || heroSettings.imageUrl || "", mobileImageUrl: loadedSlides[0]?.mobileImageUrl || heroSettings.mobileImageUrl || "" },
-        { imageUrl: loadedSlides[1]?.imageUrl || "", mobileImageUrl: loadedSlides[1]?.mobileImageUrl || "" },
-        { imageUrl: loadedSlides[2]?.imageUrl || "", mobileImageUrl: loadedSlides[2]?.mobileImageUrl || "" }
+        {
+          id: loadedSlides[0]?.id || "slide-1",
+          badge: loadedSlides[0]?.badge || heroSettings.badge || "Small batch · Handwoven",
+          title: loadedSlides[0]?.title || heroSettings.title || "Mats woven slowly, to live with you for years.",
+          subtitle: loadedSlides[0]?.subtitle || heroSettings.subtitle || "A collection of natural-fibre floor mats, yoga mats, doormats and table linens - each piece worked on a wooden loom by a single pair of hands.",
+          imageUrl: loadedSlides[0]?.imageUrl || heroSettings.imageUrl || "",
+          mobileImageUrl: loadedSlides[0]?.mobileImageUrl || heroSettings.mobileImageUrl || "",
+          buttonText: loadedSlides[0]?.buttonText || "Shop the collection",
+          buttonLink: loadedSlides[0]?.buttonLink || "/shop",
+        },
+        {
+          id: loadedSlides[1]?.id || "slide-2",
+          badge: loadedSlides[1]?.badge || "Asha Yoga Collection",
+          title: loadedSlides[1]?.title || "Ground your practice in nature.",
+          subtitle: loadedSlides[1]?.subtitle || "Organic cotton yoga mats, plant-dyed and hand-loomed for a natural, grounding grip.",
+          imageUrl: loadedSlides[1]?.imageUrl || "",
+          mobileImageUrl: loadedSlides[1]?.mobileImageUrl || "",
+          buttonText: loadedSlides[1]?.buttonText || "Shop Yoga Mats",
+          buttonLink: loadedSlides[1]?.buttonLink || "/shop",
+        },
+        {
+          id: loadedSlides[2]?.id || "slide-3",
+          badge: loadedSlides[2]?.badge || "Hardwearing Doormats",
+          title: loadedSlides[2]?.title || "Welcome home, naturally.",
+          subtitle: loadedSlides[2]?.subtitle || "Sturdy coir and jute doormats made to welcome boots and withstand muddy seasons.",
+          imageUrl: loadedSlides[2]?.imageUrl || "",
+          mobileImageUrl: loadedSlides[2]?.mobileImageUrl || "",
+          buttonText: loadedSlides[2]?.buttonText || "Shop Doormats",
+          buttonLink: loadedSlides[2]?.buttonLink || "/shop",
+        }
       ];
       setHeroForm({
         badge: heroSettings.badge || "",
@@ -3032,8 +3059,12 @@ function HomepageAdmin() {
 
   useEffect(() => {
     if (homepageLoaded && homepageSettings) {
+      let band = homepageSettings.valuesBand || defaultHomepageSettings.valuesBand;
+      if (band.length === 3) {
+        band = defaultHomepageSettings.valuesBand;
+      }
       setHomepageForm({
-        valuesBand: homepageSettings.valuesBand || defaultHomepageSettings.valuesBand,
+        valuesBand: band,
         featuredSection: {
           ...defaultHomepageSettings.featuredSection,
           ...(homepageSettings.featuredSection || {}),
@@ -3321,7 +3352,7 @@ function HomepageAdmin() {
           </AccordionTrigger>
           <AccordionContent className="pt-4 pb-6 space-y-6">
             <form onSubmit={handleSaveHomepage} className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-4">
                 {homepageForm.valuesBand.map((item, idx) => (
                   <div key={idx} className="p-4 border rounded-xl bg-secondary/10 space-y-4">
                     <h4 className="font-medium text-primary text-sm">Feature Column {idx + 1}</h4>

@@ -223,24 +223,26 @@ function Index() {
     },
   ];
 
-  const values = [
-    {
-      icon: "Heart",
-      title: "Women Empowerment",
-    },
-    {
-      icon: "RefreshCw",
-      title: "Circular Fashion",
-    },
-    {
-      icon: "Leaf",
-      title: "Sustainable",
-    },
-    {
-      icon: "Grid",
-      title: "Heirloom Crafts",
-    },
-  ];
+  const values = homepageSettings?.valuesBand && homepageSettings.valuesBand.length === 4
+    ? homepageSettings.valuesBand
+    : [
+        {
+          icon: "Heart",
+          title: "Women Empowerment",
+        },
+        {
+          icon: "RefreshCw",
+          title: "Circular Fashion",
+        },
+        {
+          icon: "Leaf",
+          title: "Sustainable",
+        },
+        {
+          icon: "Grid",
+          title: "Heirloom Crafts",
+        },
+      ];
 
   return (
     <div>
