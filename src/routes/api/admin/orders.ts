@@ -128,7 +128,7 @@ export const Route = createFileRoute("/api/admin/orders")({
         try {
           await assertAdmin(request, context);
           const body = await request.json();
-          const { id, status, courier, trackingNumber, sellerInstruction, customerStatus } = body;
+          const { id, status, courier, trackingNumber, sellerInstruction, customerStatus, cancellationReason } = body;
           
           if (!id || !status) {
             return Response.json({ success: false, error: "Missing id or status" }, { status: 400 });
@@ -198,7 +198,8 @@ export const Route = createFileRoute("/api/admin/orders")({
               status: finalStatus, 
               customer_status: customerStatus !== undefined ? customerStatus : undefined,
               shipping_street: updatedStreet,
-              seller_instruction: sellerInstruction !== undefined ? sellerInstruction : undefined
+              seller_instruction: sellerInstruction !== undefined ? sellerInstruction : undefined,
+              cancellation_reason: cancellationReason !== undefined ? cancellationReason : undefined
             })
             .eq("id", id);
           if (updateError) throw new Error(updateError.message);
@@ -276,6 +277,50 @@ export const Route = createFileRoute("/api/admin/orders")({
           return Response.json({ success: true, orders: formatted });
         } catch (err: any) {
           console.error("[api/admin/orders PUT error]", err);
+          return Response.json({ success: false, error: err.message }, { status: 500 });
+        }
+      },
+      DELETE: async ({ request, context }) => {
+        try {
+          await assertAdmin(request, context);
+          const url = new URL(request.url);
+          const id = url.searchParams.get("id");
+
+          if (!id) {
+            return Response.json({ success: false, error: "Missing order ID" }, { status: 400 });
+          }
+
+          const authHeader = request.headers.get("authorization");
+          const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
+
+          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+          const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          
+          const supabase = token 
+            ? createClient(supabaseUrl!, supabaseKey!, {
+                global: { headers: { Authorization: `Bearer ${token}` } }
+              })
+            : createClient(supabaseUrl!, supabaseKey!);
+
+          // Delete order_items first to avoid foreign key constraints
+          const { error: itemsError } = await supabase
+            .from("order_items")
+            .delete()
+            .eq("order_id", id);
+
+          if (itemsError) throw new Error(itemsError.message);
+
+          // Delete order
+          const { error: orderError } = await supabase
+            .from("orders")
+            .delete()
+            .eq("id", id);
+
+          if (orderError) throw new Error(orderError.message);
+
+          return Response.json({ success: true, message: "Order deleted successfully" });
+        } catch (err: any) {
+          console.error("[api/admin/orders DELETE error]", err);
           return Response.json({ success: false, error: err.message }, { status: 500 });
         }
       }

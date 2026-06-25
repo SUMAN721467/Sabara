@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Minus, Plus, X, Info } from "lucide-react";
+import { Minus, Plus, X, Info, ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatPrice, useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
@@ -23,6 +23,7 @@ function CartPage() {
   // Coupon states
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
   const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
 
@@ -149,6 +150,13 @@ function CartPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 pb-14 sm:px-6 md:pt-8 md:pb-16">
+      <Link
+        to="/shop"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
+      >
+        <ArrowLeft className="h-4 w-4" /> Back to shop
+      </Link>
+
       <h1 className="font-serif text-3xl text-foreground md:text-4xl mb-6 text-center sm:text-left">Shopping Cart ({count} {count === 1 ? 'item' : 'items'})</h1>
 
       {detailed.length === 0 ? (
@@ -243,15 +251,46 @@ function CartPage() {
                                 {formatPrice(line.product.price)}
                               </span>
                             </div>
+
+                            {/* Delete Confirmation Box */}
+                            {deleteConfirmId === line.id && (
+                              <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-red-500/5 border border-red-500/10 rounded-lg p-2.5 px-3 animate-in fade-in duration-300">
+                                <span className="text-xs font-medium text-red-600 dark:text-red-400 text-left">
+                                  Are you sure you want to remove this item?
+                                </span>
+                                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      remove(line.id);
+                                      setDeleteConfirmId(null);
+                                      toast.success("Item removed from cart");
+                                    }}
+                                    className="rounded-full bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+                                  >
+                                    Yes
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeleteConfirmId(null)}
+                                    className="rounded-full bg-secondary hover:bg-secondary-foreground/10 text-foreground border border-border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
-                          <button
-                            onClick={() => remove(line.id)}
-                            aria-label="Remove"
-                            className="text-muted-foreground hover:text-destructive transition-colors cursor-pointer p-1 bg-transparent border-none"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
+                          {deleteConfirmId !== line.id && (
+                            <button
+                              onClick={() => setDeleteConfirmId(line.id)}
+                              aria-label="Remove"
+                              className="text-muted-foreground hover:text-destructive transition-colors cursor-pointer p-1 bg-transparent border-none shrink-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
 
                         <div className="flex items-center justify-end mt-3 pt-3 border-t border-dashed border-border/60">

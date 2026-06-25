@@ -13,7 +13,7 @@ export const Route = createFileRoute("/wishlist")({
 
 function WishlistPage() {
   const { detailed, remove, count, clear } = useWishlist();
-  const { add: addToCart } = useCart();
+  const { add: addToCart, lines } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -130,13 +130,23 @@ function WishlistPage() {
 
                 <div className="mt-5 flex gap-2">
                   {user ? (
-                    <Button
-                      onClick={() => handleAddToCart(product)}
-                      className="flex-1 rounded-full text-sm font-medium py-5 cursor-pointer"
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Add to Cart
-                    </Button>
+                    lines.some((line) => line.id === product.id) ? (
+                      <Button
+                        onClick={() => navigate({ to: "/cart" })}
+                        className="flex-1 rounded-full text-sm font-medium py-5 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Go to Cart
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleAddToCart(product)}
+                        className="flex-1 rounded-full text-sm font-medium py-5 cursor-pointer"
+                      >
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Add to Cart
+                      </Button>
+                    )
                   ) : (
                     <Button
                       onClick={() => navigate({ to: "/login", search: { redirect: "/wishlist" } })}

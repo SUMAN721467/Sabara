@@ -86,11 +86,17 @@ export const Route = createFileRoute("/api/cancel-order")({
 
           // Update order status to Cancelled / Payment Failed
           const cancelReason = reason || "Payment cancelled or failed";
+          const isPaymentFailed = cancelReason.toLowerCase().includes("payment failed") || 
+                                  cancelReason.toLowerCase().includes("payment cancelled") || 
+                                  cancelReason.toLowerCase().includes("payment verification failed") || 
+                                  cancelReason.toLowerCase().includes("creation failed");
+          const customerStatus = isPaymentFailed ? "Payment Failed" : "Cancelled by Customer";
+
           const { error: updateErr } = await supabase
             .from("orders")
             .update({
               status: "Cancelled",
-              customer_status: "Cancelled by Customer",
+              customer_status: customerStatus,
               cancellation_reason: cancelReason
             })
             .eq("id", orderId);

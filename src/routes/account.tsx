@@ -46,10 +46,9 @@ const getProductNamesString = (items: any[]) => {
 };
 
 const getOrderStatusConfig = (order: any) => {
-  // 1. Cancelled
-  if (order.customerStatus === "Cancelled by Customer" || order.status === "Cancelled" || order.status === "Cancelled by Seller") {
+  if (order.customerStatus === "Cancelled by Customer" || order.customerStatus === "Payment Failed" || order.status === "Cancelled" || order.status === "Cancelled by Seller") {
     const reason = (order.cancellationReason || "").toLowerCase();
-    const isPaymentFailed = reason.includes("payment failed") || reason.includes("payment cancelled") || reason.includes("payment verification failed") || reason.includes("creation failed");
+    const isPaymentFailed = order.customerStatus === "Payment Failed" || reason.includes("payment failed") || reason.includes("payment cancelled") || reason.includes("payment verification failed") || reason.includes("creation failed");
     
     if (isPaymentFailed) {
       return {
@@ -886,6 +885,7 @@ function AccountPage() {
       case "Cancelled":
       case "Cancelled by Customer":
       case "Cancelled by Seller":
+      case "Payment Failed":
         return "bg-destructive/10 text-destructive border border-destructive/20";
       case "Return Requested":
         return "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20";
@@ -1312,7 +1312,7 @@ function AccountPage() {
                               <div className="relative flex items-start gap-4">
                                 <div className={cn(
                                   "absolute -left-[20px] mt-1 h-3.5 w-3.5 rounded-full border-2 flex items-center justify-center bg-card",
-                                  order.status !== "Cancelled" && order.status !== "Cancelled by Seller" && order.customerStatus !== "Cancelled by Customer"
+                                  order.status !== "Cancelled" && order.status !== "Cancelled by Seller" && order.customerStatus !== "Cancelled by Customer" && order.customerStatus !== "Payment Failed"
                                     ? "border-emerald-500 bg-emerald-500"
                                     : "border-destructive bg-destructive"
                                 )}>
@@ -1327,7 +1327,7 @@ function AccountPage() {
                               </div>
 
                               {/* Cancellation State (renders instead of Shipped/Delivered if cancelled) */}
-                              {(order.status === "Cancelled" || order.status === "Cancelled by Seller" || order.customerStatus === "Cancelled by Customer") ? (
+                              {(order.status === "Cancelled" || order.status === "Cancelled by Seller" || order.customerStatus === "Cancelled by Customer" || order.customerStatus === "Payment Failed") ? (
                                 <div className="relative flex items-start gap-4 animate-in fade-in duration-200">
                                   <div className="absolute -left-[20px] mt-1 h-3.5 w-3.5 rounded-full border-2 flex items-center justify-center bg-card border-destructive bg-destructive">
                                     <div className="h-1 w-1 rounded-full bg-white" />
@@ -1336,7 +1336,7 @@ function AccountPage() {
                                     <p className="text-xs font-semibold text-destructive">
                                       {(() => {
                                         const reason = (order.cancellationReason || "").toLowerCase();
-                                        const isPaymentFailed = reason.includes("payment failed") || reason.includes("payment cancelled") || reason.includes("payment verification failed") || reason.includes("creation failed");
+                                        const isPaymentFailed = order.customerStatus === "Payment Failed" || reason.includes("payment failed") || reason.includes("payment cancelled") || reason.includes("payment verification failed") || reason.includes("creation failed");
                                         return isPaymentFailed ? "Payment Failed, Order Not Placed" : "Order Cancelled";
                                       })()}
                                     </p>
@@ -1646,7 +1646,7 @@ function AccountPage() {
                           {/* Action Buttons split */}
                           <div className="grid grid-cols-2 divide-x divide-border/40 border-t border-border/20 text-center text-xs font-semibold">
                             {/* Left action: Cancel or Return request */}
-                            {order.status === "Pending" && order.customerStatus !== "Cancelled by Customer" ? (
+                            {order.status === "Pending" && order.customerStatus !== "Cancelled by Customer" && order.customerStatus !== "Payment Failed" ? (
                               <button
                                 onClick={() => {
                                   setOrderToCancel(order.id);

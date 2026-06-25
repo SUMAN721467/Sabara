@@ -227,7 +227,7 @@ const StarRating = ({ rating, size = "h-4 w-4" }: { rating: number; size?: strin
 
 function ProductPage() {
   const { product, related, variants } = Route.useLoaderData();
-  const { add } = useCart();
+  const { add, lines } = useCart();
   const { toggle: toggleWishlist, has: hasWishlist } = useWishlist();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -459,15 +459,26 @@ function ProductPage() {
                 Out of Stock
               </button>
             ) : user ? (
-              <button
-                onClick={() => {
-                  add(product.id, qty);
-                  toast.success(`${product.name} added to cart`);
-                }}
-                className="flex-1 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
-              >
-                Add to cart · {formatPrice(product.price * qty)}
-              </button>
+              lines.some((line) => line.id === product.id) ? (
+                <button
+                  onClick={() => {
+                    navigate({ to: "/cart" });
+                  }}
+                  className="flex-1 rounded-full bg-emerald-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-emerald-700 cursor-pointer text-center flex items-center justify-center"
+                >
+                  Go to cart
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    add(product.id, qty);
+                    toast.success(`${product.name} added to cart`);
+                  }}
+                  className="flex-1 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+                >
+                  Add to cart · {formatPrice(product.price * qty)}
+                </button>
+              )
             ) : (
               <button
                 onClick={() => {

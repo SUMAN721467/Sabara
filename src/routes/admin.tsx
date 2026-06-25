@@ -1460,6 +1460,7 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [deleteConfirmOrderId, setDeleteConfirmOrderId] = useState<string | null>(null);
   const [courierInput, setCourierInput] = useState("");
   const [trackingNumberInput, setTrackingNumberInput] = useState("");
   const [sellerInstructionInput, setSellerInstructionInput] = useState("");
@@ -1480,7 +1481,15 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
     }
   }, [selectedOrder]);
 
-  const handleStatusChange = async (id: string, newStatus: string, courierVal?: string, trackingVal?: string, sellerInstructionVal?: string, customerStatusVal?: string) => {
+  const handleStatusChange = async (
+    id: string,
+    newStatus: string,
+    courierVal?: string,
+    trackingVal?: string,
+    sellerInstructionVal?: string,
+    customerStatusVal?: string,
+    cancellationReasonVal?: string
+  ) => {
     setUpdatingId(id);
     try {
       const headers = await getAuthHeaders();
@@ -1494,6 +1503,9 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
       }
       if (customerStatusVal !== undefined) {
         payload.customerStatus = customerStatusVal;
+      }
+      if (cancellationReasonVal !== undefined) {
+        payload.cancellationReason = cancellationReasonVal;
       }
       const res = await fetch("/api/admin/orders", {
         method: "PUT",
@@ -1512,13 +1524,39 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
           courier: newStatus === "Shipped" ? courierVal : null,
           trackingNumber: newStatus === "Shipped" ? trackingVal : null,
           sellerInstruction: sellerInstructionVal !== undefined ? sellerInstructionVal : prev.sellerInstruction,
-          customerStatus: customerStatusVal !== undefined ? customerStatusVal : prev.customerStatus
+          customerStatus: customerStatusVal !== undefined ? customerStatusVal : prev.customerStatus,
+          cancellationReason: cancellationReasonVal !== undefined ? cancellationReasonVal : prev.cancellationReason
         }));
       }
     } catch (e: any) {
       toast.error(e.message || "Failed to update status");
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleDeleteOrder = async (id: string) => {
+    setUpdatingId(id);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`/api/admin/orders?id=${id}`, {
+        method: "DELETE",
+        headers,
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || "Failed to delete order");
+      
+      toast.success("Order deleted successfully!");
+      setOrders((prev) => prev.filter((o) => o.id !== id));
+      if (selectedOrder && selectedOrder.id === id) {
+        setSelectedOrder(null);
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete order");
+    } finally {
+      setUpdatingId(null);
+      setDeleteConfirmOrderId(null);
     }
   };
 
@@ -1532,16 +1570,17 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Pending": return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400";
-      case "Paid": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
-      case "Shipped": return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
-      case "Out for Delivery": return "bg-orange-500/10 text-orange-600 dark:text-orange-400";
-      case "Delivered": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+      case "Pending": return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20";
+      case "Paid": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
+      case "Shipped": return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20";
+      case "Out for Delivery": return "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20";
+      case "Delivered": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
       case "Cancelled":
       case "Cancelled by Customer":
       case "Cancelled by Seller":
-        return "bg-destructive/10 text-destructive";
-      default: return "bg-secondary text-secondary-foreground";
+      case "Payment Failed":
+        return "bg-destructive/10 text-destructive border border-destructive/20";
+      default: return "bg-secondary text-secondary-foreground border border-secondary/20";
     }
   };
 
@@ -1558,10 +1597,43 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
     <div className="space-y-6">
       {selectedOrder ? (
         <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex justify-between items-center mb-6">
             <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>
               <ArrowLeft className="h-4 w-4 mr-1" /> Back to Orders
             </Button>
+            {deleteConfirmOrderId === selectedOrder.id ? (
+              <div className="inline-flex items-center gap-2 animate-in fade-in duration-200">
+                <span className="text-xs font-semibold text-destructive mr-1">Are you sure to delete this order history?</span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={updatingId === selectedOrder.id}
+                  onClick={() => handleDeleteOrder(selectedOrder.id)}
+                  className="rounded-full text-xs px-3 py-1 cursor-pointer h-8"
+                >
+                  Yes
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={updatingId === selectedOrder.id}
+                  onClick={() => setDeleteConfirmOrderId(null)}
+                  className="rounded-full text-xs px-3 py-1 cursor-pointer h-8"
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDeleteConfirmOrderId(selectedOrder.id)}
+                className="text-destructive border-destructive/35 hover:bg-destructive/10 hover:text-destructive rounded-full px-4 cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4 mr-1.5" />
+                Delete Order
+              </Button>
+            )}
           </div>
 
           <div className="grid gap-8 md:grid-cols-[1fr_350px]">
@@ -1580,11 +1652,7 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-muted-foreground uppercase font-semibold">Customer Status:</span>
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                      selectedOrder.customerStatus === "Cancelled by Customer"
-                        ? "bg-destructive/10 text-destructive border border-destructive/20"
-                        : "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20"
-                    }`}>
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(selectedOrder.customerStatus || "Pending")}`}>
                       {selectedOrder.customerStatus || "Pending"}
                     </span>
                   </div>
@@ -1723,29 +1791,65 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
 
                 <div className="border-t pt-4 space-y-3">
                   <Label htmlFor="status-dropdown" className="text-xs uppercase tracking-wider text-muted-foreground block">Quick Status Update</Label>
-                  <select
-                    id="status-dropdown"
-                    disabled={updatingId === selectedOrder.id}
-                    value={selectedStatus}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setSelectedStatus(val);
-                      if (val !== "Shipped") {
-                        handleStatusChange(selectedOrder.id, val, courierInput, trackingNumberInput, sellerInstructionInput);
-                      }
-                    }}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring outline-none disabled:opacity-75 disabled:cursor-not-allowed"
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Shipped">Shipped</option>
-                    <option value="Out for Delivery">Out for Delivery</option>
-                    <option value="Delivered">Delivered</option>
-                    <option value="Cancelled by Seller">Cancelled by Seller</option>
-                    <option value="Cancelled by Customer">Cancelled by Customer</option>
-                    {selectedStatus === "Cancelled" && (
-                      <option value="Cancelled">Cancelled</option>
-                    )}
-                  </select>
+                  {(() => {
+                    let dropdownValue = selectedStatus;
+                    if (selectedOrder.customerStatus === "Payment Failed") {
+                      dropdownValue = "Payment Failed";
+                    } else if (selectedOrder.customerStatus === "Cancelled by Customer") {
+                      dropdownValue = "Cancelled by Customer";
+                    } else if (selectedOrder.status === "Cancelled" || selectedOrder.status === "Cancelled by Seller") {
+                      dropdownValue = "Cancelled by Seller";
+                    }
+                    return (
+                      <select
+                        id="status-dropdown"
+                        disabled={updatingId === selectedOrder.id}
+                        value={dropdownValue}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSelectedStatus(val);
+                          if (val === "Shipped") {
+                            // Don't call handleStatusChange yet, let user fill form
+                          } else {
+                            let newStatus = val;
+                            let custStatus: string | undefined = undefined;
+                            let cancelReason: string | undefined = undefined;
+
+                            if (val === "Payment Failed") {
+                              newStatus = "Cancelled";
+                              custStatus = "Payment Failed";
+                              cancelReason = "Payment failed";
+                            } else if (val === "Cancelled by Customer") {
+                              newStatus = "Cancelled";
+                              custStatus = "Cancelled by Customer";
+                              cancelReason = "Cancelled by customer";
+                            } else if (val === "Cancelled by Seller") {
+                              newStatus = "Cancelled by Seller";
+                              custStatus = "Cancelled by Seller";
+                              cancelReason = "Cancelled by seller";
+                            } else if (val === "Pending") {
+                              newStatus = "Pending";
+                              custStatus = "Pending";
+                            }
+
+                            handleStatusChange(selectedOrder.id, newStatus, courierInput, trackingNumberInput, sellerInstructionInput, custStatus, cancelReason);
+                          }
+                        }}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring outline-none disabled:opacity-75 disabled:cursor-not-allowed"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Out for Delivery">Out for Delivery</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled by Seller">Cancelled by Seller</option>
+                        <option value="Cancelled by Customer">Cancelled by Customer</option>
+                        <option value="Payment Failed">Payment Failed</option>
+                        {(selectedStatus === "Cancelled" || selectedOrder.status === "Cancelled") && (
+                          <option value="Cancelled">Cancelled</option>
+                        )}
+                      </select>
+                    );
+                  })()}
 
                   {selectedStatus === "Shipped" && (
                     <div className="space-y-3 p-3 rounded-lg border bg-background/50 animate-in fade-in duration-200">
@@ -1895,13 +1999,7 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
                           {/* Customer Status */}
                           <div className="flex items-center gap-1">
                             <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider w-[55px]">Customer:</span>
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${
-                              order.customerStatus === "Cancelled by Customer"
-                                ? "bg-destructive/10 text-destructive border border-destructive/20"
-                                : (order.customerStatus && order.customerStatus !== "Pending")
-                                  ? getStatusColor(order.customerStatus)
-                                  : "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20"
-                            }`}>
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${getStatusColor(order.customerStatus || "Pending")}`}>
                               {order.customerStatus || "Pending"}
                             </span>
                           </div>
@@ -1913,33 +2011,100 @@ function OrdersAdmin({ initialOrders, onRefresh }: { initialOrders: any[], onRef
                         </div>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)}>
-                          View Details
-                        </Button>
-                        <select
-                          disabled={updatingId === order.id}
-                          value={order.status}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === "Shipped") {
-                              setSelectedOrder(order);
-                              toast.info("Please fill in tracking details for the Shipped status.");
-                            } else {
-                              handleStatusChange(order.id, val);
-                            }
-                          }}
-                          className="rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring disabled:opacity-75 disabled:cursor-not-allowed"
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="Shipped">Shipped</option>
-                          <option value="Out for Delivery">Out for Delivery</option>
-                          <option value="Delivered">Delivered</option>
-                          <option value="Cancelled by Seller">Cancelled by Seller</option>
-                          <option value="Cancelled by Customer">Cancelled by Customer</option>
-                          {order.status === "Cancelled" && (
-                            <option value="Cancelled">Cancelled</option>
-                          )}
-                        </select>
+                        {deleteConfirmOrderId === order.id ? (
+                          <div className="inline-flex items-center gap-1.5 animate-in fade-in duration-200">
+                            <span className="text-[11px] font-semibold text-destructive mr-1">Are you sure to delete this order history?</span>
+                            <Button
+                              variant="destructive"
+                              disabled={updatingId === order.id}
+                              onClick={() => handleDeleteOrder(order.id)}
+                              className="rounded-full text-[10px] px-2.5 py-1 h-7 cursor-pointer"
+                            >
+                              Yes
+                            </Button>
+                            <Button
+                              variant="outline"
+                              disabled={updatingId === order.id}
+                              onClick={() => setDeleteConfirmOrderId(null)}
+                              className="rounded-full text-[10px] px-2.5 py-1 h-7 cursor-pointer"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)}>
+                              View Details
+                            </Button>
+                            {(() => {
+                              let dropdownValue = order.status;
+                              if (order.customerStatus === "Payment Failed") {
+                                dropdownValue = "Payment Failed";
+                              } else if (order.customerStatus === "Cancelled by Customer") {
+                                dropdownValue = "Cancelled by Customer";
+                              } else if (order.status === "Cancelled" || order.status === "Cancelled by Seller") {
+                                dropdownValue = "Cancelled by Seller";
+                              }
+                              return (
+                                <select
+                                  disabled={updatingId === order.id}
+                                  value={dropdownValue}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === "Shipped") {
+                                      setSelectedOrder(order);
+                                      toast.info("Please fill in tracking details for the Shipped status.");
+                                    } else {
+                                      let newStatus = val;
+                                      let custStatus: string | undefined = undefined;
+                                      let cancelReason: string | undefined = undefined;
+
+                                      if (val === "Payment Failed") {
+                                        newStatus = "Cancelled";
+                                        custStatus = "Payment Failed";
+                                        cancelReason = "Payment failed";
+                                      } else if (val === "Cancelled by Customer") {
+                                        newStatus = "Cancelled";
+                                        custStatus = "Cancelled by Customer";
+                                        cancelReason = "Cancelled by customer";
+                                      } else if (val === "Cancelled by Seller") {
+                                        newStatus = "Cancelled by Seller";
+                                        custStatus = "Cancelled by Seller";
+                                        cancelReason = "Cancelled by seller";
+                                      } else if (val === "Pending") {
+                                        newStatus = "Pending";
+                                        custStatus = "Pending";
+                                      }
+
+                                      handleStatusChange(order.id, newStatus, undefined, undefined, undefined, custStatus, cancelReason);
+                                    }
+                                  }}
+                                  className="rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring disabled:opacity-75 disabled:cursor-not-allowed"
+                                >
+                                  <option value="Pending">Pending</option>
+                                  <option value="Shipped">Shipped</option>
+                                  <option value="Out for Delivery">Out for Delivery</option>
+                                  <option value="Delivered">Delivered</option>
+                                  <option value="Cancelled by Seller">Cancelled by Seller</option>
+                                  <option value="Cancelled by Customer">Cancelled by Customer</option>
+                                  <option value="Payment Failed">Payment Failed</option>
+                                  {(order.status === "Cancelled" || order.status === "Cancelled by Seller") && (
+                                    <option value="Cancelled">Cancelled</option>
+                                  )}
+                                </select>
+                              );
+                            })()}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteConfirmOrderId(order.id)}
+                              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full px-2 cursor-pointer shrink-0"
+                              title="Delete Order"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
@@ -1990,15 +2155,16 @@ function CustomersAdmin({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Pending": return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400";
-      case "Shipped": return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
-      case "Out for Delivery": return "bg-orange-500/10 text-orange-600 dark:text-orange-400";
-      case "Delivered": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+      case "Pending": return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20";
+      case "Shipped": return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20";
+      case "Out for Delivery": return "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20";
+      case "Delivered": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
       case "Cancelled":
       case "Cancelled by Customer":
       case "Cancelled by Seller":
-        return "bg-destructive/10 text-destructive";
-      default: return "bg-secondary text-secondary-foreground";
+      case "Payment Failed":
+        return "bg-destructive/10 text-destructive border border-destructive/20";
+      default: return "bg-secondary text-secondary-foreground border border-secondary/20";
     }
   };
 
