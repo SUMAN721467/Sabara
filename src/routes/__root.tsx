@@ -8,6 +8,7 @@ import {
   Scripts,
   useLocation,
 } from "@tanstack/react-router";
+import { Analytics } from "@vercel/analytics/react";
 
 import appCss from "../styles.css?url";
 import faviconIcon from "../assets/favicon-icon.png";
@@ -180,6 +181,7 @@ function RootComponent() {
             </div>
             <Toaster richColors position="top-right" />
             <FaqChatBot />
+            <Analytics />
           </WishlistProvider>
         </CartProvider>
       </AuthProvider>
