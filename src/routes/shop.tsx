@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { categories, products as fallbackProducts, type Category, type Product } from "@/data/products";
 import { ProductCard } from "@/components/site/ProductCard";
 import { cn } from "@/lib/utils";
-import { Search } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 type Sort = "featured" | "low" | "high";
@@ -153,8 +153,14 @@ function Shop() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20">
+    <div className="mx-auto max-w-6xl px-4 pt-6 pb-14 sm:px-6 md:pt-8 md:pb-20">
       <ScrollReveal variant="fade-up" duration={800}>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to home
+        </Link>
         <header className="max-w-2xl">
           <span className="text-xs font-medium uppercase tracking-[0.22em] text-primary">
             The full collection

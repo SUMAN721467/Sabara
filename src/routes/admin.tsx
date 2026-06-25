@@ -201,6 +201,7 @@ function AdminPage() {
             <TabsTrigger value="promotions">Promotions</TabsTrigger>
             <TabsTrigger value="shipping">Shipping</TabsTrigger>
             <TabsTrigger value="faqs">FAQs</TabsTrigger>
+            <TabsTrigger value="categories">Categories</TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="products">
@@ -229,6 +230,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="faqs">
           <FaqsAdmin />
+        </TabsContent>
+        <TabsContent value="categories">
+          <CategoriesAdmin products={products} />
         </TabsContent>
       </Tabs>
     </div>
@@ -461,6 +465,66 @@ function ProductsAdmin({ initialProducts, onRefresh }: { initialProducts: any[],
         }
         throw new Error(message);
       }
+
+      // Automatically add new categories to the Categories visibility settings
+      try {
+        const prodCategories = (data.category || "").split(",").map((c: any) => c.trim()).filter(Boolean);
+        if (prodCategories.length > 0) {
+          const catRes = await fetch("/api/site-settings?key=categories");
+          if (catRes.ok) {
+            const catJson = await catRes.json();
+            let currentList: { name: string; visible: boolean }[] = [];
+            if (catJson.success && catJson.value) {
+              if (Array.isArray(catJson.value.categories)) {
+                currentList = catJson.value.categories;
+              } else if (Array.isArray(catJson.value.visibleCategories)) {
+                currentList = catJson.value.visibleCategories.map((name: string) => ({ name, visible: true }));
+              }
+            } else {
+              currentList = [
+                { name: "Floor", visible: true },
+                { name: "Yoga", visible: true },
+                { name: "Doormat", visible: true },
+                { name: "Table", visible: true }
+              ];
+            }
+
+            const updatedList = [...currentList];
+            let listChanged = false;
+
+            prodCategories.forEach((catName: string) => {
+              const exists = updatedList.some(
+                (cl) => cl.name.toLowerCase() === catName.toLowerCase()
+              );
+              if (!exists) {
+                updatedList.push({ name: catName, visible: true });
+                listChanged = true;
+              }
+            });
+
+            if (listChanged) {
+              const visibleNames = updatedList.filter((c) => c.visible).map((c) => c.name);
+              await fetch("/api/admin/site-settings", {
+                method: "POST",
+                headers: {
+                  ...headers,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  key: "categories",
+                  value: {
+                    categories: updatedList,
+                    visibleCategories: visibleNames
+                  }
+                })
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Auto category sync failed:", err);
+      }
+
       toast.success(isEdit ? "Product updated!" : "Product added!");
       setMode("list");
       setEditTarget(null);
@@ -5017,6 +5081,292 @@ function FaqsAdmin() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CATEGORIES ADMIN — configure category ordering and visibility
+   ══════════════════════════════════════════════════════════════════════════ */
+function CategoriesAdmin({ products }: { products: any[] }) {
+  const [categoriesList, setCategoriesList] = useState<{ name: string; visible: boolean }[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Fetch categories settings from Database
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/site-settings?key=categories");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.value) {
+          if (Array.isArray(json.value.categories)) {
+            setCategoriesList(json.value.categories);
+          } else if (Array.isArray(json.value.visibleCategories)) {
+            setCategoriesList(json.value.visibleCategories.map((name: string) => ({ name, visible: true })));
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load categories:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Extract catalog categories dynamically
+  const catalogCatsSet = new Set<string>();
+  products.forEach((p: any) => {
+    if (p.category) {
+      p.category.split(",").forEach((c: string) => {
+        const trimmed = c.trim();
+        if (trimmed) catalogCatsSet.add(trimmed);
+      });
+    }
+  });
+  const catalogCategories = Array.from(catalogCatsSet);
+
+  // Find catalog categories that are NOT in our list
+  const missingCatalogCats = catalogCategories.filter(
+    (cc) => !categoriesList.some((cl) => cl.name.toLowerCase() === cc.toLowerCase())
+  );
+
+  // Save categories settings to Database
+  const saveCategories = async (updatedList: { name: string; visible: boolean }[]) => {
+    try {
+      setSaving(true);
+      const visibleNames = updatedList.filter((c) => c.visible).map((c) => c.name);
+      
+      const authHeaders = await getAuthHeaders();
+      const res = await fetch("/api/admin/site-settings", {
+        method: "POST",
+        headers: {
+          ...authHeaders,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          key: "categories",
+          value: {
+            categories: updatedList,
+            visibleCategories: visibleNames
+          }
+        })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Failed to save categories");
+      }
+      setCategoriesList(updatedList);
+      toast.success("Categories updated successfully!");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save categories");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddCategory = async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (categoriesList.some((c) => c.name.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error("Category already exists in the list");
+      return;
+    }
+    const updated = [...categoriesList, { name: trimmed, visible: true }];
+    await saveCategories(updated);
+    setNewCategoryName("");
+  };
+
+  const handleToggleVisibility = async (index: number) => {
+    const updated = categoriesList.map((c, i) => (i === index ? { ...c, visible: !c.visible } : c));
+    await saveCategories(updated);
+  };
+
+  const handleDeleteCategory = async (index: number) => {
+    if (!confirm("Are you sure you want to remove this category from the visibility settings? (This will not delete products in this category).")) {
+      return;
+    }
+    const updated = categoriesList.filter((_, i) => i !== index);
+    await saveCategories(updated);
+  };
+
+  const handleMoveCategory = async (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= categoriesList.length) return;
+    
+    const updated = [...categoriesList];
+    const temp = updated[index];
+    updated[index] = updated[targetIndex];
+    updated[targetIndex] = temp;
+    await saveCategories(updated);
+  };
+
+  const handleResetToDefaults = async () => {
+    if (categoriesList.length > 0 && !confirm("This will overwrite your current settings. Continue?")) {
+      return;
+    }
+    const defaults = [
+      { name: "Floor", visible: true },
+      { name: "Yoga", visible: true },
+      { name: "Doormat", visible: true },
+      { name: "Table", visible: true }
+    ];
+    await saveCategories(defaults);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-2">
+        <h2 className="font-serif text-2xl text-foreground">Manage Shop Categories</h2>
+        <p className="text-muted-foreground text-sm">
+          Control which categories appear as filters on your storefront shop page, add custom categories, and define their sorting order.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="flex h-36 items-center justify-center text-sm text-muted-foreground">
+          Loading category settings...
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-12">
+          {/* Left: Configuration Form & List */}
+          <div className="lg:col-span-8 space-y-5">
+            <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
+              <h3 className="font-serif text-base font-semibold text-foreground">Category Visibility & Ordering</h3>
+              
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g., Foldable Mat"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="bg-background text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddCategory(newCategoryName);
+                    }
+                  }}
+                />
+                <Button
+                  onClick={() => handleAddCategory(newCategoryName)}
+                  disabled={saving || !newCategoryName.trim()}
+                  className="bg-primary text-primary-foreground hover:bg-primary/95 text-xs h-9 cursor-pointer"
+                >
+                  Add Category
+                </Button>
+              </div>
+
+              {categoriesList.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-xs">
+                  No custom categories visibility set. Shop defaults (Floor, Yoga, Doormat, Table) are currently active.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                  {categoriesList.map((cat, index) => (
+                    <div
+                      key={cat.name}
+                      className="rounded-lg border p-3.5 bg-background/50 flex items-center justify-between gap-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          id={`visible-${cat.name}`}
+                          checked={cat.visible}
+                          onChange={() => handleToggleVisibility(index)}
+                          disabled={saving}
+                          className="h-4.5 w-4.5 rounded border-border text-primary focus:ring-primary cursor-pointer disabled:opacity-50"
+                        />
+                        <label
+                          htmlFor={`visible-${cat.name}`}
+                          className={cn(
+                            "text-sm font-semibold cursor-pointer select-none transition-colors",
+                            cat.visible ? "text-foreground" : "text-muted-foreground line-through decoration-1"
+                          )}
+                        >
+                          {cat.name}
+                        </label>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          disabled={index === 0 || saving}
+                          onClick={() => handleMoveCategory(index, "up")}
+                          className="p-1 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          title="Move Up"
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === categoriesList.length - 1 || saving}
+                          onClick={() => handleMoveCategory(index, "down")}
+                          className="p-1 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          title="Move Down"
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => handleDeleteCategory(index)}
+                          className="p-1 rounded-md hover:bg-destructive/10 text-destructive disabled:opacity-50 transition-colors cursor-pointer"
+                          title="Remove"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Quick actions & metadata */}
+          <div className="lg:col-span-4 space-y-5">
+            <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
+              <h3 className="font-serif text-base font-semibold text-foreground">Quick Options</h3>
+              <Button
+                onClick={handleResetToDefaults}
+                variant="outline"
+                className="w-full text-xs h-9 cursor-pointer"
+                disabled={saving}
+              >
+                Reset to Default Categories
+              </Button>
+            </div>
+
+            {missingCatalogCats.length > 0 && (
+              <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
+                <h3 className="font-serif text-base font-semibold text-foreground">Categories in Catalog</h3>
+                <p className="text-muted-foreground text-xs leading-normal">
+                  The following categories exist on products in your catalog but are not currently listed in the visibility selector:
+                </p>
+                <div className="flex flex-wrap gap-1.5 pt-1.5">
+                  {missingCatalogCats.map((cc) => (
+                    <button
+                      key={cc}
+                      onClick={() => handleAddCategory(cc)}
+                      disabled={saving}
+                      className="inline-flex items-center gap-1 rounded-md border bg-background/50 hover:bg-primary/5 hover:border-primary/50 text-xs px-2.5 py-1 text-foreground cursor-pointer transition-colors font-medium"
+                    >
+                      <span>+</span>
+                      <span>{cc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

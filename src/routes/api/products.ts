@@ -123,18 +123,26 @@ export const Route = createFileRoute("/api/products")({
           const supabase = getServerSupabase();
           const dbProducts = await getOrSeedProducts(supabase, true);
 
-          // Extract unique categories from all live products dynamically
-          const defaultCats = ["Floor", "Yoga", "Doormat", "Table"];
-          const catsSet = new Set<string>(defaultCats);
-          dbProducts.forEach((p: any) => {
-            if (p.category) {
-              p.category.split(",").forEach((c: string) => {
-                const trimmed = c.trim();
-                if (trimmed) catsSet.add(trimmed);
-              });
-            }
-          });
-          const uniqueCategories = Array.from(catsSet);
+          // Fetch custom category settings from database
+          const categoriesData = await getSiteSetting("categories");
+          let uniqueCategories: string[] = [];
+          
+          if (categoriesData && Array.isArray(categoriesData.visibleCategories) && categoriesData.visibleCategories.length > 0) {
+            uniqueCategories = categoriesData.visibleCategories;
+          } else {
+            // Fallback: Extract unique categories from all live products dynamically
+            const defaultCats = ["Floor", "Yoga", "Doormat", "Table"];
+            const catsSet = new Set<string>(defaultCats);
+            dbProducts.forEach((p: any) => {
+              if (p.category) {
+                p.category.split(",").forEach((c: string) => {
+                  const trimmed = c.trim();
+                  if (trimmed) catsSet.add(trimmed);
+                });
+              }
+            });
+            uniqueCategories = Array.from(catsSet);
+          }
 
           let list = dbProducts;
           if (category && category !== "All") {
