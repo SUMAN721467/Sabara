@@ -227,20 +227,20 @@ function Index() {
     ? homepageSettings.valuesBand
     : [
         {
-          icon: "Heart",
-          title: "Women Empowerment",
-        },
-        {
-          icon: "RefreshCw",
-          title: "Circular Fashion",
+          icon: "Hand",
+          title: "Handmade",
         },
         {
           icon: "Leaf",
-          title: "Sustainable",
+          title: "Eco-Friendly",
         },
         {
-          icon: "Grid",
-          title: "Heirloom Crafts",
+          icon: "Shield",
+          title: "Durable",
+        },
+        {
+          icon: "Truck",
+          title: "Pan-India Shipping",
         },
       ];
 

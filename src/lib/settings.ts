@@ -181,10 +181,10 @@ export type HomepageSettings = {
 
 export const defaultHomepageSettings: HomepageSettings = {
   valuesBand: [
-    { icon: "Heart", title: "Women Empowerment", text: "Supporting female weavers." },
-    { icon: "RefreshCw", title: "Circular Fashion", text: "Woven to last and biodegrade." },
-    { icon: "Leaf", title: "Sustainable", text: "100% natural, biodegradable fibres." },
-    { icon: "Grid", title: "Heirloom Crafts", text: "Handloomed slowly on pit looms." },
+    { icon: "Hand", title: "Handmade", text: "Woven slowly on traditional pit looms." },
+    { icon: "Leaf", title: "Eco-Friendly", text: "Natural, biodegradable materials." },
+    { icon: "Shield", title: "Durable", text: "Designed for heavy everyday use." },
+    { icon: "Truck", title: "Pan-India Shipping", text: "Delivered straight to your doorstep." },
   ],
   featuredSection: {
     badge: "The collection",

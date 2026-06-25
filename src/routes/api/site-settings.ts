@@ -52,6 +52,32 @@ export async function getSiteSetting(key: string): Promise<any> {
     return null;
   }
 
+  if (key === "homepage" && data.value && Array.isArray(data.value.valuesBand)) {
+    const hasOldValues = data.value.valuesBand.some(
+      (b: any) => b.title === "Women Empowerment" || b.title === "Circular Fashion"
+    );
+    if (hasOldValues) {
+      const newValue = {
+        ...data.value,
+        valuesBand: [
+          { icon: "Hand", title: "Handmade", text: "Woven slowly on traditional pit looms." },
+          { icon: "Leaf", title: "Eco-Friendly", text: "Natural, biodegradable materials." },
+          { icon: "Shield", title: "Durable", text: "Designed for heavy everyday use." },
+          { icon: "Truck", title: "Pan-India Shipping", text: "Delivered straight to your doorstep." },
+        ],
+      };
+      try {
+        await supabase
+          .from("site_settings")
+          .update({ value: newValue })
+          .eq("key", "homepage");
+        data.value = newValue;
+      } catch (dbErr) {
+        console.error("[site-settings GET migration error]", dbErr);
+      }
+    }
+  }
+
   settingsCache[key] = { value: data.value, timestamp: now };
   return data.value;
 }
