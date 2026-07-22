@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
+import dns from "node:dns";
+
+if (typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 function getAdminEmails(): Set<string> {
   return new Set([
@@ -111,6 +116,26 @@ export const Route = createFileRoute("/api/admin/customers")({
 
           const orders = dbOrders || [];
 
+          // Fetch auth users from Supabase Auth using admin client to get email and phone
+          const authUserMap: Record<string, { email?: string; phone?: string }> = {};
+          if (useAdmin) {
+            try {
+              const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
+              if (!listError && listData?.users) {
+                listData.users.forEach((u) => {
+                  authUserMap[u.id] = {
+                    email: u.email || undefined,
+                    phone: u.phone || u.user_metadata?.phone || undefined
+                  };
+                });
+              } else if (listError) {
+                console.error("[api/admin/customers auth list error]", listError.message);
+              }
+            } catch (e) {
+              console.error("[api/admin/customers auth list exception]", e);
+            }
+          }
+
           // 3. Map orders by user_id and email
           const ordersByUserId: Record<string, any[]> = {};
           const ordersByEmail: Record<string, any[]> = {};
@@ -134,7 +159,10 @@ export const Route = createFileRoute("/api/admin/customers")({
           // First compile customers from registered profiles
           profiles.forEach((profile: any) => {
             const userOrders = ordersByUserId[profile.id] || [];
-            let email = profile.email || userOrders[0]?.customer_email || "";
+            
+            // Look up email and phone from auth first, fallback to orders
+            const authUser = authUserMap[profile.id];
+            let email = authUser?.email || profile.email || userOrders[0]?.customer_email || "";
             if (email) processedEmails.add(email.toLowerCase().trim());
 
             const totalSpent = userOrders.reduce((sum, o) => sum + Number(o.total), 0);
@@ -142,8 +170,8 @@ export const Route = createFileRoute("/api/admin/customers")({
             customersList.push({
               id: profile.id,
               fullName: profile.full_name || userOrders[0]?.customer_name || "Anonymous",
-              email: email || "Registered Customer (No order yet)",
-              phone: profile.phone || userOrders[0]?.customer_phone || "—",
+              email: email || "—",
+              phone: profile.phone || authUser?.phone || userOrders[0]?.customer_phone || "—",
               age: profile.age || "—",
               street: profile.street || userOrders[0]?.shipping_street || "—",
               city: profile.city || userOrders[0]?.shipping_city || "—",
