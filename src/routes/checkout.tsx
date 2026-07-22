@@ -49,6 +49,10 @@ function CheckoutPage() {
   const [checkoutStep, setCheckoutStep] = useState(1);
   const { settings: shippingSettings } = useShippingSettings();
 
+  // Multiple address states
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+
   // Form fields
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -170,6 +174,32 @@ function CheckoutPage() {
     toast.success("Coupon removed.");
   };
 
+  const handleSelectSavedAddress = (addr: any) => {
+    setSelectedAddressId(addr.id);
+    setFullName(addr.fullName || profile?.fullName || "");
+    setEmail(addr.email || user?.email || "");
+    setPhone(addr.phone || profile?.phone || "");
+    setStreet(addr.street || "");
+    setLandmark(addr.landmark || "");
+    setCity(addr.city || "");
+    setDistrict(addr.district || "");
+    setStateName(addr.state || "");
+    setZipCode(addr.zipCode || "");
+  };
+
+  const handleUseAnotherAddress = () => {
+    setSelectedAddressId("new");
+    setFullName(profile?.fullName || "");
+    setEmail(user?.email || "");
+    setPhone(profile?.phone || "");
+    setStreet("");
+    setLandmark("");
+    setCity("");
+    setDistrict("");
+    setStateName("");
+    setZipCode("");
+  };
+
   // Auto-fetch district & state when pincode is exactly 6 digits (manual input only)
   useEffect(() => {
     if (zipCode && zipCode.length === 6 && isManualInput) {
@@ -242,33 +272,66 @@ function CheckoutPage() {
             setProfile(p);
             setFullName(p.fullName || "");
             setPhone(p.phone || "");
-            if (p.address) {
-              setStreet(p.address.street || "");
-              setCity(p.address.city || "");
-              setDistrict(p.address.district || "");
-              setStateName(p.address.state || "");
-              setZipCode(p.address.zipCode || "");
-              setLandmark(p.address.landmark || "");
+            
+            let loadedAddresses = [];
+            if (p.addresses && p.addresses.length > 0) {
+              loadedAddresses = p.addresses;
+              setAddresses(p.addresses);
               
-              // Verify if all mandatory details are present
-              const hasAllDetails = !!(
-                p.fullName &&
-                user.email &&
-                p.phone &&
-                p.address.street &&
-                p.address.landmark &&
-                p.address.city &&
-                p.address.district &&
-                p.address.state &&
-                p.address.zipCode &&
-                p.address.zipCode.length === 6
-              );
-              
-              if (hasAllDetails) {
-                setCheckoutStep(2);
-              } else {
-                setCheckoutStep(1);
-              }
+              const firstAddr = p.addresses[0];
+              setSelectedAddressId(firstAddr.id);
+              setFullName(firstAddr.fullName || p.fullName || "");
+              setEmail(firstAddr.email || user.email || "");
+              setPhone(firstAddr.phone || p.phone || "");
+              setStreet(firstAddr.street || "");
+              setCity(firstAddr.city || "");
+              setDistrict(firstAddr.district || "");
+              setStateName(firstAddr.state || "");
+              setZipCode(firstAddr.zipCode || "");
+              setLandmark(firstAddr.landmark || "");
+            } else if (p.address) {
+              const legacyAddr = {
+                id: "default",
+                fullName: p.fullName || "",
+                phone: p.phone || "",
+                street: p.address.street || "",
+                city: p.address.city || "",
+                district: p.address.district || "",
+                state: p.address.state || "",
+                zipCode: p.address.zipCode || "",
+                landmark: p.address.landmark || "",
+                label: "HOME"
+              };
+              loadedAddresses = [legacyAddr];
+              setAddresses([legacyAddr]);
+              setSelectedAddressId("default");
+              setFullName(legacyAddr.fullName || p.fullName || "");
+              setPhone(legacyAddr.phone || p.phone || "");
+              setStreet(legacyAddr.street || "");
+              setCity(legacyAddr.city || "");
+              setDistrict(legacyAddr.district || "");
+              setStateName(legacyAddr.state || "");
+              setZipCode(legacyAddr.zipCode || "");
+              setLandmark(legacyAddr.landmark || "");
+            }
+
+            const primaryAddr = loadedAddresses[0];
+            const hasAllDetails = !!(
+              p.fullName &&
+              user.email &&
+              p.phone &&
+              primaryAddr &&
+              primaryAddr.street &&
+              primaryAddr.landmark &&
+              primaryAddr.city &&
+              primaryAddr.district &&
+              primaryAddr.state &&
+              primaryAddr.zipCode &&
+              primaryAddr.zipCode.length === 6
+            );
+            
+            if (hasAllDetails) {
+              setCheckoutStep(2);
             } else {
               setCheckoutStep(1);
             }
@@ -293,7 +356,7 @@ function CheckoutPage() {
     }
 
     if (zipCode.length !== 6) {
-      toast.error("ZIP / Postal Code must be exactly 6 digits.");
+      toast.error("Area Pin Code must be exactly 6 digits.");
       return;
     }
 
@@ -640,123 +703,180 @@ function CheckoutPage() {
                     </div>
                   ) : (
                     <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
-                      <div className="grid gap-4 sm:grid-cols-2 text-left">
-                        <div className="space-y-2">
-                          <Label htmlFor="fullName">Full Name <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="fullName"
-                            placeholder="Enter your full name"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="abcd@gmail.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 text-left">
-                        <Label htmlFor="phone">Phone Number <span className="text-destructive">*</span></Label>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="+91 12345 67890"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="space-y-2 text-left">
-                        <Label htmlFor="street">Street Address <span className="text-destructive">*</span></Label>
-                        <Input
-                          id="street"
-                          placeholder="Enter your full address"
-                          value={street}
-                          onChange={(e) => setStreet(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="space-y-2 text-left">
-                        <Label htmlFor="landmark">Landmark <span className="text-destructive">*</span></Label>
-                        <Input
-                          id="landmark"
-                          placeholder="e.g. Near Temple, Next to SBI Bank"
-                          value={landmark}
-                          onChange={(e) => setLandmark(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="grid gap-4 sm:grid-cols-2 text-left">
-                        <div className="space-y-2">
-                          <Label htmlFor="city">City / Town / Village <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="city"
-                            placeholder="Enter your city/town name"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="district">District <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="district"
-                            placeholder="Enter your district name"
-                            value={district}
-                            onChange={(e) => setDistrict(e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="state">State / Province <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="state"
-                            placeholder="Enter your state name"
-                            value={stateName}
-                            onChange={(e) => setStateName(e.target.value)}
-                            list="indian-states"
-                          />
-                          <datalist id="indian-states">
-                            {INDIAN_STATES.map((st) => (
-                              <option key={st} value={st} />
-                            ))}
-                          </datalist>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="zipCode" className="flex items-center justify-between">
-                             <span>ZIP / Postal Code <span className="text-destructive">*</span></span>
-                             {fetchingPincode && (
-                               <span className="text-[10px] text-primary flex items-center gap-1 animate-pulse">
-                                 <Loader2 className="h-2.5 w-2.5 animate-spin" /> Fetching...
-                               </span>
-                             )}
+                      {addresses.length > 0 && (
+                        <div className="space-y-3 mb-6">
+                          <Label className="text-sm font-semibold text-foreground text-left block">
+                            Select Shipping Address
                           </Label>
-                          <div className="relative">
-                            <Input
-                              id="zipCode"
-                              placeholder="Enter area pin code"
-                              value={zipCode}
-                              maxLength={6}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-                                setIsManualInput(true);
-                                setZipCode(val);
-                              }}
-                              className={fetchingPincode ? "pr-8" : ""}
-                            />
-                            {fetchingPincode && (
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          <div className="grid gap-4 sm:grid-cols-2 text-left">
+                            {addresses.map((addr) => (
+                              <div
+                                key={addr.id}
+                                onClick={() => handleSelectSavedAddress(addr)}
+                                className={`cursor-pointer rounded-2xl border p-4 transition-all duration-200 ${
+                                  selectedAddressId === addr.id
+                                    ? "border-primary bg-primary/5 shadow-sm"
+                                    : "border-border/60 hover:border-border bg-secondary/5"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-[10px] font-bold tracking-wider uppercase bg-secondary border border-border text-muted-foreground px-2 py-0.5 rounded">
+                                    {addr.label || "HOME"}
+                                  </span>
+                                  <div className={`h-4 w-4 rounded-full border flex items-center justify-center ${
+                                    selectedAddressId === addr.id ? "border-primary" : "border-muted-foreground"
+                                  }`}>
+                                    {selectedAddressId === addr.id && <div className="h-2.5 w-2.5 rounded-full bg-primary" />}
+                                  </div>
+                                </div>
+                                <p className="font-bold text-sm text-foreground">
+                                  {addr.fullName} <span className="text-xs text-muted-foreground font-normal ml-2">{addr.phone}</span>
+                                </p>
+                                {addr.email && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">{addr.email}</p>
+                                )}
+                                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                                  {addr.street}, {addr.landmark && `Landmark: ${addr.landmark}, `}{addr.city}, {addr.district ? `${addr.district}, ` : ""}{addr.state} - {addr.zipCode}
+                                </p>
                               </div>
-                            )}
+                            ))}
+                            <div
+                              onClick={handleUseAnotherAddress}
+                              className={`cursor-pointer rounded-2xl border p-4 flex flex-col justify-center items-center text-center transition-all duration-200 min-h-[110px] ${
+                                selectedAddressId === "new"
+                                  ? "border-primary bg-primary/5 shadow-sm"
+                                  : "border-border/60 border-dashed hover:border-border bg-secondary/5"
+                              }`}
+                            >
+                              <span className="text-xs font-bold text-primary">+ USE A DIFFERENT ADDRESS</span>
+                              <span className="text-[10px] text-muted-foreground mt-1">Enter a new address manually</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
+
+                      {(selectedAddressId === "new" || addresses.length === 0) && (
+                        <div className="space-y-6 border-t border-border/40 pt-6 animate-in fade-in duration-200">
+                          <h3 className="text-sm font-semibold text-foreground text-left">New Shipping Address</h3>
+                          <div className="grid gap-4 sm:grid-cols-2 text-left">
+                            <div className="space-y-2">
+                              <Label htmlFor="fullName">Full Name <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="fullName"
+                                placeholder="Enter your full name"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="email"
+                                type="email"
+                                placeholder="abcd@gmail.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 text-left">
+                            <Label htmlFor="phone">Phone Number <span className="text-destructive">*</span></Label>
+                            <Input
+                              id="phone"
+                              type="tel"
+                              placeholder="+91 12345 67890"
+                              value={phone}
+                              onChange={(e) => setPhone(e.target.value)}
+                            />
+                          </div>
+
+                          <div className="space-y-2 text-left">
+                            <Label htmlFor="street">Street Address <span className="text-destructive">*</span></Label>
+                            <Input
+                              id="street"
+                              placeholder="Enter your full address"
+                              value={street}
+                              onChange={(e) => setStreet(e.target.value)}
+                            />
+                          </div>
+
+                          <div className="space-y-2 text-left">
+                            <Label htmlFor="landmark">Landmark <span className="text-destructive">*</span></Label>
+                            <Input
+                              id="landmark"
+                              placeholder="e.g. Near Temple, Next to SBI Bank"
+                              value={landmark}
+                              onChange={(e) => setLandmark(e.target.value)}
+                            />
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-2 text-left">
+                            <div className="space-y-2">
+                              <Label htmlFor="city">City / Town / Village <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="city"
+                                placeholder="Enter your city/town name"
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="zipCode" className="flex items-center justify-between">
+                                 <span>Area Pin Code <span className="text-destructive">*</span></span>
+                                 {fetchingPincode && (
+                                   <span className="text-[10px] text-primary flex items-center gap-1 animate-pulse">
+                                     <Loader2 className="h-2.5 w-2.5 animate-spin" /> Fetching...
+                                   </span>
+                                 )}
+                              </Label>
+                              <div className="relative">
+                                <Input
+                                  id="zipCode"
+                                  placeholder="Enter area pin code"
+                                  value={zipCode}
+                                  maxLength={6}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                                    setIsManualInput(true);
+                                    setZipCode(val);
+                                  }}
+                                  className={fetchingPincode ? "pr-8" : ""}
+                                />
+                                {fetchingPincode && (
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="district">District <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="district"
+                                placeholder="Enter your district name"
+                                value={district}
+                                onChange={(e) => setDistrict(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="state">State / Province <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="state"
+                                placeholder="Enter your state name"
+                                value={stateName}
+                                onChange={(e) => setStateName(e.target.value)}
+                                list="indian-states"
+                              />
+                              <datalist id="indian-states">
+                                {INDIAN_STATES.map((st) => (
+                                  <option key={st} value={st} />
+                                ))}
+                              </datalist>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="pt-4 flex justify-end">
                         <Button 
@@ -767,7 +887,7 @@ function CheckoutPage() {
                               return;
                             }
                             if (zipCode.length !== 6) {
-                              toast.error("ZIP / Postal Code must be exactly 6 digits.");
+                              toast.error("Area Pin Code must be exactly 6 digits.");
                               return;
                             }
 
@@ -775,17 +895,34 @@ function CheckoutPage() {
                               const { data } = await supabase.auth.getSession();
                               const token = data?.session?.access_token;
                               if (token) {
+                                let bodyData: any = { fullName, phone };
+                                if (selectedAddressId === "new") {
+                                  const newAddr = {
+                                    id: Math.random().toString(36).substring(2, 9),
+                                    fullName,
+                                    email,
+                                    phone,
+                                    street,
+                                    landmark,
+                                    city,
+                                    district,
+                                    state: stateName,
+                                    zipCode,
+                                    label: "HOME"
+                                  };
+                                  const updatedAddresses = [...addresses, newAddr];
+                                  bodyData.addresses = updatedAddresses;
+                                } else {
+                                  bodyData.addresses = addresses;
+                                }
+
                                 await fetch("/api/users/profile", {
                                   method: "POST",
                                   headers: {
                                     "Content-Type": "application/json",
                                     Authorization: `Bearer ${token}`
                                   },
-                                  body: JSON.stringify({
-                                    fullName,
-                                    phone,
-                                    address: { street, city, district, state: stateName, zipCode, landmark }
-                                  })
+                                  body: JSON.stringify(bodyData)
                                 });
                               }
                             } catch (err) {
@@ -1085,7 +1222,7 @@ function CheckoutPage() {
                         return;
                       }
                       if (zipCode.length !== 6) {
-                        toast.error("ZIP / Postal Code must be exactly 6 digits.");
+                        toast.error("Area Pin Code must be exactly 6 digits.");
                         return;
                       }
                       setCheckoutStep(2);

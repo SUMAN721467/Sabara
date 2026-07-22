@@ -84,24 +84,42 @@ export const Route = createFileRoute("/api/users/profile")({
           }
 
           const streetStr = data.street || "";
-          const parts = streetStr.split("|||");
-          const street = parts[0] || "";
-          const landmark = parts[1] || "";
-          const district = parts[2] || "";
+          let addresses = [];
+          
+          if (streetStr.trim().startsWith("[")) {
+            try {
+              addresses = JSON.parse(streetStr);
+            } catch (e) {
+              console.error("[profile GET parse addresses error]", e);
+            }
+          }
+
+          if (!Array.isArray(addresses) || addresses.length === 0) {
+            const parts = streetStr.split("|||");
+            const street = parts[0] || "";
+            const landmark = parts[1] || "";
+            const district = parts[2] || "";
+            addresses = [{
+              id: "default",
+              fullName: data.full_name || "",
+              phone: data.phone || "",
+              street: street,
+              city: data.city || "",
+              district: district,
+              state: data.state || "",
+              zipCode: data.zip_code || "",
+              landmark: landmark,
+              label: "HOME"
+            }];
+          }
 
           const profile = {
             fullName: data.full_name,
             age: data.age,
             phone: data.phone,
             avatarUrl: data.avatar_url,
-            address: {
-              street: street,
-              city: data.city,
-              district: district,
-              state: data.state,
-              zipCode: data.zip_code,
-              landmark: landmark,
-            },
+            addresses: addresses,
+            address: addresses[0] || null,
           };
 
           return Response.json({ success: true, profile });
@@ -121,11 +139,12 @@ export const Route = createFileRoute("/api/users/profile")({
           }
 
           const body = await request.json();
-          const { fullName, age, phone, address, avatarUrl } = body as {
+          const { fullName, age, phone, address, addresses, avatarUrl } = body as {
             fullName?: string;
             age?: string | number;
             phone?: string;
             avatarUrl?: string | null;
+            addresses?: any[];
             address?: { street?: string; city?: string; district?: string; state?: string; zipCode?: string; landmark?: string };
           };
 
@@ -149,10 +168,18 @@ export const Route = createFileRoute("/api/users/profile")({
 
           const finalAvatarUrl = avatarUrl !== undefined ? avatarUrl : existingAvatarUrl;
 
-          // Encode district and landmark in street column to avoid database migration
-          const dbStreet = address
-            ? `${address.street || ""}|||${address.landmark || ""}|||${address.district || ""}`
-            : null;
+          // Process addresses and street column encoding
+          let dbStreet = "";
+          let firstAddr = null;
+
+          if (addresses && Array.isArray(addresses)) {
+            dbStreet = JSON.stringify(addresses);
+            firstAddr = addresses[0] || null;
+          } else if (address) {
+            // Legacy single address
+            dbStreet = `${address.street || ""}|||${address.landmark || ""}|||${address.district || ""}`;
+            firstAddr = address;
+          }
 
           const { data, error } = await supabase
             .from("user_profiles")
@@ -162,10 +189,10 @@ export const Route = createFileRoute("/api/users/profile")({
                 full_name: fullName ?? null,
                 age: parsedAge,
                 phone: phone ?? null,
-                street: dbStreet,
-                city: address?.city ?? null,
-                state: address?.state ?? null,
-                zip_code: address?.zipCode ?? null,
+                street: dbStreet || null,
+                city: firstAddr?.city ?? null,
+                state: firstAddr?.state ?? null,
+                zip_code: firstAddr?.zipCode ?? null,
                 avatar_url: finalAvatarUrl,
               },
               { onConflict: "id" },
@@ -179,24 +206,39 @@ export const Route = createFileRoute("/api/users/profile")({
           }
 
           const streetStr = data.street || "";
-          const parts = streetStr.split("|||");
-          const street = parts[0] || "";
-          const landmark = parts[1] || "";
-          const district = parts[2] || "";
+          let responseAddresses = [];
+          if (streetStr.trim().startsWith("[")) {
+            try {
+              responseAddresses = JSON.parse(streetStr);
+            } catch (e) {}
+          }
+
+          if (!Array.isArray(responseAddresses) || responseAddresses.length === 0) {
+            const parts = streetStr.split("|||");
+            const street = parts[0] || "";
+            const landmark = parts[1] || "";
+            const district = parts[2] || "";
+            responseAddresses = [{
+              id: "default",
+              fullName: data.full_name || "",
+              phone: data.phone || "",
+              street: street,
+              city: data.city || "",
+              district: district,
+              state: data.state || "",
+              zipCode: data.zip_code || "",
+              landmark: landmark,
+              label: "HOME"
+            }];
+          }
 
           const profile = {
             fullName: data.full_name,
             age: data.age,
             phone: data.phone,
             avatarUrl: data.avatar_url,
-            address: {
-              street: street,
-              city: data.city,
-              district: district,
-              state: data.state,
-              zipCode: data.zip_code,
-              landmark: landmark,
-            },
+            addresses: responseAddresses,
+            address: responseAddresses[0] || null,
           };
 
           return Response.json({ success: true, profile });

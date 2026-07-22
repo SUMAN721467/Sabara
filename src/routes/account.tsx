@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, MapPin, Loader2, Lock, Camera, Trash2, ShoppingBag, ChevronDown, ChevronUp, ChevronRight, Truck, Info, Star, ImagePlus, X, ArrowLeft, MessageSquare } from "lucide-react";
+import { User, MapPin, Loader2, Lock, Camera, Trash2, ShoppingBag, ChevronDown, ChevronUp, ChevronRight, Truck, Info, Star, ImagePlus, X, ArrowLeft, MessageSquare, MoreVertical } from "lucide-react";
 import { formatPrice } from "@/lib/cart";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -248,6 +248,25 @@ function AccountPage() {
   const [landmark, setLandmark] = useState("");
   const [fetchingPincode, setFetchingPincode] = useState(false);
 
+  // Multiple address states
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [addrLabel, setAddrLabel] = useState("HOME");
+  const [addrFullName, setAddrFullName] = useState("");
+  const [addrEmail, setAddrEmail] = useState("");
+  const [addrPhone, setAddrPhone] = useState("");
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setOpenDropdownId(null);
+    };
+    window.addEventListener("click", handleOutsideClick);
+    return () => window.removeEventListener("click", handleOutsideClick);
+  }, []);
+
   // Auto-fetch district & state when pincode is exactly 6 digits (manual input only)
   useEffect(() => {
     if (zipCode && zipCode.length === 6 && isManualInput) {
@@ -303,13 +322,36 @@ function AccountPage() {
             setFullName(p.fullName || "");
             setAge(p.age !== undefined && p.age !== null ? String(p.age) : "");
             setPhone(p.phone || "");
-            if (p.address) {
-              setStreet(p.address.street || "");
-              setCity(p.address.city || "");
-              setDistrict(p.address.district || "");
-              setStateName(p.address.state || "");
-              setZipCode(p.address.zipCode || "");
-              setLandmark(p.address.landmark || "");
+            if (p.addresses && p.addresses.length > 0) {
+              setAddresses(p.addresses);
+              const firstAddr = p.addresses[0];
+              setStreet(firstAddr.street || "");
+              setCity(firstAddr.city || "");
+              setDistrict(firstAddr.district || "");
+              setStateName(firstAddr.state || "");
+              setZipCode(firstAddr.zipCode || "");
+              setLandmark(firstAddr.landmark || "");
+            } else if (p.address) {
+              const legacyAddr = {
+                id: "default",
+                fullName: p.fullName || "",
+                email: user.email || "",
+                phone: p.phone || "",
+                street: p.address.street || "",
+                city: p.address.city || "",
+                district: p.address.district || "",
+                state: p.address.state || "",
+                zipCode: p.address.zipCode || "",
+                landmark: p.address.landmark || "",
+                label: "HOME"
+              };
+              setAddresses([legacyAddr]);
+              setStreet(legacyAddr.street || "");
+              setCity(legacyAddr.city || "");
+              setDistrict(legacyAddr.district || "");
+              setStateName(legacyAddr.state || "");
+              setZipCode(legacyAddr.zipCode || "");
+              setLandmark(legacyAddr.landmark || "");
             }
 
             // Sync database avatar_url to auth user metadata if they differ
@@ -800,21 +842,122 @@ function AccountPage() {
     }
   };
 
+  const handleStartEditAddress = (addr: any) => {
+    setEditingAddressId(addr.id);
+    setIsAddingAddress(false);
+    setAddrLabel(addr.label || "HOME");
+    setAddrFullName(addr.fullName || fullName);
+    setAddrEmail(addr.email || "");
+    setAddrPhone(addr.phone || phone);
+    setStreet(addr.street || "");
+    setLandmark(addr.landmark || "");
+    setCity(addr.city || "");
+    setDistrict(addr.district || "");
+    setStateName(addr.state || "");
+    setZipCode(addr.zipCode || "");
+  };
+
+  const handleStartAddAddress = () => {
+    setEditingAddressId(null);
+    setIsAddingAddress(true);
+    setAddrLabel("HOME");
+    setAddrFullName(fullName || "");
+    setAddrEmail(user?.email || "");
+    setAddrPhone(phone || "");
+    setStreet("");
+    setLandmark("");
+    setCity("");
+    setDistrict("");
+    setStateName("");
+    setZipCode("");
+  };
+
+  const handleCancelAddressForm = () => {
+    setIsAddingAddress(false);
+    setEditingAddressId(null);
+  };
+
+  const handleDeleteAddress = async (addressId: string) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this address?");
+    if (!confirmDelete) return;
+
+    const updatedAddresses = addresses.filter((addr) => addr.id !== addressId);
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      if (!token) {
+        toast.error("You must be logged in.");
+        return;
+      }
+
+      const response = await fetch("/api/users/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fullName,
+          age: age === "" ? "" : Number(age),
+          phone,
+          avatarUrl: profile?.avatarUrl || user.user_metadata?.avatar_url || null,
+          addresses: updatedAddresses,
+        }),
+      });
+
+      const json = await response.json();
+      if (!response.ok || !json.success) {
+        throw new Error(json.error || "Failed to delete address");
+      }
+
+      setProfile(json.profile);
+      if (json.profile?.addresses) {
+        setAddresses(json.profile.addresses);
+      } else {
+        setAddresses([]);
+      }
+      toast.success("Address deleted successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete address.");
+    }
+  };
+
   const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!street.trim() || !landmark.trim() || !city.trim() || !district.trim() || !stateName.trim() || !zipCode.trim()) {
+    if (!street.trim() || !landmark.trim() || !city.trim() || !district.trim() || !stateName.trim() || !zipCode.trim() || !addrFullName.trim() || !addrPhone.trim() || !addrEmail.trim()) {
       toast.error("All shipping address fields are mandatory.");
       return;
     }
 
     if (zipCode.length !== 6) {
-      toast.error("ZIP / Postal Code must be exactly 6 digits.");
+      toast.error("Area Pin Code must be exactly 6 digits.");
       return;
     }
 
     setSavingAddress(true);
 
+    const newAddress = {
+      id: editingAddressId || Math.random().toString(36).substring(2, 9),
+      fullName: addrFullName,
+      email: addrEmail,
+      phone: addrPhone,
+      street,
+      landmark,
+      city,
+      district,
+      state: stateName,
+      zipCode,
+      label: addrLabel || "HOME"
+    };
+
+    let updatedAddresses = [];
+    if (editingAddressId) {
+      updatedAddresses = addresses.map(addr => addr.id === editingAddressId ? newAddress : addr);
+    } else {
+      updatedAddresses = [...addresses, newAddress];
+    }
 
     try {
       const { data } = await supabase.auth.getSession();
@@ -835,14 +978,7 @@ function AccountPage() {
           age: age === "" ? "" : Number(age),
           phone,
           avatarUrl: profile?.avatarUrl || user.user_metadata?.avatar_url || null,
-          address: {
-            street,
-            city,
-            district,
-            state: stateName,
-            zipCode,
-            landmark,
-          },
+          addresses: updatedAddresses,
         }),
       });
 
@@ -852,7 +988,12 @@ function AccountPage() {
       }
 
       setProfile(json.profile);
-      toast.success("Shipping address updated successfully!");
+      if (json.profile?.addresses) {
+        setAddresses(json.profile.addresses);
+      }
+      toast.success(editingAddressId ? "Address updated successfully!" : "Address added successfully!");
+      setIsAddingAddress(false);
+      setEditingAddressId(null);
     } catch (err: any) {
       toast.error(err.message || "Something went wrong.");
     } finally {
@@ -922,6 +1063,13 @@ function AccountPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
       <div className="mb-10">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3 uppercase tracking-wider font-semibold group"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+          Back to Home
+        </Link>
         <h1 className="font-serif text-4xl text-foreground">My Account</h1>
         <p className="text-muted-foreground mt-1">
           Manage your personal profile, track orders, and edit delivery addresses.
@@ -1106,139 +1254,298 @@ function AccountPage() {
           {/* ── SHIPPING ADDRESS TAB ───────────────────────────────────────── */}
           <TabsContent value="address" className="focus-visible:ring-0 focus-visible:ring-offset-0 animate-in fade-in-50 duration-200">
             <div className="rounded-2xl border border-border/60 bg-card p-6 sm:p-8 shadow-sm">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border/40">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <MapPin className="h-5 w-5" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-border/40">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <MapPin className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-serif text-foreground">
+                      {isAddingAddress ? "Add New Address" : editingAddressId ? "Edit Address" : "Manage Addresses"}
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {isAddingAddress || editingAddressId
+                        ? "Please fill in all the details below. All fields are mandatory."
+                        : "Add and manage multiple delivery addresses for a seamless shopping experience."}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-serif text-foreground">Shipping Details</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Add or update your address for smooth checkout deliveries. <span className="font-semibold text-destructive dark:text-red-400 block sm:inline mt-1 sm:mt-0 sm:ml-1">(All fields are mandatory)</span>
-                  </p>
-                </div>
+
+                {!isAddingAddress && !editingAddressId && (
+                  <Button
+                    type="button"
+                    onClick={handleStartAddAddress}
+                    className="rounded-full px-5 py-2.5 text-xs font-semibold self-start sm:self-auto bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    + ADD A NEW ADDRESS
+                  </Button>
+                )}
               </div>
 
-              <form onSubmit={handleSaveAddress} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="street">Street Address <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="street"
-                    required
-                    value={street}
-                    onChange={(e) => setStreet(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="landmark">Landmark <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="landmark"
-                    required
-                    value={landmark}
-                    onChange={(e) => setLandmark(e.target.value)}
-                  />
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City / Town / Village <span className="text-destructive">*</span></Label>
-                    <Input
-                      id="city"
-                      required
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="district">District <span className="text-destructive">*</span></Label>
-                    <Input
-                      id="district"
-                      required
-                      value={district}
-                      onChange={(e) => setDistrict(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="state">State / Province <span className="text-destructive">*</span></Label>
-                    <Input
-                      id="state"
-                      required
-                      value={stateName}
-                      onChange={(e) => setStateName(e.target.value)}
-                      list="indian-states"
-                    />
-                    <datalist id="indian-states">
-                      {INDIAN_STATES.map((st) => (
-                        <option key={st} value={st} />
-                      ))}
-                    </datalist>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="zipCode" className="flex items-center justify-between">
-                      <span>ZIP / Postal Code <span className="text-destructive">*</span></span>
-                      {fetchingPincode && (
-                        <span className="text-[10px] text-primary flex items-center gap-1 animate-pulse">
-                          <Loader2 className="h-2.5 w-2.5 animate-spin" /> Fetching...
-                        </span>
-                      )}
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="zipCode"
-                        required
-                        value={zipCode}
-                        maxLength={6}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-                          setIsManualInput(true);
-                          setZipCode(val);
-                        }}
-                        className={fetchingPincode ? "pr-8" : ""}
-                      />
-                      {fetchingPincode && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Display Current Address Card if populated */}
-                {profile?.address?.street && (
-                  <div className="mt-6 rounded-xl border border-border/50 bg-secondary/20 p-4">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                      Active Shipping Address
-                    </h3>
-                    <div className="text-sm space-y-1 text-foreground">
-                      <p className="font-medium">{fullName}</p>
-                      <p>{street}</p>
-                      {profile?.address?.landmark && (
-                        <p className="text-xs text-muted-foreground">Landmark: {profile.address.landmark}</p>
-                      )}
-                      <p>
-                        {city}{profile?.address?.district ? `, ${profile.address.district}` : ""}, {stateName} {zipCode}
+              {!isAddingAddress && !editingAddressId ? (
+                /* ── ADDRESS LIST VIEW ────────────────────────────────────── */
+                <div>
+                  {addresses.length === 0 ? (
+                    <div className="text-center py-12 border-2 border-dashed border-border/60 rounded-2xl p-6">
+                      <MapPin className="h-10 w-10 text-muted-foreground/60 mx-auto mb-3" />
+                      <p className="text-sm font-medium text-foreground">No saved addresses found</p>
+                      <p className="text-xs text-muted-foreground mt-1 mb-4">
+                        Add a shipping address to get started with your orders.
                       </p>
-                      {phone && <p className="text-muted-foreground text-xs mt-1">Phone: {phone}</p>}
+                      <Button
+                        type="button"
+                        onClick={handleStartAddAddress}
+                        className="rounded-full px-5 py-2.5 text-xs font-semibold"
+                      >
+                        + Add Your First Address
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {addresses.map((addr) => (
+                        <div
+                          key={addr.id}
+                          className="relative rounded-2xl border border-border/60 bg-secondary/10 p-5 hover:border-border transition-all duration-200"
+                        >
+                          {/* Label Badge */}
+                          <span className="inline-block text-[10px] font-bold tracking-wider uppercase bg-secondary border border-border text-muted-foreground px-2.5 py-0.5 rounded-full mb-3">
+                            {addr.label || "HOME"}
+                          </span>
+
+                          {/* 3-dot dropdown menu */}
+                          <div className="absolute right-4 top-4">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenDropdownId(openDropdownId === addr.id ? null : addr.id);
+                              }}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+
+                            {openDropdownId === addr.id && (
+                              <div
+                                className="absolute right-0 mt-1 w-28 rounded-xl border border-border/60 bg-card p-1 shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleStartEditAddress(addr);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-xs rounded-lg text-foreground hover:bg-secondary transition-colors"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleDeleteAddress(addr.id);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-xs rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Recipient Details */}
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span className="font-bold text-sm sm:text-base text-foreground">{addr.fullName}</span>
+                            <span className="text-xs sm:text-sm text-muted-foreground font-medium">{addr.phone}</span>
+                            {addr.email && (
+                              <span className="text-xs text-muted-foreground font-normal">| {addr.email}</span>
+                            )}
+                          </div>
+
+                          {/* Address Content */}
+                          <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                            <p>{addr.street}</p>
+                            {addr.landmark && (
+                              <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+                                <span className="font-semibold">Landmark:</span> {addr.landmark}
+                              </p>
+                            )}
+                            <p className="mt-1">
+                              {addr.city}, {addr.district ? `${addr.district}, ` : ""}{addr.state} - <span className="font-semibold text-foreground">{addr.zipCode}</span>
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* ── ADDRESS FORM VIEW ─────────────────────────────────────── */
+                <form onSubmit={handleSaveAddress} className="space-y-6">
+                  {/* Address Label (Home, Work, Other) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="addrLabel">Address Label</Label>
+                    <div className="flex gap-2">
+                      {["HOME", "WORK", "OTHER"].map((l) => (
+                        <Button
+                          key={l}
+                          type="button"
+                          variant={addrLabel === l ? "default" : "outline"}
+                          className="rounded-full px-4 text-xs h-9"
+                          onClick={() => setAddrLabel(l)}
+                        >
+                          {l}
+                        </Button>
+                      ))}
                     </div>
                   </div>
-                )}
 
-                <div className="pt-2">
-                  <Button type="submit" disabled={savingAddress} className="rounded-full px-6 py-5">
-                    {savingAddress ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving Address...
-                      </>
-                    ) : (
-                      "Save Shipping Address"
-                    )}
-                  </Button>
-                </div>
-              </form>
+                  {/* Recipient details */}
+                  <div className="grid gap-6 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="addrFullName">Recipient Full Name <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="addrFullName"
+                        required
+                        value={addrFullName}
+                        onChange={(e) => setAddrFullName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="addrEmail">Recipient Email ID <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="addrEmail"
+                        type="email"
+                        required
+                        value={addrEmail}
+                        onChange={(e) => setAddrEmail(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="addrPhone">Recipient Phone Number <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="addrPhone"
+                        required
+                        value={addrPhone}
+                        onChange={(e) => setAddrPhone(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Street Address */}
+                  <div className="space-y-2">
+                    <Label htmlFor="street">Street Address <span className="text-destructive">*</span></Label>
+                    <Input
+                      id="street"
+                      required
+                      value={street}
+                      onChange={(e) => setStreet(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Landmark */}
+                  <div className="space-y-2">
+                    <Label htmlFor="landmark">Landmark <span className="text-destructive">*</span></Label>
+                    <Input
+                      id="landmark"
+                      required
+                      value={landmark}
+                      onChange={(e) => setLandmark(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City / Town / Village <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="city"
+                        required
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="zipCode" className="flex items-center justify-between">
+                        <span>Area Pin Code <span className="text-destructive">*</span></span>
+                        {fetchingPincode && (
+                          <span className="text-[10px] text-primary flex items-center gap-1 animate-pulse">
+                            <Loader2 className="h-2.5 w-2.5 animate-spin" /> Fetching...
+                          </span>
+                        )}
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="zipCode"
+                          required
+                          value={zipCode}
+                          maxLength={6}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                            setIsManualInput(true);
+                            setZipCode(val);
+                          }}
+                          className={fetchingPincode ? "pr-8" : ""}
+                        />
+                        {fetchingPincode && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="district">District <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="district"
+                        required
+                        value={district}
+                        onChange={(e) => setDistrict(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State / Province <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="state"
+                        required
+                        value={stateName}
+                        onChange={(e) => setStateName(e.target.value)}
+                        list="indian-states"
+                      />
+                      <datalist id="indian-states">
+                        {INDIAN_STATES.map((st) => (
+                          <option key={st} value={st} />
+                        ))}
+                      </datalist>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex gap-3">
+                    <Button type="submit" disabled={savingAddress} className="rounded-full px-6 py-5">
+                      {savingAddress ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                        </>
+                      ) : (
+                        "Save Address"
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-full px-6 py-5"
+                      onClick={handleCancelAddressForm}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              )}
             </div>
           </TabsContent>
 
