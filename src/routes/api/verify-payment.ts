@@ -71,6 +71,38 @@ export const Route = createFileRoute("/api/verify-payment")({
                 }
               })
             : createClient(supabaseUrl!, (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)!?.replace(/['"]/g, '').trim());
+          // Fetch order items to decrement product stock
+          const { data: dbOrderItems, error: itemsFetchError } = await supabase
+            .from("order_items")
+            .select("product_id, qty")
+            .eq("order_id", orderId);
+
+          if (!itemsFetchError && dbOrderItems && dbOrderItems.length > 0) {
+            for (const item of dbOrderItems) {
+              if (item.product_id) {
+                // Fetch current stock
+                const { data: prod } = await supabase
+                  .from("products")
+                  .select("stock")
+                  .eq("id", item.product_id)
+                  .single();
+
+                if (prod) {
+                  const currentStock = prod.stock !== undefined && prod.stock !== null ? Number(prod.stock) : 10;
+                  const newStock = Math.max(0, currentStock - item.qty);
+                  // Decrement stock in database
+                  const { error: decError } = await supabase
+                    .from("products")
+                    .update({ stock: newStock })
+                    .eq("id", item.product_id);
+
+                  if (decError) {
+                    console.error("[api/verify-payment stock decrement failed]", decError.message);
+                  }
+                }
+              }
+            }
+          }
 
           // Update order customer_status to "Paid" (status stays "Pending" due to database constraints)
           const { error: updateError } = await supabase

@@ -58,32 +58,6 @@ export const Route = createFileRoute("/api/cancel-order")({
             );
           }
 
-          // Restore product stocks
-          const { data: orderItems, error: itemsErr } = await supabase
-            .from("order_items")
-            .select("product_id, qty")
-            .eq("order_id", orderId);
-
-          if (!itemsErr && orderItems) {
-            for (const item of orderItems) {
-              if (item.product_id) {
-                const { data: prod } = await supabase
-                  .from("products")
-                  .select("stock")
-                  .eq("id", item.product_id)
-                  .single();
-
-                const currentStock = prod && prod.stock !== undefined && prod.stock !== null ? Number(prod.stock) : 0;
-                const newStock = currentStock + Number(item.qty);
-
-                await supabase
-                  .from("products")
-                  .update({ stock: newStock })
-                  .eq("id", item.product_id);
-              }
-            }
-          }
-
           // Update order status to Cancelled / Payment Failed
           const cancelReason = reason || "Payment cancelled or failed";
           const isPaymentFailed = cancelReason.toLowerCase().includes("payment failed") || 
@@ -107,7 +81,7 @@ export const Route = createFileRoute("/api/cancel-order")({
 
           return Response.json({
             success: true,
-            message: "Order successfully cancelled and stock restored."
+            message: "Order successfully cancelled."
           });
         } catch (err: any) {
           console.error("[api/cancel-order error]", err);

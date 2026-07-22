@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
+import dns from "node:dns";
+
+if (typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 async function resolveSupabaseClient(request: Request, context: any) {
   let supabase = (context as any)?.supabase;
@@ -117,7 +122,13 @@ export const Route = createFileRoute("/api/users/sync")({
             .single();
 
           if (error) {
-            console.error("[sync POST error]", error.message);
+            const isFetchError = error.message && (error.message.includes("fetch failed") || error.message.includes("fetch"));
+            console.error(
+              "[sync POST error]",
+              isFetchError 
+                ? "Supabase API connection failed (fetch failed). This usually means Node.js is having network/DNS resolution issues connecting to Supabase. Checking internet or restarting server may help." 
+                : error.message
+            );
             return Response.json({ success: false, error: error.message }, { status: 500 });
           }
 

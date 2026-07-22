@@ -31,6 +31,11 @@ function CartPage() {
     ? shippingSettings.fee 
     : 0;
 
+  const hasOutOfStockItems = detailed.some((line) => {
+    const maxStock = line.product.stock !== undefined && line.product.stock !== null ? Number(line.product.stock) : 10;
+    return maxStock <= 0;
+  });
+
   // Fetch available coupons
   useEffect(() => {
     async function fetchCoupons() {
@@ -129,6 +134,10 @@ function CartPage() {
   const totalAmount = subtotal - discount + FEES;
 
   const handleProceedToCheckout = () => {
+    if (hasOutOfStockItems) {
+      toast.error("Please remove out of stock items from your cart before proceeding.");
+      return;
+    }
     if (!user) {
       // User is not logged in: navigate to /login and pass redirect to /checkout
       navigate({
@@ -179,6 +188,9 @@ function CartPage() {
                   const original = line.product.original_price || Math.round(line.product.price * 1.45);
                   const discountPercent = Math.round(((original - line.product.price) / original) * 100);
 
+                  const maxStock = line.product.stock !== undefined && line.product.stock !== null ? Number(line.product.stock) : 10;
+                  const isItemOutOfStock = maxStock <= 0;
+
                   return (
                     <li key={line.id} className="flex gap-4 sm:gap-6 py-4 sm:py-6 first:pt-0 last:pb-0">
                       {/* Product Image & Qty Dropdown */}
@@ -200,19 +212,19 @@ function CartPage() {
                           <button
                             type="button"
                             onClick={() => setQty(line.id, Math.max(1, line.qty - 1))}
-                            disabled={line.qty <= 1}
+                            disabled={isItemOutOfStock || line.qty <= 1}
                             className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer bg-transparent border-none"
                             aria-label="Decrease quantity"
                           >
                             <Minus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                           </button>
                           <span className="w-6 sm:w-8 text-center text-[11px] sm:text-xs font-semibold tabular-nums text-foreground select-none">
-                            {line.qty}
+                            {isItemOutOfStock ? 0 : line.qty}
                           </span>
                           <button
                             type="button"
-                            onClick={() => setQty(line.id, Math.min(line.product.stock || 10, line.qty + 1))}
-                            disabled={line.qty >= (line.product.stock || 10)}
+                            onClick={() => setQty(line.id, Math.min(maxStock, line.qty + 1))}
+                            disabled={isItemOutOfStock || line.qty >= maxStock}
                             className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer bg-transparent border-none"
                             aria-label="Increase quantity"
                           >
@@ -232,9 +244,17 @@ function CartPage() {
                             >
                               {line.product.name}
                             </Link>
-                            <p className="text-[11px] sm:text-[12px] text-muted-foreground mt-1 text-left font-medium">
-                              {line.product.category} · {line.product.dimensions || "Standard Size"}
-                            </p>
+                             <p className="text-[11px] sm:text-[12px] text-muted-foreground mt-1 text-left font-medium">
+                               {line.product.category} · {line.product.dimensions || "Standard Size"}
+                             </p>
+
+                             {isItemOutOfStock && (
+                               <div className="mt-2 text-left">
+                                 <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-destructive bg-destructive/10 border border-destructive/20 px-2.5 py-0.5 rounded-full w-fit uppercase tracking-wider">
+                                   Out of Stock
+                                 </span>
+                               </div>
+                             )}
 
                             {/* Price Row */}
                             <div className="flex items-center gap-2 mt-2">
@@ -441,7 +461,7 @@ function CartPage() {
               </div>
 
               {/* Savings banner */}
-              {totalDiscount > 0 && (
+              {totalDiscount > 0 && !hasOutOfStockItems && (
                 <div className="bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-semibold rounded-[4px] p-2.5 sm:p-3 flex items-center gap-2 mb-6">
                   <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -450,9 +470,17 @@ function CartPage() {
                 </div>
               )}
 
+              {hasOutOfStockItems && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold rounded-[4px] p-2.5 sm:p-3 flex items-start gap-2 mb-6 text-left">
+                  <Info className="h-4.5 w-4.5 shrink-0 text-destructive mt-0.5" />
+                  <span>Please remove the out-of-stock item(s) from your cart to proceed with the order.</span>
+                </div>
+              )}
+
               <Button
                 onClick={handleProceedToCheckout}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-[4px] py-4 sm:py-6 text-sm sm:text-base font-bold transition-all uppercase tracking-wider shadow-sm"
+                disabled={hasOutOfStockItems}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-[4px] py-4 sm:py-6 text-sm sm:text-base font-bold transition-all uppercase tracking-wider shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Proceed to Checkout
               </Button>

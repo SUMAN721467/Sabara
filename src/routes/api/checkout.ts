@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { sendOrderEmails } from "@/lib/email";
+import dns from "node:dns";
+
+if (typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 export const Route = createFileRoute("/api/checkout")({
   server: {
@@ -55,16 +60,6 @@ export const Route = createFileRoute("/api/checkout")({
                     { success: false, error: `Product "${prod.name}" only has ${currentStock} item(s) left in stock.` },
                     { status: 400 }
                   );
-                }
-
-                // Decrement stock in database
-                const { error: decError } = await supabase
-                  .from("products")
-                  .update({ stock: Math.max(0, currentStock - item.qty) })
-                  .eq("id", item.productId);
-
-                if (decError) {
-                  console.error("[api/checkout stock decrement failed]", decError.message);
                 }
 
                 secureSubtotal += Number(prod.price) * item.qty;
@@ -171,38 +166,69 @@ export const Route = createFileRoute("/api/checkout")({
           const finalTotal = Math.max(0, secureSubtotal - discount + shippingFee);
 
 
-          // Count existing orders to make a sequential order number
-          const { count } = await supabase
+          // Find max sequence number to avoid duplicate key conflicts
+          let seq = 1;
+          const { data: existingOrders } = await supabase
             .from("orders")
-            .select("*", { count: "exact", head: true });
+            .select("order_number");
+          
+          if (existingOrders && existingOrders.length > 0) {
+            const seqs = existingOrders
+              .map(o => {
+                const match = o.order_number?.match(/^LW-2026-(\d+)$/);
+                return match ? parseInt(match[1], 10) : 0;
+              })
+              .filter(Boolean);
+            if (seqs.length > 0) {
+              seq = Math.max(...seqs) + 1;
+            }
+          }
 
-          const seq = (count || 0) + 1;
-          const orderNumber = `LW-2026-${String(seq).padStart(4, "0")}`;
           const baseStreet = `${shippingAddress.street.replace(/\|/g, " ")}${shippingAddress.landmark ? ` (Landmark: ${shippingAddress.landmark.replace(/\|/g, " ")})` : ""}${shippingAddress.district ? ` (District: ${shippingAddress.district.replace(/\|/g, " ")})` : ""}`;
 
+          // Insert order with retry loop for unique constraint safety
+          let order = null;
+          let attempts = 0;
+          const maxAttempts = 5;
 
-          // Insert order
-          const { data: order, error: orderError } = await supabase
-            .from("orders")
-            .insert({
-              order_number: orderNumber,
-              customer_name: customerName,
-              customer_email: customerEmail,
-              customer_phone: customerPhone || null,
-              total: finalTotal,
-              status: "Pending",
-              shipping_street: code 
-                ? `${baseStreet}|||${code}|${discount}` 
-                : baseStreet,
-              shipping_city: shippingAddress.city,
-              shipping_state: shippingAddress.state,
-              shipping_zip_code: shippingAddress.zipCode,
-              user_id: userId || null
-            })
-            .select("*")
-            .single();
+          while (attempts < maxAttempts) {
+            const currentOrderNumber = `LW-2026-${String(seq).padStart(4, "0")}`;
+            const { data, error: insertError } = await supabase
+              .from("orders")
+              .insert({
+                order_number: currentOrderNumber,
+                customer_name: customerName,
+                customer_email: customerEmail,
+                customer_phone: customerPhone || null,
+                total: finalTotal,
+                status: "Pending",
+                shipping_street: code 
+                  ? `${baseStreet}|||${code}|${discount}` 
+                  : baseStreet,
+                shipping_city: shippingAddress.city,
+                shipping_state: shippingAddress.state,
+                shipping_zip_code: shippingAddress.zipCode,
+                user_id: userId || null
+              })
+              .select("*")
+              .single();
 
-          if (orderError) throw new Error(orderError.message);
+            if (!insertError) {
+              order = data;
+              break;
+            }
+
+            if (insertError.message.includes("duplicate key") || insertError.message.includes("unique constraint")) {
+              seq++;
+              attempts++;
+            } else {
+              throw new Error(insertError.message);
+            }
+          }
+
+          if (!order) {
+            throw new Error("Failed to generate a unique order number after multiple attempts.");
+          }
 
           // Insert order items
           const orderItemsPayload = items.map((item: any) => ({

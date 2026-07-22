@@ -2,6 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
 import { sendActivityEmail } from "@/lib/email";
+import dns from "node:dns";
+
+if (typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 async function resolveSupabaseClient(request: Request, context: any) {
   let supabase = (context as any)?.supabase;

@@ -248,6 +248,22 @@ function CheckoutPage() {
     }
   }, [cartLoading, authLoading, detailed, orderSuccess, navigate]);
 
+  // Out of stock redirect
+  useEffect(() => {
+    if (!cartLoading && !authLoading && !orderSuccess && detailed.length > 0) {
+      const hasOutOfStock = detailed.some(
+        (line) =>
+          line.product.stock !== undefined &&
+          line.product.stock !== null &&
+          Number(line.product.stock) <= 0
+      );
+      if (hasOutOfStock) {
+        toast.error("Some items in your cart are out of stock. Please remove them before checkout.");
+        navigate({ to: "/cart" });
+      }
+    }
+  }, [cartLoading, authLoading, detailed, orderSuccess, navigate]);
+
   // Fetch registered user profile details and resolve dynamic starting step
   useEffect(() => {
     if (!user) return;
