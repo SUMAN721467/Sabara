@@ -28,7 +28,7 @@ function WishlistPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20 animate-in fade-in duration-500">
+    <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
         <div>
           <span className="text-xs font-medium uppercase tracking-[0.22em] text-primary">
@@ -63,14 +63,14 @@ function WishlistPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {detailed.map((product) => (
             <div
               key={product.id}
               className="group relative flex flex-col rounded-xl border bg-card/45 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300"
             >
               {/* Image */}
-              <div className="relative aspect-[4/5] overflow-hidden bg-secondary/50">
+              <div className="relative aspect-square overflow-hidden bg-secondary/50">
                 <Link to="/product/$id" params={{ id: product.id }}>
                   <img
                     src={product.image}

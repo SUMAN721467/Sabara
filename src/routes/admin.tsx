@@ -20,7 +20,7 @@ import {
   ShieldX, Plus, X, Upload, ImagePlus, Loader2, ArrowLeft,
   DollarSign, ShoppingBag, Users, Layers, Search, MapPin, ClipboardList,
   ShoppingCart, Heart, Calendar, Activity, Info, LogIn, Mail, Phone, User,
-  ChevronDown, ChevronUp, Settings
+  ChevronDown, ChevronUp, Settings, Truck, RotateCcw, Sparkles
 } from "lucide-react";
 import { ArrowUp, ArrowDown, Trash2, Edit, Check, Star } from "lucide-react";
 
@@ -1034,6 +1034,17 @@ function ProductForm({
   const [stock, setStock] = useState<number>(initial?.stock ?? 10);
   const [sku, setSku] = useState(initial?.sku ?? "");
 
+  // Highlights & Accordions state
+  const [highlights, setHighlights] = useState<string>(
+    initial?.highlights ?? "Free Delivery on all prepaid orders\n7-Day Hassle-Free Size Exchange\n100% Anti-Tarnish & Waterproof"
+  );
+  const [careInstructions, setCareInstructions] = useState<string>(
+    initial?.care_instructions ?? "Simply wipe clean with a dry cloth"
+  );
+  const [deliveryPolicy, setDeliveryPolicy] = useState<string>(
+    initial?.delivery_policy ?? "Dispatched within 24 hours. Delivered across India within 2 to 4 business days. Easy 7-day exchange support available on WhatsApp."
+  );
+
   // Images
   const [mainImageUrl, setMainImageUrl] = useState(initial?.image ?? "");
   const [galleryUrls, setGalleryUrls] = useState<string[]>(initial?.gallery ?? []);
@@ -1068,6 +1079,9 @@ function ProductForm({
     setBadge(initial?.badge ?? "");
     setStock(initial?.stock ?? 10);
     setSku(initial?.sku ?? "");
+    setHighlights(initial?.highlights ?? "Free Delivery on all prepaid orders\n7-Day Hassle-Free Size Exchange\n100% Anti-Tarnish & Waterproof");
+    setCareInstructions(initial?.care_instructions ?? "Simply wipe clean with a dry cloth");
+    setDeliveryPolicy(initial?.delivery_policy ?? "Dispatched within 24 hours. Delivered across India within 2 to 4 business days. Easy 7-day exchange support available on WhatsApp.");
     setMainImageUrl(initial?.image ?? "");
     setGalleryUrls(initial?.gallery ?? []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1099,7 +1113,14 @@ function ProductForm({
         urls.push(await uploadImage(file));
       }
       setGalleryUrls((prev) => [...prev, ...urls]);
-      toast.success(`${urls.length} image(s) uploaded`);
+      // If no hero image is set yet, automatically set the first uploaded image as hero/main image
+      setMainImageUrl((currentMain) => {
+        if (!currentMain && urls.length > 0) {
+          return urls[0];
+        }
+        return currentMain;
+      });
+      toast.success(`${urls.length} image(s) uploaded. First image set as Hero / Cover image.`);
     } catch (err: any) {
       toast.error(err.message || "Upload failed");
     } finally {
@@ -1108,8 +1129,15 @@ function ProductForm({
     }
   };
 
-  const removeGallery = (i: number) =>
+  const removeGallery = (i: number) => {
+    const urlToRemove = galleryUrls[i];
     setGalleryUrls((prev) => prev.filter((_, idx) => idx !== i));
+    if (urlToRemove === mainImageUrl) {
+      // Pick the next available image as main/hero
+      const remaining = galleryUrls.filter((_, idx) => idx !== i);
+      setMainImageUrl(remaining[0] || "");
+    }
+  };
 
   /* ── Add custom category ─────────────────────────────────────────────────── */
   const addCustomCategory = () => {
@@ -1132,10 +1160,14 @@ function ProductForm({
   /* ── Submit ──────────────────────────────────────────────────────────────── */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!mainImageUrl) { toast.error("Please upload a main image"); return; }
+    const finalHeroImage = mainImageUrl || (galleryUrls.length > 0 ? galleryUrls[0] : "");
+    if (!finalHeroImage) { toast.error("Please upload at least one image (Hero/Cover image)"); return; }
     setBusy(true);
     try {
-      const gallery = galleryUrls.length > 0 ? galleryUrls : [mainImageUrl];
+      // Ensure the Hero/Main image is ALWAYS the first image (index 0) in the gallery array
+      const otherImages = galleryUrls.filter((u) => u && u !== finalHeroImage);
+      const gallery = [finalHeroImage, ...otherImages];
+
       if (selectedCategories.length === 0) {
         toast.error("Please select at least one category");
         return;
@@ -1143,8 +1175,11 @@ function ProductForm({
       const fullName = color.trim() ? `${baseName.trim()} - ${color.trim()}` : baseName.trim();
       const payload: any = {
         name: fullName, price, category: selectedCategories.join(", "), materials, dimensions, story, badge,
-        image: mainImageUrl, gallery, stock, sku: sku.trim() || null,
+        image: finalHeroImage, gallery, stock, sku: sku.trim() || null,
         original_price: originalPrice || null,
+        highlights: highlights.trim(),
+        care_instructions: careInstructions.trim(),
+        delivery_policy: deliveryPolicy.trim(),
       };
       if (isEdit && initial?.id) payload.id = initial.id;
       await onSave(payload, isEdit);
@@ -1170,12 +1205,18 @@ function ProductForm({
         </h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 space-y-8">
+      <form onSubmit={handleSubmit} className="p-6 space-y-10">
         {/* ── Section 1: Basic Info ───────────────────────────────────────── */}
-        <section>
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-            Basic Information
-          </h3>
+        <section className="space-y-4">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+              1. Basic Information
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              General details, pricing, inventory and categorization.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
             <div className="sm:col-span-2 space-y-2">
               <Label htmlFor="p-name">Product Name *</Label>
@@ -1205,13 +1246,13 @@ function ProductForm({
           </div>
 
           {price > 0 && originalPrice && originalPrice > price && (
-            <div className="mt-4 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/20 p-2.5 rounded-lg border border-emerald-500/20 animate-in fade-in duration-300">
+            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/20 p-2.5 rounded-lg border border-emerald-500/20 animate-in fade-in duration-300">
               Calculated Discount: {formatPrice(originalPrice - price)} off ({Math.round(((originalPrice - price) / originalPrice) * 100)}% discount)
             </div>
           )}
 
           {/* Category */}
-          <div className="mt-4 space-y-2">
+          <div className="space-y-2">
             <Label>Category * (Select one or more)</Label>
             <div className="flex flex-wrap gap-2">
               {allCategories.map((c) => {
@@ -1224,7 +1265,7 @@ function ProductForm({
                         prev.includes(c) ? prev.filter((catName) => catName !== c) : [...prev, c]
                       );
                     }}
-                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors cursor-pointer ${
                       isSelected
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border bg-background text-foreground hover:bg-secondary"
@@ -1234,14 +1275,13 @@ function ProductForm({
                   </button>
                 );
               })}
-              {/* Show selected custom categories if they are not in allCategories */}
               {selectedCategories.filter(c => !allCategories.includes(c)).map((c) => (
                 <button
                   key={c} type="button"
                   onClick={() => {
                     setSelectedCategories((prev) => prev.filter((catName) => catName !== c));
                   }}
-                  className="rounded-full border border-primary bg-primary text-primary-foreground px-3 py-1.5 text-sm transition-colors"
+                  className="rounded-full border border-primary bg-primary text-primary-foreground px-3 py-1.5 text-sm transition-colors cursor-pointer"
                 >
                   {c} <span className="ml-1 text-xs opacity-80">×</span>
                 </button>
@@ -1249,7 +1289,7 @@ function ProductForm({
               <button
                 type="button"
                 onClick={() => setShowCustomCat(!showCustomCat)}
-                className="rounded-full border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                className="rounded-full border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors cursor-pointer"
               >
                 <Plus className="inline h-3 w-3 mr-1" />
                 New Category
@@ -1269,7 +1309,7 @@ function ProductForm({
           </div>
 
           {/* Badge & Variety */}
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="p-badge">Badge / Tag (optional)</Label>
               <Input id="p-badge" placeholder="e.g. Handwoven, Set of 4"
@@ -1283,98 +1323,248 @@ function ProductForm({
           </div>
         </section>
 
-        {/* ── Section 2: Details ──────────────────────────────────────────── */}
-        <section>
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-            Product Details
-          </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="p-materials">Materials *</Label>
-              <Input id="p-materials" required placeholder="e.g. Jute + cotton, sage trim"
-                value={materials} onChange={(e) => setMaterials(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="p-dimensions">Dimensions *</Label>
-              <Input id="p-dimensions" required placeholder="e.g. Ø 90 cm"
-                value={dimensions} onChange={(e) => setDimensions(e.target.value)} />
-            </div>
+        {/* ── Section 2: Highlights ───────────────────────────────────────── */}
+        <section className="border-t pt-8 space-y-4">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" /> 2. HIGHLIGHTS
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Top selling points shown in the highlighted yellow banner below the Buy It Now button (1 point per line).
+            </p>
           </div>
-          <div className="mt-4 space-y-2">
-            <Label htmlFor="p-story">Description / Story *</Label>
-            <Textarea id="p-story" required rows={4}
-              placeholder="Describe the product's craft, origin, and feel…"
-              value={story} onChange={(e) => setStory(e.target.value)} />
-          </div>
-        </section>
 
-        {/* ── Section 3: Images ──────────────────────────────────────────── */}
-        <section>
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-            Product Images
-          </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div className="space-y-2">
+              <Label htmlFor="p-highlights">Highlights Bullet Points (1 per line) *</Label>
+              <Textarea
+                id="p-highlights"
+                rows={4}
+                className="font-mono text-xs leading-relaxed"
+                placeholder="Free Delivery on all prepaid orders&#10;7-Day Hassle-Free Size Exchange&#10;100% Anti-Tarnish & Waterproof"
+                value={highlights}
+                onChange={(e) => setHighlights(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Tip: Each new line will be displayed with an icon on the live product page.
+              </p>
+            </div>
 
-          {/* Main image */}
-          <div className="space-y-2">
-            <Label>Main Image *</Label>
-            <div className="flex items-start gap-4">
-              {mainImageUrl ? (
-                <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-xl border">
-                  <img src={mainImageUrl} alt="Main" className="h-full w-full object-cover" />
-                  <button type="button" onClick={() => setMainImageUrl("")}
-                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ) : (
-                <button type="button" onClick={() => mainFileRef.current?.click()}
-                  disabled={uploading}
-                  className="flex h-32 w-32 shrink-0 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-                  {uploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Upload className="h-6 w-6" />}
-                  <span className="text-xs">Upload</span>
-                </button>
-              )}
-              <input ref={mainFileRef} type="file" accept="image/*" className="hidden" onChange={handleMainUpload} />
-              <div className="text-xs text-muted-foreground pt-1">
-                <p>Upload from your computer.</p>
-                <p className="mt-1">Images are stored in Supabase Storage.</p>
-                <p className="mt-1">Or paste a URL:</p>
-                <Input className="mt-1" placeholder="https://…" value={mainImageUrl}
-                  onChange={(e) => setMainImageUrl(e.target.value)} />
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                LIVE PRODUCT PAGE PREVIEW:
+              </Label>
+              <div className="rounded-xl border border-amber-300/70 bg-[#fefce8] dark:bg-amber-950/30 p-4 space-y-2.5 shadow-xs">
+                {highlights.split("\n").filter(Boolean).map((line, idx) => (
+                  <div key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-foreground/90">
+                    {idx === 0 ? <Truck className="h-4 w-4 text-amber-700 dark:text-amber-400 shrink-0" /> :
+                     idx === 1 ? <RotateCcw className="h-4 w-4 text-amber-700 dark:text-amber-400 shrink-0" /> :
+                     <Sparkles className="h-4 w-4 text-amber-700 dark:text-amber-400 shrink-0" />}
+                    <span>{line}</span>
+                  </div>
+                ))}
+                {!highlights.trim() && (
+                  <p className="text-muted-foreground italic text-xs">Enter bullet points on the left to preview...</p>
+                )}
               </div>
             </div>
           </div>
+        </section>
 
-          {/* Gallery */}
-          <div className="mt-6 space-y-2">
-            <Label>Gallery Images</Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              Add multiple images for the product carousel. You can upload files or paste URLs.
+        {/* ── Section 3: Product Dropdown Accordions ──────────────────────── */}
+        <section className="border-t pt-8 space-y-4">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+              3. PRODUCT DROPDOWN ACCORDIONS
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Customize what appears in each expandable dropdown on the product details page.
             </p>
+          </div>
 
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
-              {galleryUrls.map((url, i) => (
-                <div key={i} className="group relative overflow-hidden rounded-xl border bg-secondary/30">
-                  <img src={url} alt={`Gallery ${i + 1}`} className="aspect-square w-full object-cover" />
-                  <button type="button" onClick={() => removeGallery(i)}
-                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                    <X className="h-3 w-3" />
-                  </button>
-                  <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
-                    {i + 1}
-                  </span>
+          <div className="space-y-4">
+            {/* Dropdown 1 */}
+            <div className="rounded-2xl border bg-card/60 p-5 space-y-4">
+              <div className="flex items-center gap-2.5 font-bold text-xs uppercase tracking-wider text-foreground">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-foreground text-xs font-semibold">
+                  1
+                </span>
+                DROPDOWN 1: DESCRIPTION & FABRIC
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="p-story">Product Description / Story *</Label>
+                <Textarea
+                  id="p-story"
+                  required
+                  rows={3}
+                  placeholder="Describe the product's craft, origin, and feel…"
+                  value={story}
+                  onChange={(e) => setStory(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="p-materials">Material & Fabric *</Label>
+                  <Input
+                    id="p-materials"
+                    required
+                    placeholder="e.g. Hollow 316L Titanium Steel with 18K Gold PVD"
+                    value={materials}
+                    onChange={(e) => setMaterials(e.target.value)}
+                  />
                 </div>
-              ))}
-
-              {/* Upload tile */}
-              <button type="button" onClick={() => galleryFileRef.current?.click()}
-                disabled={uploading}
-                className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-                {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
-                <span className="text-[10px]">Add images</span>
-              </button>
+                <div className="space-y-2">
+                  <Label htmlFor="p-dimensions">Dimensions (optional)</Label>
+                  <Input
+                    id="p-dimensions"
+                    placeholder="e.g. 25mm x 15mm / Standard Fit"
+                    value={dimensions}
+                    onChange={(e) => setDimensions(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
-            <input ref={galleryFileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} />
+
+            {/* Dropdown 2 */}
+            <div className="rounded-2xl border bg-card/60 p-5 space-y-4">
+              <div className="flex items-center gap-2.5 font-bold text-xs uppercase tracking-wider text-foreground">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-foreground text-xs font-semibold">
+                  2
+                </span>
+                DROPDOWN 2: CARE INSTRUCTIONS
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="p-care">Care Bullet Points (1 per line) *</Label>
+                <Textarea
+                  id="p-care"
+                  rows={3}
+                  placeholder="Simply wipe clean with a dry cloth"
+                  value={careInstructions}
+                  onChange={(e) => setCareInstructions(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Bullet points (•) will be automatically created for each line.
+                </p>
+              </div>
+            </div>
+
+            {/* Dropdown 3 */}
+            <div className="rounded-2xl border bg-card/60 p-5 space-y-4">
+              <div className="flex items-center gap-2.5 font-bold text-xs uppercase tracking-wider text-foreground">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-foreground text-xs font-semibold">
+                  3
+                </span>
+                DROPDOWN 3: DELIVERY & EXCHANGE POLICY
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="p-delivery">Delivery & Exchange Policy Text *</Label>
+                <Textarea
+                  id="p-delivery"
+                  rows={3}
+                  placeholder="Dispatched within 24 hours. Delivered across India within 2 to 4 business days. Easy 7-day exchange support available on WhatsApp."
+                  value={deliveryPolicy}
+                  onChange={(e) => setDeliveryPolicy(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Section 4: Product Media & Images ──────────────────────────── */}
+        <section className="border-t pt-8 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                <ImagePlus className="h-4 w-4 text-primary" /> 4. PRODUCT MEDIA & IMAGES
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Upload 4-5 product images directly from your computer. Supabase Storage securely hosts the assets.
+              </p>
+            </div>
+            <span className="rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold px-3 py-1 text-xs border border-amber-500/30 shrink-0">
+              {galleryUrls.length} / 5 Images
+            </span>
+          </div>
+
+          {/* Drag & Drop / Click Upload Box */}
+          <div
+            onClick={() => galleryFileRef.current?.click()}
+            className="cursor-pointer border-2 border-dashed border-border hover:border-primary rounded-2xl p-8 text-center transition-all bg-secondary/15 hover:bg-secondary/30 flex flex-col items-center justify-center gap-3 group"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-background border shadow-xs text-primary group-hover:scale-105 transition-transform">
+              {uploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Upload className="h-6 w-6" />}
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm text-foreground">Click to browse or drag & drop 4–5 product photos</h4>
+              <p className="text-xs text-muted-foreground mt-1">Supports JPG, PNG, WEBP (automatically optimized & saved to Supabase Storage)</p>
+            </div>
+          </div>
+          <input ref={galleryFileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} />
+
+          {/* Main Image Selection & Gallery Tiles */}
+          {galleryUrls.length > 0 && (
+            <div className="space-y-2 pt-2">
+              <Label>Uploaded Photos (Click to set as Main Image)</Label>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+                {galleryUrls.map((url, i) => {
+                  const isMain = url === mainImageUrl || (!mainImageUrl && i === 0);
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => setMainImageUrl(url)}
+                      className={cn(
+                        "group relative overflow-hidden rounded-xl border bg-secondary/30 aspect-square cursor-pointer transition-all",
+                        isMain ? "ring-2 ring-primary ring-offset-2" : "opacity-85 hover:opacity-100"
+                      )}
+                    >
+                      <img src={url} alt={`Photo ${i + 1}`} className="aspect-square w-full h-full object-cover" />
+                      {isMain && (
+                        <span className="absolute top-1 left-1 rounded bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground shadow-xs">
+                          Main Cover
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeGallery(i);
+                          if (url === mainImageUrl && galleryUrls.length > 1) {
+                            setMainImageUrl(galleryUrls.find((_, idx) => idx !== i) || "");
+                          }
+                        }}
+                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                      <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+                        {i + 1}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Direct URL input fallback */}
+          <div className="pt-2">
+            <Label className="text-xs text-muted-foreground">Or paste direct image URL:</Label>
+            <div className="flex gap-2 mt-1 max-w-md">
+              <Input
+                placeholder="https://…"
+                value={mainImageUrl}
+                onChange={(e) => {
+                  setMainImageUrl(e.target.value);
+                  if (e.target.value && !galleryUrls.includes(e.target.value)) {
+                    setGalleryUrls((prev) => [e.target.value, ...prev]);
+                  }
+                }}
+              />
+            </div>
           </div>
         </section>
 

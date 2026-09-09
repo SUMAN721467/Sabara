@@ -75,7 +75,7 @@ function groupProducts(list: Product[]): Product[] {
 function ProductCardSkeleton() {
   return (
     <div className="group block rounded-xl p-2 bg-card/45 border border-border/20">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-secondary/50 animate-pulse" />
+      <div className="relative aspect-square overflow-hidden rounded-lg bg-secondary/50 animate-pulse" />
       <div className="mt-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3 px-1">
         <div className="h-5 w-2/3 rounded bg-secondary/50 animate-pulse" />
         <div className="h-4 w-1/4 rounded bg-secondary/50 animate-pulse shrink-0 self-start sm:self-auto" />
@@ -153,7 +153,7 @@ function Shop() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-6 pb-14 sm:px-6 md:pt-8 md:pb-20">
+    <div className="mx-auto max-w-7xl px-4 pt-6 pb-14 sm:px-6 md:pt-8 md:pb-20">
       <ScrollReveal variant="fade-up" duration={800}>
         <Link
           to="/"
@@ -239,14 +239,14 @@ function Shop() {
         </p>
       )}
 
-      <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-3">
+      <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:grid-cols-3 lg:grid-cols-4">
         {isLoading ? (
-          Array.from({ length: 6 }).map((_, i) => (
+          Array.from({ length: 8 }).map((_, i) => (
             <ProductCardSkeleton key={i} />
           ))
         ) : (
           visible.map((p, i) => (
-            <ScrollReveal key={p.id} variant="fade-up" delay={(i % 6) * 80} duration={600} once={true}>
+            <ScrollReveal key={p.id} variant="fade-up" delay={(i % 8) * 60} duration={600} once={true}>
               <ProductCard product={p} />
             </ScrollReveal>
           ))

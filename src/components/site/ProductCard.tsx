@@ -27,7 +27,7 @@ export function ProductCard({ product }: { product: Product }) {
       params={{ id: product.id }}
       className="group block card-hover rounded-xl p-2 bg-card/45 border border-border/20 transition-all duration-300"
     >
-      <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-secondary/50">
+      <div className="relative aspect-square overflow-hidden rounded-lg bg-secondary/50">
         <img
           src={product.image}
           alt={product.name}
