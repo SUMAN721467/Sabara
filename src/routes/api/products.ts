@@ -66,8 +66,24 @@ export async function getOrSeedProducts(supabase: any, filterHidden = false, byp
 
       rawList = rawList.map((p: any) => {
         const rev = reviewsMap[p.id] || { rating: 0, count: 0 };
+        let parsedProduct = { ...p };
+        if (parsedProduct.story && typeof parsedProduct.story === "string") {
+          const metaRegex = /<!--SABARA_META:([\s\S]*?)-->/;
+          const match = parsedProduct.story.match(metaRegex);
+          if (match) {
+            try {
+              const meta = JSON.parse(match[1]);
+              parsedProduct.story = parsedProduct.story.replace(metaRegex, "").trim();
+              if (meta.highlights) parsedProduct.highlights = meta.highlights;
+              if (meta.care_instructions) parsedProduct.care_instructions = meta.care_instructions;
+              if (meta.delivery_policy) parsedProduct.delivery_policy = meta.delivery_policy;
+            } catch (e) {
+              console.error("Error parsing product metadata:", e);
+            }
+          }
+        }
         return {
-          ...p,
+          ...parsedProduct,
           rating: rev.count > 0 ? rev.rating : null,
           reviewsCount: rev.count
         };

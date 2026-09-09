@@ -49,6 +49,26 @@ const getProductDetails = createServerFn({ method: "GET" })
 
       if (!product) return null;
 
+      // Extract metadata if embedded in story
+      if (product.story && typeof product.story === "string") {
+        const metaRegex = /<!--SABARA_META:([\s\S]*?)-->/;
+        const match = product.story.match(metaRegex);
+        if (match) {
+          try {
+            const meta = JSON.parse(match[1]);
+            product = {
+              ...product,
+              story: product.story.replace(metaRegex, "").trim(),
+              highlights: meta.highlights || product.highlights,
+              care_instructions: meta.care_instructions || product.care_instructions,
+              delivery_policy: meta.delivery_policy || product.delivery_policy,
+            };
+          } catch (e) {
+            console.error("Error parsing product metadata:", e);
+          }
+        }
+      }
+
       // Ensure gallery is an array
       let gallery: string[] = [];
       if (Array.isArray(product.gallery)) {
