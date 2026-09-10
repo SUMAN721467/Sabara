@@ -78,7 +78,7 @@ export function ProductCard({ product }: { product: Product }) {
       )}
 
       <div className="mt-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3 px-1">
-        <h3 className="font-serif text-base sm:text-lg leading-tight text-foreground transition-colors group-hover:text-primary duration-300">
+        <h3 className="font-sans font-normal text-base sm:text-lg leading-snug text-foreground transition-colors group-hover:text-primary duration-300">
           {product.name.split(" - ")[0]}
         </h3>
         {product.original_price && product.original_price > product.price ? (

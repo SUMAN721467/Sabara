@@ -1,15 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Minus, Plus, X, Loader2, CheckCircle2, Info } from "lucide-react";
+import { Minus, Plus, X, Loader2, CheckCircle2, Info, MapPin, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatPrice, useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useRef, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { INDIAN_STATES, fetchDistrictAndStateFromPincode } from "@/lib/pincode";
 import { useShippingSettings } from "@/lib/settings";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/checkout")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -48,12 +49,13 @@ function CheckoutPage() {
   const [orderSuccess, setOrderSuccess] = useState<any | null>(null);
   const [checkoutStep, setCheckoutStep] = useState(1);
   const { settings: shippingSettings } = useShippingSettings();
+  const initialFetchDone = useRef(false);
 
   // Multiple address states
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
-  // Form fields
+  // Active selected address fields for checkout order
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -62,9 +64,23 @@ function CheckoutPage() {
   const [district, setDistrict] = useState("");
   const [stateName, setStateName] = useState("");
   const [zipCode, setZipCode] = useState("");
-  const [isManualInput, setIsManualInput] = useState(false);
   const [landmark, setLandmark] = useState("");
+
+  // Modal Pop-up States for Adding / Editing Address
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [addrLabel, setAddrLabel] = useState("HOME");
+  const [addrFullName, setAddrFullName] = useState("");
+  const [addrEmail, setAddrEmail] = useState("");
+  const [addrPhone, setAddrPhone] = useState("");
+  const [addrStreet, setAddrStreet] = useState("");
+  const [addrLandmark, setAddrLandmark] = useState("");
+  const [addrDistrict, setAddrDistrict] = useState("");
+  const [addrStateName, setAddrStateName] = useState("");
+  const [addrZipCode, setAddrZipCode] = useState("");
   const [fetchingPincode, setFetchingPincode] = useState(false);
+  const [isManualInput, setIsManualInput] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
 
   // Coupon states
   const [couponCode, setCouponCode] = useState("");
@@ -181,36 +197,129 @@ function CheckoutPage() {
     setPhone(addr.phone || profile?.phone || "");
     setStreet(addr.street || "");
     setLandmark(addr.landmark || "");
-    setCity(addr.city || "");
+    setCity(addr.city || addr.district || "");
     setDistrict(addr.district || "");
     setStateName(addr.state || "");
     setZipCode(addr.zipCode || "");
   };
 
-  const handleUseAnotherAddress = () => {
-    setSelectedAddressId("new");
-    setFullName(profile?.fullName || "");
-    setEmail(user?.email || "");
-    setPhone(profile?.phone || "");
-    setStreet("");
-    setLandmark("");
-    setCity("");
-    setDistrict("");
-    setStateName("");
-    setZipCode("");
+  const handleStartAddAddress = () => {
+    setEditingAddressId(null);
+    setIsAddingAddress(true);
+    setAddrLabel("HOME");
+    setAddrFullName(profile?.fullName || user?.user_metadata?.full_name || "");
+    setAddrEmail(user?.email || "");
+    setAddrPhone(profile?.phone || "");
+    setAddrStreet("");
+    setAddrLandmark("");
+    setAddrDistrict("");
+    setAddrStateName("");
+    setAddrZipCode("");
   };
 
-  // Auto-fetch district & state when pincode is exactly 6 digits (manual input only)
+  const handleStartEditAddress = (addr: any) => {
+    setEditingAddressId(addr.id);
+    setIsAddingAddress(false);
+    setAddrLabel(addr.label || "HOME");
+    setAddrFullName(addr.fullName || profile?.fullName || "");
+    setAddrEmail(addr.email || user?.email || "");
+    setAddrPhone(addr.phone || profile?.phone || "");
+    setAddrStreet(addr.street || "");
+    setAddrLandmark(addr.landmark || "");
+    setAddrDistrict(addr.district || "");
+    setAddrStateName(addr.state || "");
+    setAddrZipCode(addr.zipCode || "");
+  };
+
+  const handleCancelAddressModal = () => {
+    setIsAddingAddress(false);
+    setEditingAddressId(null);
+  };
+
+  const handleSaveAddressModal = async (e: FormEvent) => {
+    e.preventDefault();
+    if (
+      !addrFullName.trim() ||
+      !addrPhone.trim() ||
+      !addrEmail.trim() ||
+      !addrStreet.trim() ||
+      !addrLandmark.trim() ||
+      !addrDistrict.trim() ||
+      !addrStateName.trim() ||
+      !addrZipCode.trim()
+    ) {
+      toast.error("All shipping address fields are mandatory.");
+      return;
+    }
+    if (addrZipCode.length !== 6) {
+      toast.error("Area Pin Code must be exactly 6 digits.");
+      return;
+    }
+
+    setSavingAddress(true);
+    const newAddrId = editingAddressId || Math.random().toString(36).substring(2, 9);
+    const newAddr = {
+      id: newAddrId,
+      fullName: addrFullName,
+      email: addrEmail,
+      phone: addrPhone,
+      street: addrStreet,
+      landmark: addrLandmark,
+      district: addrDistrict,
+      city: addrDistrict.trim(),
+      state: addrStateName,
+      zipCode: addrZipCode,
+      label: addrLabel || "HOME",
+    };
+
+    let updatedAddresses = [];
+    if (editingAddressId) {
+      updatedAddresses = addresses.map((a) => (a.id === editingAddressId ? newAddr : a));
+    } else {
+      updatedAddresses = [...addresses, newAddr];
+    }
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      if (token) {
+        await fetch("/api/users/profile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            fullName: profile?.fullName || addrFullName,
+            phone: profile?.phone || addrPhone,
+            addresses: updatedAddresses,
+          }),
+        });
+      }
+
+      setAddresses(updatedAddresses);
+      handleSelectSavedAddress(newAddr);
+      toast.success(editingAddressId ? "Address updated successfully!" : "Address added successfully!");
+      setIsAddingAddress(false);
+      setEditingAddressId(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save address.");
+    } finally {
+      setSavingAddress(false);
+    }
+  };
+
+  // Auto-fetch district & state when modal pincode is exactly 6 digits
   useEffect(() => {
-    if (zipCode && zipCode.length === 6 && isManualInput) {
+    if (addrZipCode && addrZipCode.length === 6 && isManualInput) {
       const fetchDetails = async () => {
         setFetchingPincode(true);
         try {
-          const details = await fetchDistrictAndStateFromPincode(zipCode);
+          const details = await fetchDistrictAndStateFromPincode(addrZipCode);
           if (details) {
-            setDistrict(details.district);
-            setStateName(details.state);
-            toast.success(`District & State auto-filled for PIN Code ${zipCode}`);
+            setAddrDistrict(details.district);
+            setAddrStateName(details.state);
+            toast.success(`District & State auto-filled for PIN Code ${addrZipCode}`);
           } else {
             toast.error("Could not find location details for this PIN Code. Please enter manually.");
           }
@@ -222,7 +331,7 @@ function CheckoutPage() {
       };
       fetchDetails();
     }
-  }, [zipCode, isManualInput]);
+  }, [addrZipCode, isManualInput]);
 
   // Redirect to Orders tab after success
   useEffect(() => {
@@ -264,9 +373,11 @@ function CheckoutPage() {
     }
   }, [cartLoading, authLoading, detailed, orderSuccess, navigate]);
 
-  // Fetch registered user profile details and resolve dynamic starting step
+  // Fetch registered user profile details once on mount
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
+    if (initialFetchDone.current) return;
+    initialFetchDone.current = true;
     
     setProfileLoading(true);
     setEmail(user.email || "");
@@ -289,84 +400,67 @@ function CheckoutPage() {
             setFullName(p.fullName || "");
             setPhone(p.phone || "");
             
-            let loadedAddresses = [];
-            if (p.addresses && p.addresses.length > 0) {
-              loadedAddresses = p.addresses;
+            if (p.addresses && Array.isArray(p.addresses) && p.addresses.length > 0) {
               setAddresses(p.addresses);
-              
               const firstAddr = p.addresses[0];
               setSelectedAddressId(firstAddr.id);
               setFullName(firstAddr.fullName || p.fullName || "");
               setEmail(firstAddr.email || user.email || "");
               setPhone(firstAddr.phone || p.phone || "");
               setStreet(firstAddr.street || "");
-              setCity(firstAddr.city || "");
+              setLandmark(firstAddr.landmark || "");
+              setCity(firstAddr.city || firstAddr.district || "");
               setDistrict(firstAddr.district || "");
               setStateName(firstAddr.state || "");
               setZipCode(firstAddr.zipCode || "");
-              setLandmark(firstAddr.landmark || "");
-            } else if (p.address) {
+            } else if (p.address && (p.address.street || p.address.district || p.address.state || p.address.zipCode)) {
               const legacyAddr = {
                 id: "default",
                 fullName: p.fullName || "",
                 phone: p.phone || "",
+                email: user.email || "",
                 street: p.address.street || "",
-                city: p.address.city || "",
+                city: p.address.city || p.address.district || "",
                 district: p.address.district || "",
                 state: p.address.state || "",
                 zipCode: p.address.zipCode || "",
                 landmark: p.address.landmark || "",
                 label: "HOME"
               };
-              loadedAddresses = [legacyAddr];
               setAddresses([legacyAddr]);
               setSelectedAddressId("default");
               setFullName(legacyAddr.fullName || p.fullName || "");
               setPhone(legacyAddr.phone || p.phone || "");
               setStreet(legacyAddr.street || "");
-              setCity(legacyAddr.city || "");
+              setLandmark(legacyAddr.landmark || "");
               setDistrict(legacyAddr.district || "");
+              setCity(legacyAddr.city || legacyAddr.district || "");
               setStateName(legacyAddr.state || "");
               setZipCode(legacyAddr.zipCode || "");
-              setLandmark(legacyAddr.landmark || "");
-            }
-
-            const primaryAddr = loadedAddresses[0];
-            const hasAllDetails = !!(
-              p.fullName &&
-              user.email &&
-              p.phone &&
-              primaryAddr &&
-              primaryAddr.street &&
-              primaryAddr.landmark &&
-              primaryAddr.city &&
-              primaryAddr.district &&
-              primaryAddr.state &&
-              primaryAddr.zipCode &&
-              primaryAddr.zipCode.length === 6
-            );
-            
-            if (hasAllDetails) {
-              setCheckoutStep(2);
             } else {
-              setCheckoutStep(1);
+              setAddresses([]);
+              setSelectedAddressId("");
+              setStreet("");
+              setCity("");
+              setDistrict("");
+              setStateName("");
+              setZipCode("");
+              setLandmark("");
             }
-          } else {
-            setCheckoutStep(1);
           }
         })
-        .catch(() => {
-          setCheckoutStep(1);
+        .catch((err) => {
+          console.error("Failed to load profile in checkout:", err);
         })
         .finally(() => setProfileLoading(false));
     });
-  }, [user]);
+  }, [user?.id]);
 
   const handleCheckout = async (e: FormEvent) => {
     e.preventDefault();
     if (detailed.length === 0) return;
 
-    if (!fullName || !email || !phone.trim() || !street.trim() || !landmark.trim() || !city.trim() || !district.trim() || !stateName.trim() || !zipCode.trim()) {
+    if (!fullName || !email || !phone.trim() || !street.trim() || !landmark.trim() || !district.trim() || !stateName.trim() || !zipCode.trim()) {
       toast.error("Please fill in all shipping details. All fields are mandatory.");
       return;
     }
@@ -694,13 +788,25 @@ function CheckoutPage() {
             {/* Left Column: Form or Summary depending on checkoutStep */}
             <div className="space-y-8 w-full min-w-0">
               {checkoutStep === 1 ? (
-                /* Step 1: Address Form */
+                /* Step 1: Address Selection & Pop-up Modal */
                 <div>
-                  <div className="flex flex-col mb-6">
-                    <h2 className="font-serif text-2xl text-left">1. Shipping & Delivery Address</h2>
-                    <p className="text-xs text-muted-foreground mt-1 text-left">
-                      Please enter your shipping address details. All fields are mandatory.
-                    </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                      <h2 className="font-serif text-2xl text-left text-foreground">1. Shipping & Delivery Address</h2>
+                      <p className="text-xs text-muted-foreground mt-1 text-left">
+                        Select your delivery address or add a new one. All fields are mandatory.
+                      </p>
+                    </div>
+
+                    {user && (
+                      <Button
+                        type="button"
+                        onClick={handleStartAddAddress}
+                        className="rounded-full px-5 py-2 text-xs font-semibold self-start sm:self-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+                      >
+                        + ADD A NEW ADDRESS
+                      </Button>
+                    )}
                   </div>
 
                   {!user ? (
@@ -712,152 +818,240 @@ function CheckoutPage() {
                         </Link>
                       </Button>
                     </div>
-                  ) : profileLoading ? (
+                  ) : (profileLoading && !profile) ? (
                     <div className="flex items-center gap-2 py-4 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       Loading your shipping details...
                     </div>
                   ) : (
-                    <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
-                      {addresses.length > 0 && (
-                        <div className="space-y-3 mb-6">
-                          <Label className="text-sm font-semibold text-foreground text-left block">
-                            Select Shipping Address
-                          </Label>
+                    <div className="space-y-6 rounded-2xl border border-border/70 bg-card p-6 shadow-sm">
+                      {addresses.length === 0 ? (
+                        <div className="text-center py-10 border-2 border-dashed border-border/60 rounded-2xl p-6">
+                          <MapPin className="h-10 w-10 text-muted-foreground/60 mx-auto mb-3" />
+                          <p className="text-sm font-medium text-foreground">No saved addresses found</p>
+                          <p className="text-xs text-muted-foreground mt-1 mb-4">
+                            Add a shipping address to proceed with your order.
+                          </p>
+                          <Button
+                            type="button"
+                            onClick={handleStartAddAddress}
+                            className="rounded-full px-5 py-2.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+                          >
+                            + Add Shipping Address
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
                           <div className="grid gap-4 sm:grid-cols-2 text-left">
-                            {addresses.map((addr) => (
-                              <div
-                                key={addr.id}
-                                onClick={() => handleSelectSavedAddress(addr)}
-                                className={`cursor-pointer rounded-2xl border p-4 transition-all duration-200 ${
-                                  selectedAddressId === addr.id
-                                    ? "border-primary bg-primary/5 shadow-sm"
-                                    : "border-border/60 hover:border-border bg-secondary/5"
-                                }`}
-                              >
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="text-[10px] font-bold tracking-wider uppercase bg-secondary border border-border text-muted-foreground px-2 py-0.5 rounded">
-                                    {addr.label || "HOME"}
-                                  </span>
-                                  <div className={`h-4 w-4 rounded-full border flex items-center justify-center ${
-                                    selectedAddressId === addr.id ? "border-primary" : "border-muted-foreground"
-                                  }`}>
-                                    {selectedAddressId === addr.id && <div className="h-2.5 w-2.5 rounded-full bg-primary" />}
+                            {addresses.map((addr) => {
+                              const isSelected = selectedAddressId === addr.id;
+                              return (
+                                <div
+                                  key={addr.id}
+                                  onClick={() => handleSelectSavedAddress(addr)}
+                                  className={cn(
+                                    "relative cursor-pointer rounded-2xl border p-5 transition-all duration-200",
+                                    isSelected
+                                      ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/30"
+                                      : "border-border/60 hover:border-border bg-secondary/10"
+                                  )}
+                                >
+                                  {/* Header badges & Edit */}
+                                  <div className="flex items-center justify-between mb-2.5">
+                                    <div className="flex items-center gap-2">
+                                      <span className="inline-block text-[10px] font-bold tracking-wider uppercase bg-secondary border border-border text-muted-foreground px-2.5 py-0.5 rounded-full">
+                                        {addr.label || "HOME"}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleStartEditAddress(addr);
+                                        }}
+                                        className="text-xs text-primary hover:underline font-semibold inline-flex items-center gap-1 p-1"
+                                      >
+                                        <Pencil className="h-3 w-3" /> Edit
+                                      </button>
+                                      <div
+                                        className={cn(
+                                          "h-4 w-4 rounded-full border flex items-center justify-center transition-colors",
+                                          isSelected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"
+                                        )}
+                                      >
+                                        {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                                      </div>
+                                    </div>
                                   </div>
+
+                                  {/* Recipient Details */}
+                                  <p className="font-bold text-sm text-foreground">
+                                    {addr.fullName} <span className="text-xs text-muted-foreground font-normal ml-2">{addr.phone}</span>
+                                  </p>
+                                  {addr.email && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">{addr.email}</p>
+                                  )}
+
+                                  {/* Address Lines */}
+                                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                                    {addr.street}
+                                    {addr.landmark ? `, Landmark: ${addr.landmark}` : ""}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+                                    {addr.district ? `${addr.district}, ` : ""}{addr.state} - <span className="font-semibold text-foreground">{addr.zipCode}</span>
+                                  </p>
                                 </div>
-                                <p className="font-bold text-sm text-foreground">
-                                  {addr.fullName} <span className="text-xs text-muted-foreground font-normal ml-2">{addr.phone}</span>
-                                </p>
-                                {addr.email && (
-                                  <p className="text-xs text-muted-foreground mt-0.5">{addr.email}</p>
-                                )}
-                                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                                  {addr.street}, {addr.landmark && `Landmark: ${addr.landmark}, `}{addr.city}, {addr.district ? `${addr.district}, ` : ""}{addr.state} - {addr.zipCode}
-                                </p>
-                              </div>
-                            ))}
+                              );
+                            })}
+
+                            {/* Add Different Address Card */}
                             <div
-                              onClick={handleUseAnotherAddress}
-                              className={`cursor-pointer rounded-2xl border p-4 flex flex-col justify-center items-center text-center transition-all duration-200 min-h-[110px] ${
-                                selectedAddressId === "new"
-                                  ? "border-primary bg-primary/5 shadow-sm"
-                                  : "border-border/60 border-dashed hover:border-border bg-secondary/5"
-                              }`}
+                              onClick={handleStartAddAddress}
+                              className="cursor-pointer rounded-2xl border border-dashed border-border/70 hover:border-primary/50 hover:bg-primary/5 p-5 flex flex-col justify-center items-center text-center transition-all duration-200 min-h-[140px] bg-secondary/5 group"
                             >
-                              <span className="text-xs font-bold text-primary">+ USE A DIFFERENT ADDRESS</span>
-                              <span className="text-[10px] text-muted-foreground mt-1">Enter a new address manually</span>
+                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary mb-2 group-hover:scale-110 transition-transform">
+                                <Plus className="h-4 w-4" />
+                              </div>
+                              <span className="text-xs font-bold text-primary">+ ADD A NEW ADDRESS</span>
+                              <span className="text-[10px] text-muted-foreground mt-1">Add another delivery location</span>
                             </div>
+                          </div>
+
+                          <div className="pt-4 flex justify-end border-t border-border/40">
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                if (!fullName || !email || !phone.trim() || !street.trim() || !landmark.trim() || !district.trim() || !stateName.trim() || !zipCode.trim()) {
+                                  toast.error("Please select or add a complete shipping address.");
+                                  return;
+                                }
+                                if (zipCode.length !== 6) {
+                                  toast.error("Area Pin Code must be exactly 6 digits.");
+                                  return;
+                                }
+                                setCheckoutStep(2);
+                              }}
+                              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-8 py-5 text-xs font-bold uppercase tracking-wider transition-all shadow-md"
+                            >
+                              Proceed to Summary
+                            </Button>
                           </div>
                         </div>
                       )}
+                    </div>
+                  )}
 
-                      {(selectedAddressId === "new" || addresses.length === 0) && (
-                        <div className="space-y-6 border-t border-border/40 pt-6 animate-in fade-in duration-200">
-                          <h3 className="text-sm font-semibold text-foreground text-left">New Shipping Address</h3>
-                          <div className="grid gap-4 sm:grid-cols-2 text-left">
-                            <div className="space-y-2">
-                              <Label htmlFor="fullName">Full Name <span className="text-destructive">*</span></Label>
+                  {/* ── POP-UP MODAL FOR ADD / EDIT ADDRESS IN CHECKOUT ──────────── */}
+                  {(isAddingAddress || editingAddressId !== null) && (
+                    <div
+                      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+                      onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                          handleCancelAddressModal();
+                        }
+                      }}
+                    >
+                      <div
+                        className="relative w-full max-w-xl my-auto rounded-3xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden text-card-foreground flex flex-col max-h-[92vh]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Header */}
+                        <div className="flex items-start justify-between gap-4 pb-5 border-b border-border/40 text-left">
+                          <div className="flex items-center gap-3.5">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary flex-shrink-0 shadow-xs">
+                              <MapPin className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h2 className="text-lg sm:text-xl font-serif font-bold text-foreground">
+                                {editingAddressId ? "Edit Shipping Address" : "Add New Shipping Address"}
+                              </h2>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Auto-fetches city & state upon entering 6-digit PIN.
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleCancelAddressModal}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors -mr-1 -mt-1"
+                            aria-label="Close dialog"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        {/* Modal Form */}
+                        <form onSubmit={handleSaveAddressModal} className="space-y-4 pt-5 overflow-y-auto pr-1 text-left">
+                          {/* Row 1: Full Name & Mobile Number */}
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-1.5">
+                              <Label htmlFor="checkoutAddrFullName" className="text-xs font-semibold text-foreground">
+                                Full Name <span className="text-destructive">*</span>
+                              </Label>
                               <Input
-                                id="fullName"
-                                placeholder="Enter your full name"
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
+                                id="checkoutAddrFullName"
+                                placeholder="e.g. Suman Samanta"
+                                required
+                                value={addrFullName}
+                                onChange={(e) => setAddrFullName(e.target.value)}
+                                className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
                               />
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
+                            <div className="space-y-1.5">
+                              <Label htmlFor="checkoutAddrPhone" className="text-xs font-semibold text-foreground">
+                                Mobile Number <span className="text-destructive">*</span>
+                              </Label>
                               <Input
-                                id="email"
+                                id="checkoutAddrPhone"
+                                type="tel"
+                                placeholder="10-digit mobile number"
+                                required
+                                value={addrPhone}
+                                onChange={(e) => setAddrPhone(e.target.value)}
+                                className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Row 2: Email ID & Pin Code */}
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-1.5">
+                              <Label htmlFor="checkoutAddrEmail" className="text-xs font-semibold text-foreground">
+                                Email ID <span className="text-destructive">*</span>
+                              </Label>
+                              <Input
+                                id="checkoutAddrEmail"
                                 type="email"
-                                placeholder="abcd@gmail.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="e.g. suman@example.com"
+                                required
+                                value={addrEmail}
+                                onChange={(e) => setAddrEmail(e.target.value)}
+                                className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
                               />
                             </div>
-                          </div>
-
-                          <div className="space-y-2 text-left">
-                            <Label htmlFor="phone">Phone Number <span className="text-destructive">*</span></Label>
-                            <Input
-                              id="phone"
-                              type="tel"
-                              placeholder="+91 12345 67890"
-                              value={phone}
-                              onChange={(e) => setPhone(e.target.value)}
-                            />
-                          </div>
-
-                          <div className="space-y-2 text-left">
-                            <Label htmlFor="street">Street Address <span className="text-destructive">*</span></Label>
-                            <Input
-                              id="street"
-                              placeholder="Enter your full address"
-                              value={street}
-                              onChange={(e) => setStreet(e.target.value)}
-                            />
-                          </div>
-
-                          <div className="space-y-2 text-left">
-                            <Label htmlFor="landmark">Landmark <span className="text-destructive">*</span></Label>
-                            <Input
-                              id="landmark"
-                              placeholder="e.g. Near Temple, Next to SBI Bank"
-                              value={landmark}
-                              onChange={(e) => setLandmark(e.target.value)}
-                            />
-                          </div>
-
-                          <div className="grid gap-4 sm:grid-cols-2 text-left">
-                            <div className="space-y-2">
-                              <Label htmlFor="city">City / Town / Village <span className="text-destructive">*</span></Label>
-                              <Input
-                                id="city"
-                                placeholder="Enter your city/town name"
-                                value={city}
-                                onChange={(e) => setCity(e.target.value)}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="zipCode" className="flex items-center justify-between">
-                                 <span>Area Pin Code <span className="text-destructive">*</span></span>
-                                 {fetchingPincode && (
-                                   <span className="text-[10px] text-primary flex items-center gap-1 animate-pulse">
-                                     <Loader2 className="h-2.5 w-2.5 animate-spin" /> Fetching...
-                                   </span>
-                                 )}
+                            <div className="space-y-1.5">
+                              <Label htmlFor="checkoutZipCode" className="text-xs font-semibold text-foreground flex items-center justify-between">
+                                <span>Pin Code <span className="text-destructive">*</span></span>
+                                {fetchingPincode && (
+                                  <span className="text-[10px] text-primary flex items-center gap-1 font-normal animate-pulse">
+                                    <Loader2 className="h-2.5 w-2.5 animate-spin" /> Fetching...
+                                  </span>
+                                )}
                               </Label>
                               <div className="relative">
                                 <Input
-                                  id="zipCode"
-                                  placeholder="Enter area pin code"
-                                  value={zipCode}
+                                  id="checkoutZipCode"
+                                  placeholder="6-digit PIN code"
+                                  required
+                                  value={addrZipCode}
                                   maxLength={6}
                                   onChange={(e) => {
                                     const val = e.target.value.replace(/\D/g, "").slice(0, 6);
                                     setIsManualInput(true);
-                                    setZipCode(val);
+                                    setAddrZipCode(val);
                                   }}
-                                  className={fetchingPincode ? "pr-8" : ""}
+                                  className={cn("rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm", fetchingPincode && "pr-8")}
                                 />
                                 {fetchingPincode && (
                                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -866,91 +1060,123 @@ function CheckoutPage() {
                                 )}
                               </div>
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="district">District <span className="text-destructive">*</span></Label>
+                          </div>
+
+                          {/* Row 3: District & State */}
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-1.5">
+                              <Label htmlFor="checkoutDistrict" className="text-xs font-semibold text-foreground">
+                                District <span className="text-destructive">*</span>
+                              </Label>
                               <Input
-                                id="district"
-                                placeholder="Enter your district name"
-                                value={district}
-                                onChange={(e) => setDistrict(e.target.value)}
+                                id="checkoutDistrict"
+                                placeholder="Auto-detected from PIN"
+                                required
+                                value={addrDistrict}
+                                onChange={(e) => setAddrDistrict(e.target.value)}
+                                className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
                               />
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="state">State / Province <span className="text-destructive">*</span></Label>
+                            <div className="space-y-1.5">
+                              <Label htmlFor="checkoutState" className="text-xs font-semibold text-foreground">
+                                State <span className="text-destructive">*</span>
+                              </Label>
                               <Input
-                                id="state"
-                                placeholder="Enter your state name"
-                                value={stateName}
-                                onChange={(e) => setStateName(e.target.value)}
-                                list="indian-states"
+                                id="checkoutState"
+                                placeholder="Auto-detected from PIN"
+                                required
+                                value={addrStateName}
+                                onChange={(e) => setAddrStateName(e.target.value)}
+                                list="checkout-indian-states"
+                                className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
                               />
-                              <datalist id="indian-states">
+                              <datalist id="checkout-indian-states">
                                 {INDIAN_STATES.map((st) => (
                                   <option key={st} value={st} />
                                 ))}
                               </datalist>
                             </div>
                           </div>
-                        </div>
-                      )}
 
-                      <div className="pt-4 flex justify-end">
-                        <Button 
-                          type="button" 
-                          onClick={async () => {
-                            if (!fullName || !email || !phone.trim() || !street.trim() || !landmark.trim() || !city.trim() || !district.trim() || !stateName.trim() || !zipCode.trim()) {
-                              toast.error("Please fill in all shipping details. All fields are mandatory.");
-                              return;
-                            }
-                            if (zipCode.length !== 6) {
-                              toast.error("Area Pin Code must be exactly 6 digits.");
-                              return;
-                            }
+                          {/* Row 4: Street Address */}
+                          <div className="space-y-1.5">
+                            <Label htmlFor="checkoutStreet" className="text-xs font-semibold text-foreground">
+                              Flat, House no., Building, Street Address <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="checkoutStreet"
+                              placeholder="e.g. B-402, Sea Green Heights, Bandra West"
+                              required
+                              value={addrStreet}
+                              onChange={(e) => setAddrStreet(e.target.value)}
+                              className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
+                            />
+                          </div>
 
-                            try {
-                              const { data } = await supabase.auth.getSession();
-                              const token = data?.session?.access_token;
-                              if (token) {
-                                let bodyData: any = { fullName, phone };
-                                if (selectedAddressId === "new") {
-                                  const newAddr = {
-                                    id: Math.random().toString(36).substring(2, 9),
-                                    fullName,
-                                    email,
-                                    phone,
-                                    street,
-                                    landmark,
-                                    city,
-                                    district,
-                                    state: stateName,
-                                    zipCode,
-                                    label: "HOME"
-                                  };
-                                  const updatedAddresses = [...addresses, newAddr];
-                                  bodyData.addresses = updatedAddresses;
-                                } else {
-                                  bodyData.addresses = addresses;
-                                }
+                          {/* Row 5: Landmark */}
+                          <div className="space-y-1.5">
+                            <Label htmlFor="checkoutLandmark" className="text-xs font-semibold text-foreground">
+                              Landmark <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="checkoutLandmark"
+                              placeholder="e.g. Near City Park / Opposite Metro Station"
+                              required
+                              value={addrLandmark}
+                              onChange={(e) => setAddrLandmark(e.target.value)}
+                              className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
+                            />
+                          </div>
 
-                                await fetch("/api/users/profile", {
-                                  method: "POST",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                    Authorization: `Bearer ${token}`
-                                  },
-                                  body: JSON.stringify(bodyData)
-                                });
-                              }
-                            } catch (err) {
-                              console.error("Failed to auto-save address:", err);
-                            }
+                          {/* Row 6: Address Type (at the end) */}
+                          <div className="space-y-1.5 pt-1">
+                            <Label className="text-xs font-semibold text-foreground block">
+                              Address Type
+                            </Label>
+                            <div className="flex flex-wrap gap-2.5">
+                              {["HOME", "WORK", "OTHER"].map((l) => (
+                                <button
+                                  key={l}
+                                  type="button"
+                                  onClick={() => setAddrLabel(l)}
+                                  className={cn(
+                                    "px-5 py-2 rounded-xl text-xs font-semibold transition-all duration-150",
+                                    addrLabel === l
+                                      ? "bg-primary text-primary-foreground shadow-sm"
+                                      : "bg-secondary/40 hover:bg-secondary text-foreground border border-border/60"
+                                  )}
+                                >
+                                  {l === "HOME" ? "Home" : l === "WORK" ? "Work" : "Other"}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
 
-                            setCheckoutStep(2);
-                          }}
-                          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-[4px] py-6 text-base font-bold transition-all shadow-sm uppercase tracking-wider"
-                        >
-                          Use This Address & Continue
-                        </Button>
+                          {/* Footer Actions */}
+                          <div className="pt-4 border-t border-border/40 flex items-center justify-end gap-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleCancelAddressModal}
+                              className="rounded-xl px-5 py-2.5 text-xs font-semibold border-border/70 hover:bg-secondary text-foreground"
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="submit"
+                              disabled={savingAddress}
+                              className="rounded-xl px-6 py-2.5 text-xs font-bold tracking-wider uppercase bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                            >
+                              {savingAddress ? (
+                                <>
+                                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving...
+                                </>
+                              ) : (
+                                "SAVE ADDRESS"
+                              )}
+                            </Button>
+                          </div>
+                        </form>
                       </div>
                     </div>
                   )}
@@ -1233,7 +1459,7 @@ function CheckoutPage() {
                 {checkoutStep === 1 ? (
                   <Button
                     onClick={() => {
-                      if (!fullName || !email || !phone.trim() || !street.trim() || !landmark.trim() || !city.trim() || !district.trim() || !stateName.trim() || !zipCode.trim()) {
+                      if (!fullName || !email || !phone.trim() || !street.trim() || !landmark.trim() || !district.trim() || !stateName.trim() || !zipCode.trim()) {
                         toast.error("Please fill in all shipping details. All fields are mandatory.");
                         return;
                       }

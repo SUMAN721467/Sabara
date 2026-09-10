@@ -167,16 +167,43 @@ export const Route = createFileRoute("/api/admin/customers")({
 
             const totalSpent = userOrders.reduce((sum, o) => sum + Number(o.total), 0);
 
+            let streetDisplay = "—";
+            let cityDisplay = profile.city || userOrders[0]?.shipping_city || "—";
+            let stateDisplay = profile.state || userOrders[0]?.shipping_state || "—";
+            let zipDisplay = profile.zip_code || userOrders[0]?.shipping_zip_code || "—";
+
+            if (profile.street) {
+              const s = profile.street.trim();
+              if (s.startsWith("[")) {
+                try {
+                  const addrs = JSON.parse(s);
+                  if (Array.isArray(addrs) && addrs.length > 0) {
+                    streetDisplay = addrs[0].street || "—";
+                    if (addrs[0].city) cityDisplay = addrs[0].city;
+                    if (addrs[0].state) stateDisplay = addrs[0].state;
+                    if (addrs[0].zipCode) zipDisplay = addrs[0].zipCode;
+                  }
+                } catch (e) {}
+              } else if (s.includes("|||")) {
+                streetDisplay = s.split("|||")[0] || "—";
+              } else if (s !== "[]") {
+                streetDisplay = s;
+              }
+            }
+            if (streetDisplay === "—" && userOrders[0]?.shipping_street) {
+              streetDisplay = userOrders[0].shipping_street;
+            }
+
             customersList.push({
               id: profile.id,
               fullName: profile.full_name || userOrders[0]?.customer_name || "Anonymous",
               email: email || "—",
               phone: profile.phone || authUser?.phone || userOrders[0]?.customer_phone || "—",
               age: profile.age || "—",
-              street: profile.street || userOrders[0]?.shipping_street || "—",
-              city: profile.city || userOrders[0]?.shipping_city || "—",
-              state: profile.state || userOrders[0]?.shipping_state || "—",
-              zipCode: profile.zip_code || userOrders[0]?.shipping_zip_code || "—",
+              street: streetDisplay,
+              city: cityDisplay,
+              state: stateDisplay,
+              zipCode: zipDisplay,
               totalOrders: userOrders.length,
               totalSpent,
               isRegistered: true,

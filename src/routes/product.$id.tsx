@@ -527,7 +527,7 @@ function ProductPage() {
           <span className="text-xs font-medium uppercase tracking-[0.22em] text-primary">
             {(product.category || "").split(",").map((c: string) => c.trim()).join(" · ")}
           </span>
-          <h1 className="mt-3 font-serif text-2xl leading-tight text-foreground md:text-3xl">
+          <h1 className="mt-3 font-sans font-normal text-2xl leading-tight text-foreground md:text-3xl">
             {product.name.split(" - ")[0]}
           </h1>
 

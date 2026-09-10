@@ -161,9 +161,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const matches = useRouterState({ select: (s) => s.matches });
-  const currentMatch = matches[matches.length - 1];
-  const pageKey = currentMatch ? currentMatch.id : "root";
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -174,7 +171,7 @@ function RootComponent() {
               <AnnouncementBar />
               <Navbar />
               <main className="flex-1 overflow-x-hidden">
-                <div key={pageKey} className="animate-page-enter">
+                <div>
                   <Outlet />
                 </div>
               </main>

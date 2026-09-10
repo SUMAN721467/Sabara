@@ -188,12 +188,20 @@ function AccountPage() {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const activeTab = search.tab || "profile";
+  const [activeTab, setActiveTab] = useState(search.tab || "profile");
+
+  useEffect(() => {
+    if (search.tab && search.tab !== activeTab) {
+      setActiveTab(search.tab);
+    }
+  }, [search.tab]);
 
   const handleTabChange = (val: string) => {
+    setActiveTab(val);
     navigate({
       to: "/account",
-      search: { tab: val }
+      search: { tab: val },
+      replace: true,
     });
   };
   const [profile, setProfile] = useState<any>(null);
@@ -234,6 +242,8 @@ function AccountPage() {
   // Refs
   const avatarFileRef = useRef<HTMLInputElement>(null);
   const reviewPhotoInputRef = useRef<HTMLInputElement>(null);
+  const initialFetchDone = useRef(false);
+  const ordersFetchDone = useRef(false);
 
   // Form states
   const [fullName, setFullName] = useState("");
@@ -301,7 +311,9 @@ function AccountPage() {
 
   // ─── Fetch profile once the user is confirmed ─────────────────────────────
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
+    if (initialFetchDone.current) return;
+    initialFetchDone.current = true;
 
     setProfileLoading(true);
     supabase.auth.getSession().then(({ data }) => {
@@ -322,16 +334,25 @@ function AccountPage() {
             setFullName(p.fullName || "");
             setAge(p.age !== undefined && p.age !== null ? String(p.age) : "");
             setPhone(p.phone || "");
-            if (p.addresses && p.addresses.length > 0) {
+            if (p.addresses && Array.isArray(p.addresses)) {
               setAddresses(p.addresses);
-              const firstAddr = p.addresses[0];
-              setStreet(firstAddr.street || "");
-              setCity(firstAddr.city || "");
-              setDistrict(firstAddr.district || "");
-              setStateName(firstAddr.state || "");
-              setZipCode(firstAddr.zipCode || "");
-              setLandmark(firstAddr.landmark || "");
-            } else if (p.address) {
+              if (p.addresses.length > 0) {
+                const firstAddr = p.addresses[0];
+                setStreet(firstAddr.street || "");
+                setCity(firstAddr.city || "");
+                setDistrict(firstAddr.district || "");
+                setStateName(firstAddr.state || "");
+                setZipCode(firstAddr.zipCode || "");
+                setLandmark(firstAddr.landmark || "");
+              } else {
+                setStreet("");
+                setCity("");
+                setDistrict("");
+                setStateName("");
+                setZipCode("");
+                setLandmark("");
+              }
+            } else if (p.address && (p.address.street || p.address.city || p.address.state || p.address.zipCode)) {
               const legacyAddr = {
                 id: "default",
                 fullName: p.fullName || "",
@@ -352,6 +373,14 @@ function AccountPage() {
               setStateName(legacyAddr.state || "");
               setZipCode(legacyAddr.zipCode || "");
               setLandmark(legacyAddr.landmark || "");
+            } else {
+              setAddresses([]);
+              setStreet("");
+              setCity("");
+              setDistrict("");
+              setStateName("");
+              setZipCode("");
+              setLandmark("");
             }
 
             // Sync database avatar_url to auth user metadata if they differ
@@ -374,7 +403,7 @@ function AccountPage() {
         })
         .finally(() => setProfileLoading(false));
     });
-  }, [user]);
+  }, [user?.id]);
 
   const fetchUserReviews = async () => {
     if (!user) return;
@@ -417,11 +446,12 @@ function AccountPage() {
 
   // ─── Fetch orders and reviews once the user is confirmed ─────────────────
   useEffect(() => {
-    if (user) {
+    if (user?.id && !ordersFetchDone.current) {
+      ordersFetchDone.current = true;
       fetchOrders();
       fetchUserReviews();
     }
-  }, [user]);
+  }, [user?.id]);
 
   const handleCancelOrder = async () => {
     if (!orderToCancel) return;
@@ -808,14 +838,7 @@ function AccountPage() {
           age: age === "" ? "" : Number(age),
           phone,
           avatarUrl: profile?.avatarUrl || user.user_metadata?.avatar_url || null,
-          address: {
-            street,
-            city,
-            district,
-            state: stateName,
-            zipCode,
-            landmark,
-          },
+          addresses: addresses,
         }),
       });
 
@@ -912,10 +935,23 @@ function AccountPage() {
       }
 
       setProfile(json.profile);
-      if (json.profile?.addresses) {
-        setAddresses(json.profile.addresses);
+      const nextAddrs = json.profile?.addresses || [];
+      setAddresses(nextAddrs);
+      if (nextAddrs.length > 0) {
+        const firstAddr = nextAddrs[0];
+        setStreet(firstAddr.street || "");
+        setCity(firstAddr.city || "");
+        setDistrict(firstAddr.district || "");
+        setStateName(firstAddr.state || "");
+        setZipCode(firstAddr.zipCode || "");
+        setLandmark(firstAddr.landmark || "");
       } else {
-        setAddresses([]);
+        setStreet("");
+        setCity("");
+        setDistrict("");
+        setStateName("");
+        setZipCode("");
+        setLandmark("");
       }
       toast.success("Address deleted successfully!");
     } catch (err: any) {
@@ -926,7 +962,7 @@ function AccountPage() {
   const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!street.trim() || !landmark.trim() || !city.trim() || !district.trim() || !stateName.trim() || !zipCode.trim() || !addrFullName.trim() || !addrPhone.trim() || !addrEmail.trim()) {
+    if (!street.trim() || !landmark.trim() || !district.trim() || !stateName.trim() || !zipCode.trim() || !addrFullName.trim() || !addrPhone.trim() || !addrEmail.trim()) {
       toast.error("All shipping address fields are mandatory.");
       return;
     }
@@ -945,7 +981,7 @@ function AccountPage() {
       phone: addrPhone,
       street,
       landmark,
-      city,
+      city: district.trim(),
       district,
       state: stateName,
       zipCode,
@@ -1076,7 +1112,7 @@ function AccountPage() {
         </p>
       </div>
 
-      {profileLoading ? (
+      {profileLoading && !profile ? (
         <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/80 bg-card p-12 text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-muted-foreground text-sm">Loading your account details...</p>
@@ -1261,290 +1297,360 @@ function AccountPage() {
                   </div>
                   <div>
                     <h2 className="text-xl font-serif text-foreground">
-                      {isAddingAddress ? "Add New Address" : editingAddressId ? "Edit Address" : "Manage Addresses"}
+                      Manage Addresses
                     </h2>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {isAddingAddress || editingAddressId
-                        ? "Please fill in all the details below. All fields are mandatory."
-                        : "Add and manage multiple delivery addresses for a seamless shopping experience."}
+                      Add and manage multiple delivery addresses for a seamless shopping experience.
                     </p>
                   </div>
                 </div>
 
-                {!isAddingAddress && !editingAddressId && (
-                  <Button
-                    type="button"
-                    onClick={handleStartAddAddress}
-                    className="rounded-full px-5 py-2.5 text-xs font-semibold self-start sm:self-auto bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    + ADD A NEW ADDRESS
-                  </Button>
+                <Button
+                  type="button"
+                  onClick={handleStartAddAddress}
+                  className="rounded-full px-5 py-2.5 text-xs font-semibold self-start sm:self-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+                >
+                  + ADD A NEW ADDRESS
+                </Button>
+              </div>
+
+              {/* ── ADDRESS LIST VIEW ────────────────────────────────────── */}
+              <div>
+                {addresses.length === 0 ? (
+                  <div className="text-center py-12 border-2 border-dashed border-border/60 rounded-2xl p-6">
+                    <MapPin className="h-10 w-10 text-muted-foreground/60 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-foreground">No saved addresses found</p>
+                    <p className="text-xs text-muted-foreground mt-1 mb-4">
+                      Add a shipping address to get started with your orders.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={handleStartAddAddress}
+                      className="rounded-full px-5 py-2.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      + Add Your First Address
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {addresses.map((addr) => (
+                      <div
+                        key={addr.id}
+                        className="relative rounded-2xl border border-border/60 bg-secondary/10 p-5 hover:border-border transition-all duration-200"
+                      >
+                        {/* Label Badge */}
+                        <span className="inline-block text-[10px] font-bold tracking-wider uppercase bg-secondary border border-border text-muted-foreground px-2.5 py-0.5 rounded-full mb-3">
+                          {addr.label || "HOME"}
+                        </span>
+
+                        {/* 3-dot dropdown menu */}
+                        <div className="absolute right-4 top-4">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenDropdownId(openDropdownId === addr.id ? null : addr.id);
+                            }}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+
+                          {openDropdownId === addr.id && (
+                            <div
+                              className="absolute right-0 mt-1 w-28 rounded-xl border border-border/60 bg-card p-1 shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-100"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleStartEditAddress(addr);
+                                  setOpenDropdownId(null);
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs rounded-lg text-foreground hover:bg-secondary transition-colors"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleDeleteAddress(addr.id);
+                                  setOpenDropdownId(null);
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Recipient Details */}
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="font-bold text-sm sm:text-base text-foreground">{addr.fullName}</span>
+                          <span className="text-xs sm:text-sm text-muted-foreground font-medium">{addr.phone}</span>
+                          {addr.email && (
+                            <span className="text-xs text-muted-foreground font-normal">| {addr.email}</span>
+                          )}
+                        </div>
+
+                        {/* Address Content */}
+                        <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                          <p>{addr.street}</p>
+                          {addr.landmark && (
+                            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+                              <span className="font-semibold">Landmark:</span> {addr.landmark}
+                            </p>
+                          )}
+                          <p className="mt-1">
+                            {addr.city}, {addr.district ? `${addr.district}, ` : ""}{addr.state} - <span className="font-semibold text-foreground">{addr.zipCode}</span>
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
-              {!isAddingAddress && !editingAddressId ? (
-                /* ── ADDRESS LIST VIEW ────────────────────────────────────── */
-                <div>
-                  {addresses.length === 0 ? (
-                    <div className="text-center py-12 border-2 border-dashed border-border/60 rounded-2xl p-6">
-                      <MapPin className="h-10 w-10 text-muted-foreground/60 mx-auto mb-3" />
-                      <p className="text-sm font-medium text-foreground">No saved addresses found</p>
-                      <p className="text-xs text-muted-foreground mt-1 mb-4">
-                        Add a shipping address to get started with your orders.
-                      </p>
-                      <Button
+              {/* ── POP-UP MODAL FOR ADD / EDIT ADDRESS ───────────────────────── */}
+              {(isAddingAddress || editingAddressId !== null) && (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      handleCancelAddressForm();
+                    }
+                  }}
+                >
+                  <div
+                    className="relative w-full max-w-xl my-auto rounded-3xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden text-card-foreground flex flex-col max-h-[92vh]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-4 pb-5 border-b border-border/40">
+                      <div className="flex items-center gap-3.5">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary flex-shrink-0 shadow-xs">
+                          <MapPin className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h2 className="text-lg sm:text-xl font-serif font-bold text-foreground">
+                            {editingAddressId ? "Edit Shipping Address" : "Add New Shipping Address"}
+                          </h2>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Auto-fetches city & state upon entering 6-digit PIN.
+                          </p>
+                        </div>
+                      </div>
+                      <button
                         type="button"
-                        onClick={handleStartAddAddress}
-                        className="rounded-full px-5 py-2.5 text-xs font-semibold"
+                        onClick={handleCancelAddressForm}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors -mr-1 -mt-1"
+                        aria-label="Close dialog"
                       >
-                        + Add Your First Address
-                      </Button>
+                        <X className="h-4 w-4" />
+                      </button>
                     </div>
-                  ) : (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {addresses.map((addr) => (
-                        <div
-                          key={addr.id}
-                          className="relative rounded-2xl border border-border/60 bg-secondary/10 p-5 hover:border-border transition-all duration-200"
-                        >
-                          {/* Label Badge */}
-                          <span className="inline-block text-[10px] font-bold tracking-wider uppercase bg-secondary border border-border text-muted-foreground px-2.5 py-0.5 rounded-full mb-3">
-                            {addr.label || "HOME"}
-                          </span>
 
-                          {/* 3-dot dropdown menu */}
-                          <div className="absolute right-4 top-4">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenDropdownId(openDropdownId === addr.id ? null : addr.id);
+                    {/* Modal Form */}
+                    <form onSubmit={handleSaveAddress} className="space-y-4 pt-5 overflow-y-auto pr-1">
+                      {/* Row 1: Full Name & Mobile Number */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="popupAddrFullName" className="text-xs font-semibold text-foreground">
+                            Full Name <span className="text-destructive">*</span>
+                          </Label>
+                          <Input
+                            id="popupAddrFullName"
+                            placeholder="e.g. Suman Samanta"
+                            required
+                            value={addrFullName}
+                            onChange={(e) => setAddrFullName(e.target.value)}
+                            className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="popupAddrPhone" className="text-xs font-semibold text-foreground">
+                            Mobile Number <span className="text-destructive">*</span>
+                          </Label>
+                          <Input
+                            id="popupAddrPhone"
+                            type="tel"
+                            placeholder="10-digit mobile number"
+                            required
+                            value={addrPhone}
+                            onChange={(e) => setAddrPhone(e.target.value)}
+                            className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 2: Email ID & Pin Code */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="popupAddrEmail" className="text-xs font-semibold text-foreground">
+                            Email ID <span className="text-destructive">*</span>
+                          </Label>
+                          <Input
+                            id="popupAddrEmail"
+                            type="email"
+                            placeholder="e.g. suman@example.com"
+                            required
+                            value={addrEmail}
+                            onChange={(e) => setAddrEmail(e.target.value)}
+                            className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="popupZipCode" className="text-xs font-semibold text-foreground flex items-center justify-between">
+                            <span>Pin Code <span className="text-destructive">*</span></span>
+                            {fetchingPincode && (
+                              <span className="text-[10px] text-primary flex items-center gap-1 font-normal animate-pulse">
+                                <Loader2 className="h-2.5 w-2.5 animate-spin" /> Fetching...
+                              </span>
+                            )}
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="popupZipCode"
+                              placeholder="6-digit PIN code"
+                              required
+                              value={zipCode}
+                              maxLength={6}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                                setIsManualInput(true);
+                                setZipCode(val);
                               }}
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-
-                            {openDropdownId === addr.id && (
-                              <div
-                                className="absolute right-0 mt-1 w-28 rounded-xl border border-border/60 bg-card p-1 shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-100"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    handleStartEditAddress(addr);
-                                    setOpenDropdownId(null);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-xs rounded-lg text-foreground hover:bg-secondary transition-colors"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    handleDeleteAddress(addr.id);
-                                    setOpenDropdownId(null);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-xs rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                                >
-                                  Delete
-                                </button>
+                              className={cn("rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm", fetchingPincode && "pr-8")}
+                            />
+                            {fetchingPincode && (
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                               </div>
                             )}
                           </div>
-
-                          {/* Recipient Details */}
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <span className="font-bold text-sm sm:text-base text-foreground">{addr.fullName}</span>
-                            <span className="text-xs sm:text-sm text-muted-foreground font-medium">{addr.phone}</span>
-                            {addr.email && (
-                              <span className="text-xs text-muted-foreground font-normal">| {addr.email}</span>
-                            )}
-                          </div>
-
-                          {/* Address Content */}
-                          <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                            <p>{addr.street}</p>
-                            {addr.landmark && (
-                              <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-                                <span className="font-semibold">Landmark:</span> {addr.landmark}
-                              </p>
-                            )}
-                            <p className="mt-1">
-                              {addr.city}, {addr.district ? `${addr.district}, ` : ""}{addr.state} - <span className="font-semibold text-foreground">{addr.zipCode}</span>
-                            </p>
-                          </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* ── ADDRESS FORM VIEW ─────────────────────────────────────── */
-                <form onSubmit={handleSaveAddress} className="space-y-6">
-                  {/* Address Label (Home, Work, Other) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="addrLabel">Address Label</Label>
-                    <div className="flex gap-2">
-                      {["HOME", "WORK", "OTHER"].map((l) => (
-                        <Button
-                          key={l}
-                          type="button"
-                          variant={addrLabel === l ? "default" : "outline"}
-                          className="rounded-full px-4 text-xs h-9"
-                          onClick={() => setAddrLabel(l)}
-                        >
-                          {l}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Recipient details */}
-                  <div className="grid gap-6 sm:grid-cols-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="addrFullName">Recipient Full Name <span className="text-destructive">*</span></Label>
-                      <Input
-                        id="addrFullName"
-                        required
-                        value={addrFullName}
-                        onChange={(e) => setAddrFullName(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="addrEmail">Recipient Email ID <span className="text-destructive">*</span></Label>
-                      <Input
-                        id="addrEmail"
-                        type="email"
-                        required
-                        value={addrEmail}
-                        onChange={(e) => setAddrEmail(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="addrPhone">Recipient Phone Number <span className="text-destructive">*</span></Label>
-                      <Input
-                        id="addrPhone"
-                        required
-                        value={addrPhone}
-                        onChange={(e) => setAddrPhone(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Street Address */}
-                  <div className="space-y-2">
-                    <Label htmlFor="street">Street Address <span className="text-destructive">*</span></Label>
-                    <Input
-                      id="street"
-                      required
-                      value={street}
-                      onChange={(e) => setStreet(e.target.value)}
-                    />
-                  </div>
-
-                  {/* Landmark */}
-                  <div className="space-y-2">
-                    <Label htmlFor="landmark">Landmark <span className="text-destructive">*</span></Label>
-                    <Input
-                      id="landmark"
-                      required
-                      value={landmark}
-                      onChange={(e) => setLandmark(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City / Town / Village <span className="text-destructive">*</span></Label>
-                      <Input
-                        id="city"
-                        required
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="zipCode" className="flex items-center justify-between">
-                        <span>Area Pin Code <span className="text-destructive">*</span></span>
-                        {fetchingPincode && (
-                          <span className="text-[10px] text-primary flex items-center gap-1 animate-pulse">
-                            <Loader2 className="h-2.5 w-2.5 animate-spin" /> Fetching...
-                          </span>
-                        )}
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="zipCode"
-                          required
-                          value={zipCode}
-                          maxLength={6}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-                            setIsManualInput(true);
-                            setZipCode(val);
-                          }}
-                          className={fetchingPincode ? "pr-8" : ""}
-                        />
-                        {fetchingPincode && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                          </div>
-                        )}
                       </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="district">District <span className="text-destructive">*</span></Label>
-                      <Input
-                        id="district"
-                        required
-                        value={district}
-                        onChange={(e) => setDistrict(e.target.value)}
-                      />
-                    </div>
+                      {/* Row 3: District & State */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="popupDistrict" className="text-xs font-semibold text-foreground">
+                            District <span className="text-destructive">*</span>
+                          </Label>
+                          <Input
+                            id="popupDistrict"
+                            placeholder="Auto-detected from PIN"
+                            required
+                            value={district}
+                            onChange={(e) => setDistrict(e.target.value)}
+                            className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="popupState" className="text-xs font-semibold text-foreground">
+                            State <span className="text-destructive">*</span>
+                          </Label>
+                          <Input
+                            id="popupState"
+                            placeholder="Auto-detected from PIN"
+                            required
+                            value={stateName}
+                            onChange={(e) => setStateName(e.target.value)}
+                            list="indian-states"
+                            className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
+                          />
+                          <datalist id="indian-states">
+                            {INDIAN_STATES.map((st) => (
+                              <option key={st} value={st} />
+                            ))}
+                          </datalist>
+                        </div>
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="state">State / Province <span className="text-destructive">*</span></Label>
-                      <Input
-                        id="state"
-                        required
-                        value={stateName}
-                        onChange={(e) => setStateName(e.target.value)}
-                        list="indian-states"
-                      />
-                      <datalist id="indian-states">
-                        {INDIAN_STATES.map((st) => (
-                          <option key={st} value={st} />
-                        ))}
-                      </datalist>
-                    </div>
+                      {/* Row 4: Street Address */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="popupStreet" className="text-xs font-semibold text-foreground">
+                          Flat, House no., Building, Street Address <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="popupStreet"
+                          placeholder="e.g. B-402, Sea Green Heights, Bandra West"
+                          required
+                          value={street}
+                          onChange={(e) => setStreet(e.target.value)}
+                          className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
+                        />
+                      </div>
+
+                      {/* Row 5: Landmark */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="popupLandmark" className="text-xs font-semibold text-foreground">
+                          Landmark <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="popupLandmark"
+                          placeholder="e.g. Near City Park / Opposite Metro Station"
+                          required
+                          value={landmark}
+                          onChange={(e) => setLandmark(e.target.value)}
+                          className="rounded-xl h-11 bg-secondary/15 border-border/70 focus:bg-background text-sm"
+                        />
+                      </div>
+
+                      {/* Row 6: Address Type (kept in the last as requested) */}
+                      <div className="space-y-1.5 pt-1">
+                        <Label className="text-xs font-semibold text-foreground block">
+                          Address Type
+                        </Label>
+                        <div className="flex flex-wrap gap-2.5">
+                          {["HOME", "WORK", "OTHER"].map((l) => (
+                            <button
+                              key={l}
+                              type="button"
+                              onClick={() => setAddrLabel(l)}
+                              className={cn(
+                                "px-5 py-2 rounded-xl text-xs font-semibold transition-all duration-150",
+                                addrLabel === l
+                                  ? "bg-primary text-primary-foreground shadow-sm"
+                                  : "bg-secondary/40 hover:bg-secondary text-foreground border border-border/60"
+                              )}
+                            >
+                              {l === "HOME" ? "Home" : l === "WORK" ? "Work" : "Other"}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="pt-4 border-t border-border/40 flex items-center justify-end gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCancelAddressForm}
+                          className="rounded-xl px-5 py-2.5 text-xs font-semibold border-border/70 hover:bg-secondary text-foreground"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={savingAddress}
+                          className="rounded-xl px-6 py-2.5 text-xs font-bold tracking-wider uppercase bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                        >
+                          {savingAddress ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving...
+                            </>
+                          ) : (
+                            "SAVE ADDRESS"
+                          )}
+                        </Button>
+                      </div>
+                    </form>
                   </div>
-
-                  <div className="pt-2 flex gap-3">
-                    <Button type="submit" disabled={savingAddress} className="rounded-full px-6 py-5">
-                      {savingAddress ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
-                        </>
-                      ) : (
-                        "Save Address"
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="rounded-full px-6 py-5"
-                      onClick={handleCancelAddressForm}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
+                </div>
               )}
             </div>
           </TabsContent>

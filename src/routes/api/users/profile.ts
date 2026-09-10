@@ -88,41 +88,76 @@ export const Route = createFileRoute("/api/users/profile")({
             return Response.json({ success: true, profile: null });
           }
 
-          const streetStr = data.street || "";
-          let addresses = [];
-          
-          if (streetStr.trim().startsWith("[")) {
-            try {
-              addresses = JSON.parse(streetStr);
-            } catch (e) {
-              console.error("[profile GET parse addresses error]", e);
+          let addresses: any[] = [];
+
+          // Try fetching from dedicated shipping_addresses table first
+          try {
+            const { data: dbAddrs, error: addrErr } = await supabase
+              .from("shipping_addresses")
+              .select("*")
+              .eq("user_id", userId)
+              .order("created_at", { ascending: true });
+
+            if (!addrErr && dbAddrs && dbAddrs.length > 0) {
+              addresses = dbAddrs.map((a: any) => ({
+                id: a.id,
+                fullName: a.full_name,
+                email: a.email || "",
+                phone: a.phone,
+                street: a.street,
+                landmark: a.landmark || "",
+                district: a.district || "",
+                city: a.city || a.district || "",
+                state: a.state,
+                zipCode: a.zip_code,
+                label: a.label || "HOME",
+                isDefault: a.is_default || false,
+              }));
+            }
+          } catch (e) {
+            console.error("[profile GET shipping_addresses error]", e);
+          }
+
+          // Fallback to user_profiles.street if shipping_addresses table was empty or not yet created
+          if (addresses.length === 0 && data) {
+            const streetStr = (data.street || "").trim();
+            if (streetStr.startsWith("[")) {
+              try {
+                const parsed = JSON.parse(streetStr);
+                if (Array.isArray(parsed)) {
+                  addresses = parsed;
+                }
+              } catch (e) {
+                console.error("[profile GET parse addresses error]", e);
+              }
+            } else if (streetStr !== "" && streetStr !== "[]") {
+              const parts = streetStr.split("|||");
+              const street = parts[0] || "";
+              const landmark = parts[1] || "";
+              const district = parts[2] || "";
+              if (street || landmark || district || data.city || data.state || data.zip_code) {
+                addresses = [{
+                  id: "default",
+                  fullName: data.full_name || "",
+                  email: "",
+                  phone: data.phone || "",
+                  street: street,
+                  city: data.city || "",
+                  district: district,
+                  state: data.state || "",
+                  zipCode: data.zip_code || "",
+                  landmark: landmark,
+                  label: "HOME"
+                }];
+              }
             }
           }
 
-          if (!Array.isArray(addresses) || addresses.length === 0) {
-            const parts = streetStr.split("|||");
-            const street = parts[0] || "";
-            const landmark = parts[1] || "";
-            const district = parts[2] || "";
-            addresses = [{
-              id: "default",
-              fullName: data.full_name || "",
-              phone: data.phone || "",
-              street: street,
-              city: data.city || "",
-              district: district,
-              state: data.state || "",
-              zipCode: data.zip_code || "",
-              landmark: landmark,
-              label: "HOME"
-            }];
-          }
-
           const profile = {
-            fullName: data.full_name,
-            age: data.age,
-            phone: data.phone,
-            avatarUrl: data.avatar_url,
+            fullName: data?.full_name,
+            age: data?.age,
+            phone: data?.phone,
+            avatarUrl: data?.avatar_url,
             addresses: addresses,
             address: addresses[0] || null,
           };
@@ -174,34 +209,73 @@ export const Route = createFileRoute("/api/users/profile")({
           const finalAvatarUrl = avatarUrl !== undefined ? avatarUrl : existingAvatarUrl;
 
           // Process addresses and street column encoding
-          let dbStreet = "";
-          let firstAddr = null;
+          let dbStreet: string | null = null;
+          let firstAddr: any = null;
 
-          if (addresses && Array.isArray(addresses)) {
+          if (addresses !== undefined && Array.isArray(addresses)) {
             dbStreet = JSON.stringify(addresses);
             firstAddr = addresses[0] || null;
-          } else if (address) {
-            // Legacy single address
-            dbStreet = `${address.street || ""}|||${address.landmark || ""}|||${address.district || ""}`;
-            firstAddr = address;
+
+            // Sync with dedicated shipping_addresses table
+            try {
+              // Delete old addresses for this user
+              await supabase
+                .from("shipping_addresses")
+                .delete()
+                .eq("user_id", userId);
+
+              // Insert new addresses
+              if (addresses.length > 0) {
+                const insertPayload = addresses.map((addr) => ({
+                  user_id: userId,
+                  full_name: addr.fullName || fullName || "",
+                  email: addr.email || null,
+                  phone: addr.phone || phone || "",
+                  street: addr.street || "",
+                  landmark: addr.landmark || null,
+                  district: addr.district || "",
+                  city: addr.city || addr.district || null,
+                  state: addr.state || "",
+                  zip_code: addr.zipCode || "",
+                  label: addr.label || "HOME",
+                  is_default: addr.isDefault || false,
+                }));
+
+                await supabase
+                  .from("shipping_addresses")
+                  .insert(insertPayload);
+              }
+            } catch (dbErr) {
+              console.error("[profile POST shipping_addresses sync error]", dbErr);
+            }
+          } else if (address !== undefined) {
+            if (address && (address.street || address.landmark || address.district)) {
+              dbStreet = `${address.street || ""}|||${address.landmark || ""}|||${address.district || ""}`;
+              firstAddr = address;
+            } else {
+              dbStreet = "[]";
+              firstAddr = null;
+            }
+          }
+
+          const upsertPayload: Record<string, any> = {
+            id: userId,
+            full_name: fullName ?? null,
+            age: parsedAge,
+            phone: phone ?? null,
+            avatar_url: finalAvatarUrl,
+          };
+
+          if (addresses !== undefined || address !== undefined) {
+            upsertPayload.street = dbStreet;
+            upsertPayload.city = firstAddr?.city ?? null;
+            upsertPayload.state = firstAddr?.state ?? null;
+            upsertPayload.zip_code = firstAddr?.zipCode ?? null;
           }
 
           const { data, error } = await supabase
             .from("user_profiles")
-            .upsert(
-              {
-                id: userId,
-                full_name: fullName ?? null,
-                age: parsedAge,
-                phone: phone ?? null,
-                street: dbStreet || null,
-                city: firstAddr?.city ?? null,
-                state: firstAddr?.state ?? null,
-                zip_code: firstAddr?.zipCode ?? null,
-                avatar_url: finalAvatarUrl,
-              },
-              { onConflict: "id" },
-            )
+            .upsert(upsertPayload, { onConflict: "id" })
             .select()
             .single();
 
@@ -210,31 +284,34 @@ export const Route = createFileRoute("/api/users/profile")({
             return Response.json({ success: false, error: error.message }, { status: 500 });
           }
 
-          const streetStr = data.street || "";
-          let responseAddresses = [];
-          if (streetStr.trim().startsWith("[")) {
+          const streetStr = (data.street || "").trim();
+          let responseAddresses: any[] = [];
+          if (streetStr.startsWith("[")) {
             try {
-              responseAddresses = JSON.parse(streetStr);
+              const parsed = JSON.parse(streetStr);
+              if (Array.isArray(parsed)) {
+                responseAddresses = parsed;
+              }
             } catch (e) {}
-          }
-
-          if (!Array.isArray(responseAddresses) || responseAddresses.length === 0) {
+          } else if (streetStr !== "" && streetStr !== "[]") {
             const parts = streetStr.split("|||");
             const street = parts[0] || "";
             const landmark = parts[1] || "";
             const district = parts[2] || "";
-            responseAddresses = [{
-              id: "default",
-              fullName: data.full_name || "",
-              phone: data.phone || "",
-              street: street,
-              city: data.city || "",
-              district: district,
-              state: data.state || "",
-              zipCode: data.zip_code || "",
-              landmark: landmark,
-              label: "HOME"
-            }];
+            if (street || landmark || district || data.city || data.state || data.zip_code) {
+              responseAddresses = [{
+                id: "default",
+                fullName: data.full_name || "",
+                phone: data.phone || "",
+                street: street,
+                city: data.city || "",
+                district: district,
+                state: data.state || "",
+                zipCode: data.zip_code || "",
+                landmark: landmark,
+                label: "HOME"
+              }];
+            }
           }
 
           const profile = {
