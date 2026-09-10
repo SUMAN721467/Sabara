@@ -12,6 +12,11 @@ import {
   ChevronRight,
   Settings,
   Heart,
+  MapPin,
+  ArrowRight,
+  HelpCircle,
+  Phone,
+  Sparkles,
 } from "lucide-react";
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useCart } from "@/lib/cart";
@@ -194,6 +199,19 @@ function AccountPanel({
           </Link>
 
           <Link
+            to="/account"
+            search={{ tab: "address" }}
+            onClick={onClose}
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-secondary group"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary group-hover:bg-primary/15 transition-colors">
+              <MapPin className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </div>
+            <span className="flex-1">Shipping Address</span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+          </Link>
+
+          <Link
             to="/wishlist"
             onClick={onClose}
             className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-secondary group hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
@@ -255,6 +273,17 @@ export function Navbar() {
   const [query, setQuery] = useState("");
   const userBtnRef = useRef<HTMLButtonElement>(null);
 
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
   const onSearch = (e: FormEvent) => {
     e.preventDefault();
     const q = query.trim();
@@ -265,6 +294,7 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     setAccountOpen(false);
+    setOpen(false);
     await signOut();
     toast.success("Signed out");
     navigate({ to: "/" });
@@ -275,11 +305,291 @@ export function Navbar() {
       {/* ── Login success popup ────────────────────────────────────────────── */}
       {justLoggedIn && user && <LoginSuccessPopup user={user} />}
 
+      {/* ── Mobile Side Drawer Backdrop ─────────────────────────────────────── */}
+      <div
+        onClick={() => setOpen(false)}
+        className={cn(
+          "fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 md:hidden",
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+        aria-hidden="true"
+      />
+
+      {/* ── Mobile Side Drawer ──────────────────────────────────────────────── */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-[85vw] max-w-[320px] flex-col bg-background shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:hidden border-r border-border/70",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+        aria-label="Mobile Navigation"
+      >
+        {/* Drawer Header */}
+        <div className="flex h-16 items-center justify-between px-5 border-b border-border/60">
+          <Link to="/" onClick={() => setOpen(false)} className="shrink-0 group">
+            <img
+              src={logoImg}
+              alt="Sabara"
+              className="h-8 w-auto max-h-8 max-w-[120px] transition-transform duration-300 group-hover:scale-105"
+            />
+          </Link>
+          <button
+            onClick={() => setOpen(false)}
+            aria-label="Close menu"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/80 text-foreground transition-all hover:bg-secondary active:scale-90 cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Drawer Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          {/* Main Navigation Links */}
+          <div className="space-y-1">
+            <Link
+              to="/"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary active:scale-[0.99]"
+            >
+              <span>Home</span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+            </Link>
+
+            <Link
+              to="/shop"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary active:scale-[0.99]"
+            >
+              <div className="flex items-center gap-2">
+                <span>Shop All</span>
+                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary tracking-wide">
+                  COLLECTION
+                </span>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+            </Link>
+
+            <Link
+              to="/about"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary active:scale-[0.99]"
+            >
+              <span>Our Craft</span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+            </Link>
+
+            <Link
+              to="/contact"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary active:scale-[0.99]"
+            >
+              <span>Contact</span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+            </Link>
+          </div>
+
+          <div className="border-t border-border/60" />
+
+          {/* Account / User Section */}
+          <div className="space-y-1">
+            {user ? (
+              <>
+                {/* User Info Card */}
+                <div className="flex items-center gap-3 rounded-xl bg-secondary/60 p-3 mb-2">
+                  {user.user_metadata?.avatar_url ? (
+                    <img
+                      src={user.user_metadata.avatar_url}
+                      alt="avatar"
+                      className="h-9 w-9 rounded-full object-cover border border-border/80"
+                    />
+                  ) : (
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-primary text-sm font-bold">
+                      <User className="h-4 w-4" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-foreground truncate">
+                      {user.user_metadata?.full_name || user.email?.split("@")[0] || "My Account"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                </div>
+
+                <Link
+                  to="/account"
+                  search={{ tab: "profile" }}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>Profile Details</span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+                </Link>
+
+                <Link
+                  to="/account"
+                  search={{ tab: "address" }}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>Shipping Address</span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+                </Link>
+
+                <Link
+                  to="/account"
+                  search={{ tab: "orders" }}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                    <span>My Orders</span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+                </Link>
+
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold text-primary tracking-wide">
+                        ADMIN
+                      </span>
+                      <span>Admin Dashboard</span>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+                  </Link>
+                )}
+
+                <Link
+                  to="/wishlist"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Heart className="h-4 w-4 text-muted-foreground" />
+                    <span>Wishlist</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {wishlistCount > 0 && (
+                      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
+                        {wishlistCount}
+                      </span>
+                    )}
+                    <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+                  </div>
+                </Link>
+
+                <button
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors mt-1 cursor-pointer"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign out</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>Sign in</span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+                </Link>
+
+                <Link
+                  to="/signup"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="h-4 w-4 text-muted-foreground" />
+                    <span>Create account</span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+                </Link>
+
+                <Link
+                  to="/wishlist"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Heart className="h-4 w-4 text-muted-foreground" />
+                    <span>Wishlist</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {wishlistCount > 0 && (
+                      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
+                        {wishlistCount}
+                      </span>
+                    )}
+                    <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
+                  </div>
+                </Link>
+              </>
+            )}
+          </div>
+
+          <div className="border-t border-border/60" />
+
+          {/* Help & Brand Info */}
+          <div className="space-y-1">
+            <Link
+              to="/about"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between rounded-xl px-3 py-2 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary"
+            >
+              <div className="flex items-center gap-2.5">
+                <HelpCircle className="h-3.5 w-3.5" />
+                <span>Our Story</span>
+              </div>
+              <ArrowRight className="h-3.5 w-3.5 opacity-60" />
+            </Link>
+
+            <Link
+              to="/contact"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between rounded-xl px-3 py-2 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary"
+            >
+              <div className="flex items-center gap-2.5">
+                <Phone className="h-3.5 w-3.5" />
+                <span>Contact & Help</span>
+              </div>
+              <ArrowRight className="h-3.5 w-3.5 opacity-60" />
+            </Link>
+          </div>
+        </div>
+      </aside>
+
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-2 sm:px-6">
-          <Link to="/" className="font-serif text-xl tracking-tight group mr-2 sm:mr-3 shrink-0">
-            <img src={logoImg} alt="Sabara" className="h-6 sm:h-9 w-auto max-h-6 sm:max-h-9 max-w-[90px] sm:max-w-none transition-transform duration-500 ease-out group-hover:scale-105" />
-          </Link>
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button
+              onClick={() => setOpen((v) => !v)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 md:hidden cursor-pointer"
+              aria-label="Toggle menu"
+            >
+              {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+
+            <Link to="/" className="font-serif text-xl tracking-tight group mr-2 sm:mr-3 shrink-0">
+              <img src={logoImg} alt="Sabara" className="h-6 sm:h-9 w-auto max-h-6 sm:max-h-9 max-w-[90px] sm:max-w-none transition-transform duration-500 ease-out group-hover:scale-105" />
+            </Link>
+          </div>
 
           <nav className="hidden items-center gap-8 md:flex">
             {links.map((l) => (
@@ -306,7 +616,7 @@ export function Navbar() {
             <button
               onClick={() => setSearchOpen((v) => !v)}
               aria-label="Search"
-              className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90"
+              className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
             >
               <Search className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
@@ -321,7 +631,7 @@ export function Navbar() {
                     aria-expanded={accountOpen}
                     onClick={() => setAccountOpen((v) => !v)}
                     className={cn(
-                      "relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90",
+                      "relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer",
                       accountOpen && "bg-secondary scale-105",
                     )}
                   >
@@ -351,7 +661,7 @@ export function Navbar() {
                 <Link
                   to="/login"
                   aria-label="Sign in"
-                  className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90"
+                  className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
                 >
                   <User className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Link>
@@ -383,14 +693,6 @@ export function Navbar() {
                 </span>
               )}
             </Link>
-
-            <button
-              onClick={() => setOpen((v) => !v)}
-              className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 md:hidden"
-              aria-label="Toggle menu"
-            >
-              {open ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : <Menu className="h-4 w-4 sm:h-5 sm:w-5" />}
-            </button>
           </div>
         </div>
 
@@ -420,113 +722,6 @@ export function Navbar() {
               Search
             </button>
           </form>
-        </div>
-
-        {/* ── Mobile drawer ──────────────────────────────────────────────────── */}
-        <div
-          className={cn(
-            "overflow-hidden border-t border-border/60 transition-[max-height] duration-300 md:hidden",
-            open ? "max-h-[32rem]" : "max-h-0",
-          )}
-        >
-          <nav className="flex flex-col px-4 py-3">
-            {links.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                onClick={() => setOpen(false)}
-                className="py-2 text-sm text-muted-foreground hover:text-foreground font-medium"
-                activeProps={{ className: "py-2 text-sm text-foreground font-semibold" }}
-                activeOptions={{ exact: l.to === "/" }}
-              >
-                {l.label}
-              </Link>
-            ))}
-
-            <Link
-              to="/wishlist"
-              onClick={() => setOpen(false)}
-              className="flex items-center justify-between py-2 text-sm text-muted-foreground hover:text-foreground hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-            >
-              <span>My Wishlist</span>
-              {wishlistCount > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
-                  {wishlistCount}
-                </span>
-              )}
-            </Link>
-
-            <div className="mt-2 border-t border-border/60 pt-2">
-              {user ? (
-                <div className="flex flex-col gap-1">
-                  {/* Mobile account info */}
-                  <div className="flex items-center gap-2 px-0 py-2">
-                    {user.user_metadata?.avatar_url ? (
-                      <img
-                        src={user.user_metadata.avatar_url}
-                        alt="avatar"
-                        className="h-7 w-7 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/15 text-primary">
-                        <User className="h-3.5 w-3.5" />
-                      </div>
-                    )}
-                    <span className="text-sm text-foreground truncate max-w-[180px]">
-                      {user.email}
-                    </span>
-                  </div>
-                  <Link
-                    to="/account"
-                    onClick={() => setOpen(false)}
-                    className="py-2 text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    My Account
-                  </Link>
-                  <Link
-                    to="/account"
-                    search={{ tab: "orders" }}
-                    onClick={() => setOpen(false)}
-                    className="py-2 text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    My Orders
-                  </Link>
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setOpen(false)}
-                      className="py-2 text-sm text-muted-foreground hover:text-foreground"
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
-                  <button
-                    onClick={handleSignOut}
-                    className="flex items-center gap-2 py-2 text-sm text-destructive hover:text-destructive/80"
-                  >
-                    <LogOut className="h-4 w-4" /> Sign out
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  <Link
-                    to="/login"
-                    onClick={() => setOpen(false)}
-                    className="py-2 text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    to="/signup"
-                    onClick={() => setOpen(false)}
-                    className="py-2 text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    Create account
-                  </Link>
-                </div>
-              )}
-            </div>
-          </nav>
         </div>
       </header>
     </>

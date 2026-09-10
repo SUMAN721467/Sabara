@@ -77,53 +77,59 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
       )}
 
-      <div className="mt-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3 px-1">
-        <h3 className="font-sans font-normal text-base sm:text-lg leading-snug text-foreground transition-colors group-hover:text-primary duration-300">
+      {/* Product Information */}
+      <div className="mt-2 px-1 flex flex-col gap-0.5">
+        {/* Category & Materials */}
+        <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground/75 truncate">
+          {product.category} {product.materials ? `· ${product.materials}` : ""}
+        </p>
+
+        {/* Product Title */}
+        <h3
+          title={product.name.split(" - ")[0]}
+          className="font-sans font-normal text-xs sm:text-sm leading-snug text-foreground transition-colors group-hover:text-primary duration-200 line-clamp-2"
+        >
           {product.name.split(" - ")[0]}
         </h3>
-        {product.original_price && product.original_price > product.price ? (
-          <div className="flex flex-row items-baseline gap-1.5 flex-wrap sm:flex-col sm:items-end shrink-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-semibold text-red-600 dark:text-red-400">
-                {formatPrice(product.price)}
-              </span>
+
+        {/* Rating Stars (rendered only if available) */}
+        {Boolean((product as any).rating) && (
+          <div className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-semibold my-0.5">
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={cn(
+                    "h-3 w-3",
+                    star <= Math.round((product as any).rating)
+                      ? "fill-amber-400 text-amber-400 stroke-amber-400"
+                      : "text-muted-foreground/35 stroke-[1.5]"
+                  )}
+                />
+              ))}
+            </div>
+            <span className="text-foreground/80 font-bold ml-0.5">{(product as any).rating}</span>
+            <span className="text-muted-foreground font-normal">({(product as any).reviewsCount})</span>
+          </div>
+        )}
+
+        {/* Price Row */}
+        <div className="flex items-baseline gap-2 mt-1">
+          <span className="text-sm sm:text-base font-semibold text-red-600 dark:text-red-400">
+            {formatPrice(product.price)}
+          </span>
+          {product.original_price && product.original_price > product.price && (
+            <>
               <span className="text-xs text-muted-foreground line-through decoration-muted-foreground">
                 {formatPrice(product.original_price)}
               </span>
-            </div>
-            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-              ({Math.round(((product.original_price - product.price) / product.original_price) * 100)}% off)
-            </span>
-          </div>
-        ) : (
-          <span className="text-sm font-medium text-muted-foreground shrink-0">{formatPrice(product.price)}</span>
-        )}
-      </div>
-      {(product as any).rating && (
-        <div className="flex items-center gap-1 px-1 mt-1 text-xs text-amber-600 dark:text-amber-400 font-semibold">
-          <div className="flex items-center gap-0.5">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                className={cn(
-                  "h-3 w-3",
-                  star <= Math.round((product as any).rating)
-                    ? "fill-amber-400 text-amber-400 stroke-amber-400"
-                    : "text-muted-foreground/35 stroke-[1.5]"
-                )}
-              />
-            ))}
-          </div>
-          <span className="text-foreground/80 font-bold ml-0.5">{(product as any).rating}</span>
-          <span className="text-muted-foreground font-normal">({(product as any).reviewsCount})</span>
+              <span className="text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                ({Math.round(((product.original_price - product.price) / product.original_price) * 100)}% off)
+              </span>
+            </>
+          )}
         </div>
-      )}
-      <p className={cn(
-        "text-xs uppercase tracking-wider text-muted-foreground/80 px-1 pb-1",
-        (product as any).rating ? "mt-1.5" : "mt-0.5"
-      )}>
-        {product.category} · {product.materials}
-      </p>
+      </div>
     </Link>
   );
 }

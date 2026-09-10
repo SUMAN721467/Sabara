@@ -25,8 +25,17 @@ import {
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
 
+let featuredCache: { data: any[]; timestamp: number } | null = null;
+let heroCache: { data: any; timestamp: number } | null = null;
+let homepageCache: { data: any; timestamp: number } | null = null;
+const CACHE_TTL_MS = 60 * 1000; // 1 minute in-memory server cache
+
 const getFeaturedProducts = createServerFn({ method: "GET" })
   .handler(async () => {
+    const now = Date.now();
+    if (featuredCache && (now - featuredCache.timestamp < CACHE_TTL_MS)) {
+      return featuredCache.data;
+    }
     try {
       const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
       const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -67,67 +76,51 @@ const getFeaturedProducts = createServerFn({ method: "GET" })
           reviewsCount: totalReviews,
           variants: sorted,
         };
-      });
+      }).slice(0, 4);
 
-      return featured.slice(0, 4);
+      featuredCache = { data: featured, timestamp: now };
+      return featured;
     } catch (err: any) {
       console.error("[getFeaturedProducts ERROR]", err?.message, err?.stack);
-      return [];
+      return featuredCache?.data || [];
     }
   });
 
 const getHeroSettingsServer = createServerFn({ method: "GET" })
   .handler(async () => {
+    const now = Date.now();
+    if (heroCache && (now - heroCache.timestamp < CACHE_TTL_MS)) {
+      return heroCache.data;
+    }
     try {
-      // Discover schema columns once if files are missing
-      try {
-        const fs = await import("fs");
-        if (!fs.existsSync("user_profiles_columns.json") || !fs.existsSync("orders_columns.json")) {
-          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-          const supabase = serviceKey
-            ? createClient(supabaseUrl!, serviceKey, {
-                auth: {
-                  storage: undefined,
-                  persistSession: false,
-                  autoRefreshToken: false,
-                }
-              })
-            : createClient(supabaseUrl!, (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)!);
-
-          const { data: profileSample } = await supabase.from("user_profiles").select("*").limit(1);
-          const { data: orderSample } = await supabase.from("orders").select("*").limit(1);
-          fs.writeFileSync("user_profiles_columns.json", JSON.stringify({
-            keys: profileSample && profileSample[0] ? Object.keys(profileSample[0]) : [],
-            sample: profileSample && profileSample[0] ? profileSample[0] : null
-          }, null, 2));
-          fs.writeFileSync("orders_columns.json", JSON.stringify({
-            keys: orderSample && orderSample[0] ? Object.keys(orderSample[0]) : [],
-            sample: orderSample && orderSample[0] ? orderSample[0] : null
-          }, null, 2));
-        }
-      } catch (err) {
-        console.error("Schema discovery error:", err);
-      }
-
-      return await getSiteSetting("hero");
+      const data = await getSiteSetting("hero");
+      heroCache = { data, timestamp: now };
+      return data;
     } catch (e) {
       console.error("[getHeroSettingsServer error]", e);
+      return heroCache?.data || null;
     }
-    return null;
   });
 
 const getHomepageSettingsServer = createServerFn({ method: "GET" })
   .handler(async () => {
+    const now = Date.now();
+    if (homepageCache && (now - homepageCache.timestamp < CACHE_TTL_MS)) {
+      return homepageCache.data;
+    }
     try {
-      return await getSiteSetting("homepage");
+      const data = await getSiteSetting("homepage");
+      homepageCache = { data, timestamp: now };
+      return data;
     } catch (e) {
       console.error("[getHomepageSettingsServer error]", e);
+      return homepageCache?.data || null;
     }
-    return null;
   });
 
 export const Route = createFileRoute("/")({
+  staleTime: 1000 * 60 * 5, // 5 minutes client cache: instant navigation back to home
+  preloadStaleTime: 1000 * 60 * 5,
   loader: async () => {
     try {
       const [featured, heroSettings, homepageSettings] = await Promise.all([
