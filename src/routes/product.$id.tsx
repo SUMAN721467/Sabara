@@ -270,6 +270,9 @@ function ZoomableImage({ src, alt }: { src: string; alt: string }) {
         <img
           src={src}
           alt={alt}
+          width={600}
+          height={600}
+          decoding="async"
           className="h-full w-full object-cover aspect-square"
         />
 
@@ -527,6 +530,10 @@ function ProductPage() {
                   <img
                     src={img}
                     alt={`${product.name} view ${i + 1}`}
+                    width={90}
+                    height={90}
+                    loading="lazy"
+                    decoding="async"
                     className="aspect-square h-full w-full object-cover"
                   />
                 </button>

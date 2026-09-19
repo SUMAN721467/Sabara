@@ -31,7 +31,10 @@ export function ProductCard({ product }: { product: Product }) {
         <img
           src={product.image}
           alt={product.name}
+          width={300}
+          height={300}
           loading="lazy"
+          decoding="async"
           className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.21,0.6,0.35,1)] group-hover:scale-[1.06]"
         />
         {product.badge && (

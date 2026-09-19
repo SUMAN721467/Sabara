@@ -144,6 +144,14 @@ export const Route = createFileRoute("/")({
           "Small-batch handwoven mats in natural fibres. Floor mats, yoga mats, doormats and table linens made by artisans.",
       },
     ],
+    links: [
+      {
+        rel: "preload",
+        as: "image",
+        href: hero,
+        fetchPriority: "high",
+      },
+    ],
   }),
 });
 
@@ -240,7 +248,7 @@ function Index() {
   return (
     <div>
       {/* HERO — full width sliding carousel */}
-      <section className="relative w-full overflow-hidden transition-opacity duration-500" style={{ opacity: showHero ? 1 : 0 }}>
+      <section className="relative w-full overflow-hidden">
         <Carousel setApi={setApi} opts={{ loop: true }} className="w-full relative aspect-[207/325] md:aspect-[32/13] h-auto min-h-0">
           <CarouselContent className="-ml-0 h-full w-full">
             {slides.map((slide: any, index: number) => (
@@ -257,6 +265,7 @@ function Index() {
                     height={650}
                     loading={index === 0 ? "eager" : "lazy"}
                     fetchPriority={index === 0 ? "high" : "low"}
+                    decoding={index === 0 ? "sync" : "async"}
                     className="block md:hidden h-full w-full object-cover object-center transition-transform duration-[4000ms] ease-out hover:scale-[1.02]"
                   />
                   {/* Desktop Image */}
@@ -267,6 +276,7 @@ function Index() {
                     height={650}
                     loading={index === 0 ? "eager" : "lazy"}
                     fetchPriority={index === 0 ? "high" : "low"}
+                    decoding={index === 0 ? "sync" : "async"}
                     className="hidden md:block h-full w-full object-cover object-center transition-transform duration-[4000ms] ease-out hover:scale-[1.02]"
                   />
                 </Link>
@@ -349,7 +359,10 @@ function Index() {
                     <img
                       src={col.image}
                       alt={col.name}
+                      width={300}
+                      height={400}
                       loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     />
                   </div>
@@ -402,6 +415,7 @@ function Index() {
                 src={homepageSettings?.craftStory?.imageUrl || defaultHomepageSettings.craftStory.imageUrl}
                 alt="Hands weaving on a wooden loom"
                 loading="lazy"
+                decoding="async"
                 width={1400}
                 height={1000}
                 className="h-full w-full object-cover transition-transform duration-1000 hover:scale-105"

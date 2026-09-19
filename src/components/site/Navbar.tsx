@@ -329,6 +329,9 @@ export function Navbar() {
             <img
               src={logoImg}
               alt="Sabara"
+              width={120}
+              height={32}
+              decoding="async"
               className="h-8 w-auto max-h-8 max-w-[120px] transition-transform duration-300 group-hover:scale-105"
             />
           </Link>
@@ -587,7 +590,7 @@ export function Navbar() {
             </button>
 
             <Link to="/" className="font-serif text-xl tracking-tight group mr-2 sm:mr-3 shrink-0">
-              <img src={logoImg} alt="Sabara" className="h-6 sm:h-9 w-auto max-h-6 sm:max-h-9 max-w-[90px] sm:max-w-none transition-transform duration-500 ease-out group-hover:scale-105" />
+              <img src={logoImg} alt="Sabara" width={130} height={36} decoding="async" className="h-6 sm:h-9 w-auto max-h-6 sm:max-h-9 max-w-[90px] sm:max-w-none transition-transform duration-500 ease-out group-hover:scale-105" />
             </Link>
           </div>
 

@@ -43,7 +43,7 @@ function About() {
       <section className="mx-auto max-w-6xl px-4 sm:px-6">
         <ScrollReveal variant="zoom-out" duration={1000}>
           <div className="overflow-hidden rounded-2xl">
-            <img src={hero} alt="Mat in a sunlit room" loading="lazy" className="h-full w-full object-cover transition-transform duration-[1.5s] hover:scale-105" />
+            <img src={hero} alt="Mat in a sunlit room" width={1200} height={800} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-[1.5s] hover:scale-105" />
           </div>
         </ScrollReveal>
       </section>
@@ -52,7 +52,7 @@ function About() {
         <div className="grid gap-10 md:grid-cols-2 md:items-center md:gap-16">
           <ScrollReveal variant="fade-right" duration={900}>
             <div className="overflow-hidden rounded-2xl">
-              <img src={craft} alt="Hands weaving" loading="lazy" className="h-full w-full object-cover transition-transform duration-[1.5s] hover:scale-105" />
+              <img src={craft} alt="Hands weaving" width={600} height={600} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-[1.5s] hover:scale-105" />
             </div>
           </ScrollReveal>
           <div>

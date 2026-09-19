@@ -170,7 +170,7 @@ export function FaqChatBot() {
           <div className="flex items-center justify-between bg-primary px-4 py-3.5 text-primary-foreground">
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-9 w-9 items-center justify-center rounded-full overflow-hidden border border-primary-foreground/20 bg-primary-foreground/15">
-                <img src={roundLogo} alt="Logo" className="h-full w-full object-cover" />
+                <img src={roundLogo} alt="Logo" width={36} height={36} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-primary" />
               </div>
               <div>
@@ -238,7 +238,7 @@ export function FaqChatBot() {
                   >
                     {msg.sender === "bot" && (
                       <div className="flex h-7 w-7 shrink-0 select-none items-center justify-center rounded-full overflow-hidden border border-border/30 bg-secondary text-secondary-foreground">
-                        <img src={roundLogo} alt="Logo" className="h-full w-full object-cover" />
+                        <img src={roundLogo} alt="Logo" width={28} height={28} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                       </div>
                     )}
                     <div
@@ -262,7 +262,7 @@ export function FaqChatBot() {
                 {isTyping && (
                   <div className="flex w-full items-start gap-2.5 justify-start">
                     <div className="flex h-7 w-7 shrink-0 select-none items-center justify-center rounded-full overflow-hidden border border-border/30 bg-secondary text-secondary-foreground">
-                      <img src={roundLogo} alt="Logo" className="h-full w-full object-cover" />
+                      <img src={roundLogo} alt="Logo" width={28} height={28} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                     </div>
                     <div className="bg-secondary/60 text-secondary-foreground rounded-2xl rounded-tl-none px-3.5 py-2.5 border border-border/30">
                       <div className="flex gap-1 items-center h-3">
@@ -446,7 +446,7 @@ export function FaqChatBot() {
           <>
             {/* Logo container inside the speech bubble */}
             <div className="h-10 w-10 rounded-full overflow-hidden border border-primary-foreground/10 bg-white flex items-center transition-transform duration-300 group-hover:scale-105">
-              <img src={roundLogo} alt="Sabara Support Logo" className="h-full w-full object-cover" />
+              <img src={roundLogo} alt="Sabara Support Logo" width={40} height={40} decoding="async" className="h-full w-full object-cover" />
             </div>
             {/* Speech bubble tail */}
             <span className="absolute bottom-[-6px] left-[10px] w-0 h-0 border-r-[14px] border-r-transparent border-t-[14px] border-t-primary" />
