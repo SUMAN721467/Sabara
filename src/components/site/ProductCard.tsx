@@ -73,7 +73,15 @@ export function ProductCard({ product }: { product: Product }) {
                 )}
                 title={variantColor}
               >
-                <img src={v.image} alt={variantColor} className="h-full w-full object-cover" />
+                <img
+                  src={v.image}
+                  alt={variantColor}
+                  width={24}
+                  height={24}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover"
+                />
               </Link>
             );
           })}

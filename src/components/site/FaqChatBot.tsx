@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { MessageCircle, X, HelpCircle, User, Sparkles, RefreshCw, Search, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
-import roundLogo from "@/assets/round-logo.svg";
+import roundLogo from "@/assets/round logo.png";
 
 interface FAQItem {
   id: string;
@@ -79,8 +79,16 @@ export function FaqChatBot() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch FAQs from Database
+  // Load default FAQs initially, fetch customized FAQs when opened
   useEffect(() => {
+    if (!isOpen) {
+      if (faqs.length === 0) {
+        setFaqs(DEFAULT_FAQS);
+        setLoading(false);
+      }
+      return;
+    }
+
     async function loadFaqs() {
       try {
         const res = await fetch("/api/site-settings?key=faqs");
@@ -99,7 +107,7 @@ export function FaqChatBot() {
       setLoading(false);
     }
     loadFaqs();
-  }, []);
+  }, [isOpen]);
 
   // Auto-scroll to bottom of chat
   useEffect(() => {

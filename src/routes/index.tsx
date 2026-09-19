@@ -265,28 +265,30 @@ function Index() {
                   to="/shop"
                   className="block relative w-full aspect-[207/325] md:aspect-[32/13] overflow-hidden cursor-pointer"
                 >
-                  {/* Mobile Image */}
-                  <img
-                    src={slide.mobileImageUrl || slide.imageUrl}
-                    alt={slide.title || "Hero mobile banner"}
-                    width={414}
-                    height={650}
-                    loading={index === 0 ? "eager" : "lazy"}
-                    fetchPriority={index === 0 ? "high" : "low"}
-                    decoding={index === 0 ? "sync" : "async"}
-                    className="block md:hidden h-full w-full object-cover object-center transition-transform duration-[4000ms] ease-out hover:scale-[1.02]"
-                  />
-                  {/* Desktop Image */}
-                  <img
-                    src={slide.imageUrl}
-                    alt={slide.title || "Hero banner"}
-                    width={1600}
-                    height={650}
-                    loading={index === 0 ? "eager" : "lazy"}
-                    fetchPriority={index === 0 ? "high" : "low"}
-                    decoding={index === 0 ? "sync" : "async"}
-                    className="hidden md:block h-full w-full object-cover object-center transition-transform duration-[4000ms] ease-out hover:scale-[1.02]"
-                  />
+                  <picture className="block h-full w-full">
+                    <source
+                      media="(max-width: 767px)"
+                      srcSet={slide.mobileImageUrl || slide.imageUrl}
+                      width={414}
+                      height={650}
+                    />
+                    <source
+                      media="(min-width: 768px)"
+                      srcSet={slide.imageUrl}
+                      width={1600}
+                      height={650}
+                    />
+                    <img
+                      src={slide.imageUrl}
+                      alt={slide.title || "Hero banner"}
+                      width={1600}
+                      height={650}
+                      loading={index === 0 ? "eager" : "lazy"}
+                      fetchPriority={index === 0 ? "high" : "low"}
+                      decoding={index === 0 ? "sync" : "async"}
+                      className="h-full w-full object-cover object-center transition-transform duration-[4000ms] ease-out hover:scale-[1.02]"
+                    />
+                  </picture>
                 </Link>
               </CarouselItem>
             ))}

@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import faviconIcon from "../assets/favicon-icon.svg";
+import faviconIcon from "../assets/round logo.png";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
 import { AuthProvider } from "@/lib/auth";
@@ -96,9 +96,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Work+Sans:wght@300;400;500;600&display=swap" },
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", type: "image/svg+xml", href: faviconIcon },
+      { rel: "icon", href: faviconIcon },
     ],
   }),
   shellComponent: RootShell,
@@ -111,7 +113,22 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        {/* Optimized Third-Party Analytics & Tracking Loader (Non-render blocking) */}
+        <HeadContent />
+      </head>
+      <body>
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-TZST37NW"
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          />
+        </noscript>
+        {/* End Google Tag Manager (noscript) */}
+        {children}
+        <Scripts />
+        {/* Non-blocking Third-Party Analytics & Tracking Loader */}
         <script
           type="text/javascript"
           dangerouslySetInnerHTML={{
@@ -150,9 +167,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
   // Defer non-critical scripts until after paint / idle / first user interaction
   if ('requestIdleCallback' in window) {
-    requestIdleCallback(function() { setTimeout(loadThirdPartyScripts, 1200); }, { timeout: 3000 });
+    requestIdleCallback(function() { setTimeout(loadThirdPartyScripts, 1500); }, { timeout: 3500 });
   } else {
-    window.addEventListener('load', function() { setTimeout(loadThirdPartyScripts, 1200); });
+    window.addEventListener('load', function() { setTimeout(loadThirdPartyScripts, 1500); });
   }
 
   var events = ['pointerdown', 'touchstart', 'keydown', 'scroll'];
@@ -168,21 +185,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 })();`,
           }}
         />
-        <HeadContent />
-      </head>
-      <body>
-        {/* Google Tag Manager (noscript) */}
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-TZST37NW"
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
-        {/* End Google Tag Manager (noscript) */}
-        {children}
-        <Scripts />
       </body>
     </html>
   );

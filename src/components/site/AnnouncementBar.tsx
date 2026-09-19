@@ -21,7 +21,7 @@ export function AnnouncementBar() {
     return () => clearInterval(timer);
   }, [settings?.autoPlay, settings?.autoPlayInterval, activeItems.length]);
 
-  if (!isLoaded || !settings?.enabled || activeItems.length === 0) return null;
+  if (!settings?.enabled || activeItems.length === 0) return null;
   if (location.pathname.startsWith("/admin")) return null;
 
   const handleNext = () => {

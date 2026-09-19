@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ArrowLeft, Minus, Plus, Heart, Star, MessageSquare, X, Loader2, Share2, Ruler, ChevronDown, Truck, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, ShoppingCart, Minus, Plus, Heart, Star, MessageSquare, X, Loader2, Share2, Ruler, ChevronDown, Truck, RotateCcw, Sparkles } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { formatPrice, useCart } from "@/lib/cart";
@@ -338,6 +338,9 @@ function ProductPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isWishlisted = hasWishlist(product.id);
+  const isInCart = useMemo(() => {
+    return lines.some((l) => l.id === product.id);
+  }, [lines, product.id]);
   const maxStock = product.stock !== undefined && product.stock !== null ? Number(product.stock) : 10;
   const isOutOfStock = maxStock <= 0;
   const [qty, setQty] = useState(1);
@@ -666,13 +669,23 @@ function ProductPage() {
                 </button>
               </div>
 
-              {/* Add To Cart Button */}
+              {/* Add To Cart / Go To Cart Button */}
               {isOutOfStock ? (
                 <button
                   disabled
                   className="flex-1 rounded-xl bg-muted text-muted-foreground px-4 text-xs sm:text-sm font-bold tracking-wider uppercase cursor-not-allowed opacity-60 flex items-center justify-center"
                 >
                   Out of Stock
+                </button>
+              ) : isInCart ? (
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/cart" })}
+                  className="flex-1 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-wider uppercase text-xs sm:text-sm shadow-sm transition-all duration-200 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  <span>GO TO CART</span>
+                  <ArrowRight className="h-4 w-4" />
                 </button>
               ) : (
                 <button
