@@ -88,17 +88,13 @@ export type PromoSettings = {
   items: PromotionItem[];
 };
 
-const defaultPromoSettings: PromoSettings = {
+export const defaultPromoSettings: PromoSettings = {
   enabled: true,
-  backgroundColor: "#111111",
-  textColor: "#ffffff",
+  backgroundColor: "#f5f0e8",
+  textColor: "#2d3329",
   autoPlay: true,
   autoPlayInterval: 5,
-  items: [
-    { id: "1", text: "Get any 3 100ml PERFUMES for just ₹1298", link: "/shop", isActive: true },
-    { id: "2", text: "Free shipping on orders above ₹1000!", link: "", isActive: true },
-    { id: "3", text: "Use coupon FESTIVE10 for 10% off your first purchase!", link: "", isActive: true }
-  ]
+  items: []
 };
 
 export function usePromoSettings() {
@@ -112,7 +108,11 @@ export function usePromoSettings() {
         if (res.ok) {
           const data = await res.json();
           if (data?.success && data?.value) {
-            setSettings({ ...defaultPromoSettings, ...data.value });
+            setSettings({
+              ...defaultPromoSettings,
+              ...data.value,
+              items: Array.isArray(data.value.items) ? data.value.items : [],
+            });
           }
         }
       } catch (e) {
