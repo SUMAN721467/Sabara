@@ -135,24 +135,32 @@ export const Route = createFileRoute("/")({
     }
   },
   component: Index,
-  head: () => ({
-    meta: [
-      { title: "Sabara - Woven with Tradition" },
-      {
-        name: "description",
-        content:
-          "Small-batch handwoven mats in natural fibres. Floor mats, yoga mats, doormats and table linens made by artisans.",
-      },
-    ],
-    links: [
-      {
-        rel: "preload",
-        as: "image",
-        href: hero,
-        fetchPriority: "high",
-      },
-    ],
-  }),
+  head: ({ loaderData }: any) => {
+    const heroFirstSlide =
+      loaderData?.heroSettings?.slides?.[0]?.imageUrl ||
+      loaderData?.heroSettings?.slides?.[0]?.mobileImageUrl ||
+      loaderData?.heroSettings?.imageUrl ||
+      hero;
+
+    return {
+      meta: [
+        { title: "Sabara - Woven with Tradition" },
+        {
+          name: "description",
+          content:
+            "Small-batch handwoven mats in natural fibres. Floor mats, yoga mats, doormats and table linens made by artisans.",
+        },
+      ],
+      links: [
+        {
+          rel: "preload",
+          as: "image",
+          href: heroFirstSlide,
+          fetchPriority: "high",
+        },
+      ],
+    };
+  },
 });
 
 function Index() {
@@ -160,9 +168,9 @@ function Index() {
   const { settings: clientSettings, isLoaded } = useHeroSettings();
   const { settings: clientHomepageSettings, isLoaded: homepageLoaded } = useHomepageSettings();
 
-  const settings = isLoaded ? clientSettings : (heroSettings || clientSettings);
-  const homepageSettings = (homepageLoaded ? clientHomepageSettings : (serverHomepageSettings || clientHomepageSettings)) || defaultHomepageSettings;
-  const showHero = !!heroSettings || isLoaded;
+  const settings = heroSettings || (isLoaded ? clientSettings : defaultHomepageSettings);
+  const homepageSettings = (serverHomepageSettings || (homepageLoaded ? clientHomepageSettings : defaultHomepageSettings)) || defaultHomepageSettings;
+  const showHero = true;
 
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
@@ -289,17 +297,21 @@ function Index() {
           <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/30 hover:bg-background/60 hover:text-foreground text-foreground border-none rounded-full h-10 w-10 flex items-center justify-center backdrop-blur-sm cursor-pointer z-10 transition-all hover:scale-105 active:scale-95 shrink-0" />
 
           {/* Dots indicators overlay */}
-          <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 z-10">
+          <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-1.5 z-10 pointer-events-auto">
             {Array.from({ length: count }).map((_, i) => (
               <button
                 key={i}
                 onClick={() => api?.scrollTo(i)}
-                className={cn(
-                  "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
-                  current === i ? "w-6 bg-primary" : "w-1.5 bg-foreground/30 hover:bg-foreground/50"
-                )}
+                className="flex items-center justify-center p-2 min-h-[44px] min-w-[36px] cursor-pointer"
                 aria-label={`Go to slide ${i + 1}`}
-              />
+              >
+                <span
+                  className={cn(
+                    "h-2 rounded-full transition-all duration-300",
+                    current === i ? "w-6 bg-primary" : "w-2 bg-foreground/40 hover:bg-foreground/60"
+                  )}
+                />
+              </button>
             ))}
           </div>
         </Carousel>
@@ -317,7 +329,7 @@ function Index() {
                     <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-border bg-card text-primary transition-all duration-300 group-hover:scale-110 group-hover:border-primary group-hover:bg-primary/5 shadow-sm">
                       <IconComponent className="h-4.5 w-4.5 sm:h-5 sm:w-5 transition-transform duration-500 group-hover:rotate-12 text-primary" />
                     </div>
-                    <span className="mt-2 font-serif text-[8.5px] min-[375px]:text-[9.5px] sm:text-[10px] font-semibold tracking-wide sm:tracking-wider text-foreground uppercase max-w-[80px] sm:max-w-[120px] leading-tight transition-colors duration-300 group-hover:text-primary">
+                    <span className="mt-2 font-serif text-[10px] min-[375px]:text-[11px] sm:text-xs font-semibold tracking-wide text-foreground uppercase max-w-[80px] sm:max-w-[120px] leading-tight transition-colors duration-300 group-hover:text-primary">
                       {v.title}
                     </span>
                   </div>

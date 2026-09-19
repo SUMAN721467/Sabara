@@ -89,13 +89,13 @@ export function AnnouncementBar() {
       {activeItems.length > 1 ? (
         <button
           onClick={handlePrev}
-          className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/10 transition-colors focus:outline-none cursor-pointer"
+          className="flex h-8 w-8 min-h-[36px] min-w-[36px] items-center justify-center rounded-full hover:bg-white/10 transition-colors focus:outline-none cursor-pointer"
           aria-label="Previous announcement"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
       ) : (
-        <div className="w-6" />
+        <div className="w-8" />
       )}
 
       {/* Slide Content */}
@@ -111,13 +111,13 @@ export function AnnouncementBar() {
       {activeItems.length > 1 ? (
         <button
           onClick={handleNext}
-          className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/10 transition-colors focus:outline-none cursor-pointer"
+          className="flex h-8 w-8 min-h-[36px] min-w-[36px] items-center justify-center rounded-full hover:bg-white/10 transition-colors focus:outline-none cursor-pointer"
           aria-label="Next announcement"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
       ) : (
-        <div className="w-6" />
+        <div className="w-8" />
       )}
     </div>
   );

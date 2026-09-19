@@ -18,9 +18,9 @@ export function Footer() {
             Shop
           </div>
           <ul className="mt-4 space-y-2 text-sm">
-            <li><Link to="/shop" className="hover:text-foreground text-muted-foreground">All mats</Link></li>
-            <li><Link to="/about" className="hover:text-foreground text-muted-foreground">Our craft</Link></li>
-            <li><Link to="/contact" className="hover:text-foreground text-muted-foreground">Contact</Link></li>
+            <li><Link to="/shop" className="hover:text-foreground text-muted-foreground py-1 inline-block">All mats</Link></li>
+            <li><Link to="/about" className="hover:text-foreground text-muted-foreground py-1 inline-block">Our craft</Link></li>
+            <li><Link to="/contact" className="hover:text-foreground text-muted-foreground py-1 inline-block">Contact</Link></li>
           </ul>
         </div>
 
@@ -32,21 +32,21 @@ export function Footer() {
             <a
               href="https://www.instagram.com/sabara.in?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
               aria-label="Instagram"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+              className="inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
             >
               <Instagram className="h-4 w-4" />
             </a>
             <a
               href="mailto:contact.sabara@gmail.com"
               aria-label="Email"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+              className="inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
             >
               <Mail className="h-4 w-4" />
             </a>
             <a
               href="tel:+916294359714"
               aria-label="Phone"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+              className="inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
             >
               <Phone className="h-4 w-4" />
             </a>

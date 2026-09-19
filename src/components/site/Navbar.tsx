@@ -608,10 +608,10 @@ export function Navbar() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-0.5 sm:gap-1">
+          <div className="flex items-center gap-1 sm:gap-1.5">
             <Link
               to="/shop"
-              className="inline-flex h-6 items-center justify-center rounded-full border border-primary/30 bg-transparent px-2 text-[9px] font-bold text-primary transition-all hover:bg-primary/5 active:scale-95 md:hidden whitespace-nowrap cursor-pointer ml-1 mr-0.5"
+              className="inline-flex h-7 sm:h-8 items-center justify-center rounded-full border border-primary/40 bg-primary/5 px-2.5 sm:px-3 text-[10px] sm:text-xs font-bold text-primary transition-all hover:bg-primary/10 active:scale-95 md:hidden whitespace-nowrap cursor-pointer mr-0.5"
             >
               Shop Now
             </Link>
@@ -619,9 +619,9 @@ export function Navbar() {
             <button
               onClick={() => setSearchOpen((v) => !v)}
               aria-label="Search"
-              className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
+              className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
             >
-              <Search className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Search className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
             </button>
 
             {/* User button — relative container for the dropdown panel */}
@@ -634,7 +634,7 @@ export function Navbar() {
                     aria-expanded={accountOpen}
                     onClick={() => setAccountOpen((v) => !v)}
                     className={cn(
-                      "relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer",
+                      "relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer",
                       accountOpen && "bg-secondary scale-105",
                     )}
                   >

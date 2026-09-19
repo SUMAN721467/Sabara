@@ -425,10 +425,11 @@ export function FaqChatBot() {
             e.stopPropagation();
             setIsDismissed(true);
           }}
-          className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors cursor-pointer absolute top-2.5 right-2.5"
+          className="text-muted-foreground hover:text-foreground h-8 w-8 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-full hover:bg-secondary transition-colors cursor-pointer absolute top-1 right-1"
+          aria-label="Dismiss welcome message"
           title="Dismiss"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="h-4 w-4" />
         </button>
         {/* Speech bubble pointer */}
         <div className="absolute bottom-[-6.5px] right-5 w-3 h-3 bg-card border-r border-b border-border rotate-45" />
