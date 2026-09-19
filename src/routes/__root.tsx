@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import faviconIcon from "../assets/favicon-icon.png";
+import faviconIcon from "../assets/favicon-icon.svg";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
 import { AuthProvider } from "@/lib/auth";
@@ -98,7 +98,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", type: "image/png", href: faviconIcon },
+      { rel: "icon", type: "image/svg+xml", href: faviconIcon },
     ],
   }),
   shellComponent: RootShell,

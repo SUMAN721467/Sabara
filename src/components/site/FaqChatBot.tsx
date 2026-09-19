@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { MessageCircle, X, HelpCircle, User, Sparkles, RefreshCw, Search, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
-import roundLogo from "@/assets/round logo.png";
+import roundLogo from "@/assets/round-logo.svg";
 
 interface FAQItem {
   id: string;
