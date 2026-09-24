@@ -22,7 +22,7 @@ import {
   ShoppingCart, Heart, Calendar, Activity, Info, LogIn, Mail, Phone, User,
   ChevronDown, ChevronUp, Settings, Truck, RotateCcw, Sparkles
 } from "lucide-react";
-import { ArrowUp, ArrowDown, Trash2, Edit, Check, Star } from "lucide-react";
+import { ArrowUp, ArrowDown, Trash2, Edit, Check, Star, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
@@ -3400,6 +3400,16 @@ function CouponsAdmin() {
    HOMEPAGE ADMIN
    ══════════════════════════════════════════════════════════════════════════ */
 
+const BANNER_LINK_OPTIONS = [
+  { label: "/shop (All)", value: "/shop" },
+  { label: "/shop?category=Floor (Floor Mats)", value: "/shop?category=Floor" },
+  { label: "/shop?category=Yoga (Yoga Mats)", value: "/shop?category=Yoga" },
+  { label: "/shop?category=Doormat (Doormats)", value: "/shop?category=Doormat" },
+  { label: "/shop?category=Table (Table Linens)", value: "/shop?category=Table" },
+  { label: "/about (About Us)", value: "/about" },
+  { label: "/contact (Contact Us)", value: "/contact" },
+];
+
 function HomepageAdmin() {
   const { settings: heroSettings, updateSettings: updateHeroSettings, isLoaded: heroLoaded } = useHeroSettings();
   const { settings: homepageSettings, updateSettings: updateHomepageSettings, isLoaded: homepageLoaded } = useHomepageSettings();
@@ -3411,13 +3421,18 @@ function HomepageAdmin() {
     imageUrl: "",
     mobileImageUrl: "",
     slides: [
-      { imageUrl: "", mobileImageUrl: "" },
-      { imageUrl: "", mobileImageUrl: "" },
-      { imageUrl: "", mobileImageUrl: "" }
+      { id: "slide-1", imageUrl: "", mobileImageUrl: "", buttonLink: "/shop", showInCarousel: true },
+      { id: "slide-2", imageUrl: "", mobileImageUrl: "", buttonLink: "/shop", showInCarousel: true },
+      { id: "slide-3", imageUrl: "", mobileImageUrl: "", buttonLink: "/shop", showInCarousel: true }
     ],
     ...heroSettings
   });
   const [homepageForm, setHomepageForm] = useState({
+    collectionsSection: homepageSettings?.collectionsSection || defaultHomepageSettings.collectionsSection || {
+      badge: "Artisanal Weaves",
+      title: "Collections",
+      items: [],
+    },
     valuesBand: homepageSettings?.valuesBand || defaultHomepageSettings.valuesBand,
     featuredSection: {
       ...defaultHomepageSettings.featuredSection,
@@ -3433,46 +3448,48 @@ function HomepageAdmin() {
 
   useEffect(() => {
     if (heroLoaded && heroSettings) {
-      const loadedSlides = heroSettings.slides || [];
-      const slides = [
-        {
-          id: loadedSlides[0]?.id || "slide-1",
-          badge: loadedSlides[0]?.badge || heroSettings.badge || "Small batch · Handwoven",
-          title: loadedSlides[0]?.title || heroSettings.title || "Mats woven slowly, to live with you for years.",
-          subtitle: loadedSlides[0]?.subtitle || heroSettings.subtitle || "A collection of natural-fibre floor mats, yoga mats, doormats and table linens - each piece worked on a wooden loom by a single pair of hands.",
-          imageUrl: loadedSlides[0]?.imageUrl || heroSettings.imageUrl || "",
-          mobileImageUrl: loadedSlides[0]?.mobileImageUrl || heroSettings.mobileImageUrl || "",
-          buttonText: loadedSlides[0]?.buttonText || "Shop the collection",
-          buttonLink: loadedSlides[0]?.buttonLink || "/shop",
-        },
-        {
-          id: loadedSlides[1]?.id || "slide-2",
-          badge: loadedSlides[1]?.badge || "Asha Yoga Collection",
-          title: loadedSlides[1]?.title || "Ground your practice in nature.",
-          subtitle: loadedSlides[1]?.subtitle || "Organic cotton yoga mats, plant-dyed and hand-loomed for a natural, grounding grip.",
-          imageUrl: loadedSlides[1]?.imageUrl || "",
-          mobileImageUrl: loadedSlides[1]?.mobileImageUrl || "",
-          buttonText: loadedSlides[1]?.buttonText || "Shop Yoga Mats",
-          buttonLink: loadedSlides[1]?.buttonLink || "/shop",
-        },
-        {
-          id: loadedSlides[2]?.id || "slide-3",
-          badge: loadedSlides[2]?.badge || "Hardwearing Doormats",
-          title: loadedSlides[2]?.title || "Welcome home, naturally.",
-          subtitle: loadedSlides[2]?.subtitle || "Sturdy coir and jute doormats made to welcome boots and withstand muddy seasons.",
-          imageUrl: loadedSlides[2]?.imageUrl || "",
-          mobileImageUrl: loadedSlides[2]?.mobileImageUrl || "",
-          buttonText: loadedSlides[2]?.buttonText || "Shop Doormats",
-          buttonLink: loadedSlides[2]?.buttonLink || "/shop",
-        }
-      ];
+      const loadedSlides = (heroSettings.slides && heroSettings.slides.length > 0)
+        ? heroSettings.slides.map((s: any, idx: number) => ({
+            id: s.id || `slide-${idx + 1}`,
+            badge: s.badge || "",
+            title: s.title || "",
+            subtitle: s.subtitle || "",
+            imageUrl: s.imageUrl || (idx === 0 ? heroSettings.imageUrl || "" : ""),
+            mobileImageUrl: s.mobileImageUrl || (idx === 0 ? heroSettings.mobileImageUrl || "" : ""),
+            buttonText: s.buttonText || "",
+            buttonLink: s.buttonLink || s.link || "/shop",
+            showInCarousel: s.showInCarousel !== undefined ? s.showInCarousel : true,
+          }))
+        : [
+            {
+              id: "slide-1",
+              imageUrl: heroSettings.imageUrl || "",
+              mobileImageUrl: heroSettings.mobileImageUrl || "",
+              buttonLink: "/shop",
+              showInCarousel: true,
+            },
+            {
+              id: "slide-2",
+              imageUrl: "",
+              mobileImageUrl: "",
+              buttonLink: "/shop",
+              showInCarousel: true,
+            },
+            {
+              id: "slide-3",
+              imageUrl: "",
+              mobileImageUrl: "",
+              buttonLink: "/shop",
+              showInCarousel: true,
+            }
+          ];
       setHeroForm({
         badge: heroSettings.badge || "",
         title: heroSettings.title || "",
         subtitle: heroSettings.subtitle || "",
         imageUrl: heroSettings.imageUrl || "",
         mobileImageUrl: heroSettings.mobileImageUrl || "",
-        slides,
+        slides: loadedSlides,
       });
     }
   }, [heroLoaded, heroSettings]);
@@ -3484,6 +3501,11 @@ function HomepageAdmin() {
         band = defaultHomepageSettings.valuesBand;
       }
       setHomepageForm({
+        collectionsSection: homepageSettings.collectionsSection || defaultHomepageSettings.collectionsSection || {
+          badge: "Artisanal Weaves",
+          title: "Collections",
+          items: [],
+        },
         valuesBand: band,
         featuredSection: {
           ...defaultHomepageSettings.featuredSection,
@@ -3499,43 +3521,10 @@ function HomepageAdmin() {
     }
   }, [homepageLoaded, homepageSettings]);
 
-  const heroFileRef = useRef<HTMLInputElement>(null);
-  const heroMobileFileRef = useRef<HTMLInputElement>(null);
   const craftFileRef = useRef<HTMLInputElement>(null);
-  const [uploadingHero, setUploadingHero] = useState(false);
-  const [uploadingHeroMobile, setUploadingHeroMobile] = useState(false);
   const [uploadingCraft, setUploadingCraft] = useState(false);
   const [uploadingSlide, setUploadingSlide] = useState<{ index: number; type: 'desktop' | 'mobile' } | null>(null);
-
-  const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingHero(true);
-    try {
-      const url = await uploadImage(file);
-      setHeroForm((prev) => ({ ...prev, imageUrl: url }));
-      toast.success("Hero image uploaded successfully");
-    } catch (err: any) {
-      toast.error(err.message || "Hero image upload failed");
-    } finally {
-      setUploadingHero(false);
-    }
-  };
-
-  const handleHeroMobileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingHeroMobile(true);
-    try {
-      const url = await uploadImage(file);
-      setHeroForm((prev) => ({ ...prev, mobileImageUrl: url }));
-      toast.success("Mobile hero image uploaded successfully");
-    } catch (err: any) {
-      toast.error(err.message || "Mobile hero image upload failed");
-    } finally {
-      setUploadingHeroMobile(false);
-    }
-  };
+  const [uploadingCollectionIndex, setUploadingCollectionIndex] = useState<number | null>(null);
 
   const handleSlideImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, slideIndex: number, type: 'desktop' | 'mobile') => {
     const file = e.target.files?.[0];
@@ -3546,7 +3535,7 @@ function HomepageAdmin() {
       
       const newSlides = [...(heroForm.slides || [])];
       if (!newSlides[slideIndex]) {
-        newSlides[slideIndex] = { imageUrl: "", mobileImageUrl: "" };
+        newSlides[slideIndex] = { id: `slide-${slideIndex + 1}`, imageUrl: "", mobileImageUrl: "", buttonLink: "/shop", showInCarousel: true };
       }
       newSlides[slideIndex] = {
         ...newSlides[slideIndex],
@@ -3556,7 +3545,6 @@ function HomepageAdmin() {
       setHeroForm((prev) => ({
         ...prev,
         slides: newSlides,
-        // If it is Slide 1, update legacy fields for compatibility
         ...(slideIndex === 0 ? {
           [type === 'desktop' ? 'imageUrl' : 'mobileImageUrl']: url
         } : {})
@@ -3567,6 +3555,84 @@ function HomepageAdmin() {
     } finally {
       setUploadingSlide(null);
     }
+  };
+
+  const handleSlideUrlChange = (index: number, type: 'desktop' | 'mobile', url: string) => {
+    const newSlides = [...(heroForm.slides || [])];
+    if (!newSlides[index]) {
+      newSlides[index] = { id: `slide-${index + 1}`, imageUrl: "", mobileImageUrl: "", buttonLink: "/shop", showInCarousel: true };
+    }
+    newSlides[index] = {
+      ...newSlides[index],
+      [type === 'desktop' ? 'imageUrl' : 'mobileImageUrl']: url
+    };
+    setHeroForm((prev) => ({
+      ...prev,
+      slides: newSlides,
+      ...(index === 0 ? { [type === 'desktop' ? 'imageUrl' : 'mobileImageUrl']: url } : {})
+    }));
+  };
+
+  const handleRemoveSlideImage = (index: number, type: 'desktop' | 'mobile') => {
+    handleSlideUrlChange(index, type, "");
+  };
+
+  const handleSlideLinkChange = (index: number, link: string) => {
+    const newSlides = [...(heroForm.slides || [])];
+    if (newSlides[index]) {
+      newSlides[index] = { ...newSlides[index], buttonLink: link };
+      setHeroForm((prev) => ({ ...prev, slides: newSlides }));
+    }
+  };
+
+  const handleSlideShowInCarouselToggle = (index: number, checked: boolean) => {
+    const newSlides = [...(heroForm.slides || [])];
+    if (newSlides[index]) {
+      newSlides[index] = { ...newSlides[index], showInCarousel: checked };
+      setHeroForm((prev) => ({ ...prev, slides: newSlides }));
+    }
+  };
+
+  const handleAddSlide = () => {
+    const newSlide = {
+      id: `slide-${Date.now()}`,
+      imageUrl: "",
+      mobileImageUrl: "",
+      buttonLink: "/shop",
+      showInCarousel: true,
+    };
+    setHeroForm((prev) => ({
+      ...prev,
+      slides: [...(prev.slides || []), newSlide],
+    }));
+  };
+
+  const handleDeleteSlide = (index: number) => {
+    if (!confirm(`Are you sure you want to delete Banner Slide ${index + 1}?`)) return;
+    const newSlides = (heroForm.slides || []).filter((_, i) => i !== index);
+    setHeroForm((prev) => ({
+      ...prev,
+      slides: newSlides,
+      ...(index === 0 ? {
+        imageUrl: newSlides[0]?.imageUrl || "",
+        mobileImageUrl: newSlides[0]?.mobileImageUrl || "",
+      } : {})
+    }));
+  };
+
+  const handleMoveSlide = (index: number, direction: "prev" | "next") => {
+    const slides = [...(heroForm.slides || [])];
+    const targetIndex = direction === "prev" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= slides.length) return;
+    const temp = slides[index];
+    slides[index] = slides[targetIndex];
+    slides[targetIndex] = temp;
+    setHeroForm((prev) => ({
+      ...prev,
+      slides,
+      imageUrl: slides[0]?.imageUrl || "",
+      mobileImageUrl: slides[0]?.mobileImageUrl || "",
+    }));
   };
 
   const handleCraftUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3585,6 +3651,98 @@ function HomepageAdmin() {
     } finally {
       setUploadingCraft(false);
     }
+  };
+
+  const handleCollectionImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCollectionIndex(index);
+    try {
+      const url = await uploadImage(file);
+      const currentItems = homepageForm.collectionsSection?.items || defaultHomepageSettings.collectionsSection?.items || [];
+      const newItems = [...currentItems];
+      if (newItems[index]) {
+        newItems[index] = { ...newItems[index], image: url };
+        setHomepageForm((prev) => ({
+          ...prev,
+          collectionsSection: {
+            ...(prev.collectionsSection || defaultHomepageSettings.collectionsSection!),
+            items: newItems,
+          },
+        }));
+        toast.success("Category image uploaded successfully");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Category image upload failed");
+    } finally {
+      setUploadingCollectionIndex(null);
+    }
+  };
+
+  const updateCollectionItem = (index: number, key: string, val: string) => {
+    const currentItems = homepageForm.collectionsSection?.items || defaultHomepageSettings.collectionsSection?.items || [];
+    const newItems = [...currentItems];
+    if (newItems[index]) {
+      newItems[index] = { ...newItems[index], [key]: val };
+      setHomepageForm((prev) => ({
+        ...prev,
+        collectionsSection: {
+          ...(prev.collectionsSection || defaultHomepageSettings.collectionsSection!),
+          items: newItems,
+        },
+      }));
+    }
+  };
+
+  const handleAddCollectionItem = () => {
+    const currentItems = homepageForm.collectionsSection?.items || defaultHomepageSettings.collectionsSection?.items || [];
+    const newItems = [
+      ...currentItems,
+      {
+        id: `col-${Date.now()}`,
+        name: "New Category",
+        category: "Floor",
+        link: "/shop?category=Floor",
+        image: "",
+      },
+    ];
+    setHomepageForm((prev) => ({
+      ...prev,
+      collectionsSection: {
+        ...(prev.collectionsSection || defaultHomepageSettings.collectionsSection!),
+        items: newItems,
+      },
+    }));
+  };
+
+  const handleDeleteCollectionItem = (index: number) => {
+    if (!confirm("Are you sure you want to remove this category card from the homepage?")) return;
+    const currentItems = homepageForm.collectionsSection?.items || defaultHomepageSettings.collectionsSection?.items || [];
+    const newItems = currentItems.filter((_, i) => i !== index);
+    setHomepageForm((prev) => ({
+      ...prev,
+      collectionsSection: {
+        ...(prev.collectionsSection || defaultHomepageSettings.collectionsSection!),
+        items: newItems,
+      },
+    }));
+  };
+
+  const handleMoveCollectionItem = (index: number, direction: "up" | "down") => {
+    const currentItems = homepageForm.collectionsSection?.items || defaultHomepageSettings.collectionsSection?.items || [];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= currentItems.length) return;
+    const newItems = [...currentItems];
+    const temp = newItems[index];
+    newItems[index] = newItems[targetIndex];
+    newItems[targetIndex] = temp;
+    setHomepageForm((prev) => ({
+      ...prev,
+      collectionsSection: {
+        ...(prev.collectionsSection || defaultHomepageSettings.collectionsSection!),
+        items: newItems,
+      },
+    }));
   };
 
   if (!heroLoaded || !homepageLoaded) {
@@ -3641,116 +3799,233 @@ function HomepageAdmin() {
           </AccordionTrigger>
           <AccordionContent className="pt-4 pb-6 space-y-4">
             <form onSubmit={handleSaveHero} className="space-y-6">
-              <div className="space-y-6">
-                {Array.from({ length: 3 }).map((_, idx) => {
-                  const slide = heroForm.slides?.[idx] || { imageUrl: "", mobileImageUrl: "" };
+              <div className="space-y-5">
+                {(heroForm.slides || []).map((slide: any, idx: number) => {
                   const isUploadingDesktop = uploadingSlide?.index === idx && uploadingSlide?.type === 'desktop';
                   const isUploadingMobile = uploadingSlide?.index === idx && uploadingSlide?.type === 'mobile';
+                  const isPresetLink = BANNER_LINK_OPTIONS.some(opt => opt.value === (slide.buttonLink || "/shop"));
 
                   return (
-                    <div key={idx} className="p-5 border border-border/80 rounded-2xl bg-secondary/15 space-y-4">
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <h4 className="font-serif text-base font-semibold text-foreground uppercase tracking-wide">
-                          Banner Slide {idx + 1}
-                        </h4>
-                        <span className="text-xs text-muted-foreground">Clickable banner leading to /shop</span>
+                    <div key={slide.id || idx} className="rounded-2xl border border-border/80 bg-card p-5 shadow-xs space-y-4 transition-all">
+                      {/* Top Bar: Title, Live badge, Link dropdown, Delete */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border/60">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-serif text-sm sm:text-base font-bold text-foreground tracking-wide uppercase">
+                            BANNER SLIDE {idx + 1}
+                          </h4>
+                          {slide.showInCarousel !== false ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+                              Live
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
+                              Hidden
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground hidden sm:inline">
+                            Clickable banner leading to
+                          </span>
+                          <div className="relative">
+                            <select
+                              value={isPresetLink ? (slide.buttonLink || "/shop") : "custom"}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val !== "custom") {
+                                  handleSlideLinkChange(idx, val);
+                                }
+                              }}
+                              className="h-8 rounded-lg border border-border bg-background px-3 py-1 text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium"
+                            >
+                              {BANNER_LINK_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                              <option value="custom">Custom URL...</option>
+                            </select>
+                          </div>
+                          {!isPresetLink && (
+                            <Input
+                              value={slide.buttonLink || ""}
+                              onChange={(e) => handleSlideLinkChange(idx, e.target.value)}
+                              placeholder="/custom-link"
+                              className="h-8 w-32 text-xs"
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSlide(idx)}
+                            className="p-1.5 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors cursor-pointer"
+                            title="Delete Slide"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="grid gap-6 md:grid-cols-2">
-                        {/* Laptop Image (Desktop) */}
-                        <div className="space-y-2">
-                          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                            Laptop Image (Landscape - e.g. 1600 x 650)
-                          </Label>
-                          <div className="flex items-start gap-4">
+                      {/* 2 Column Image Pickers: Laptop & Mobile */}
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {/* Laptop Image (Landscape) */}
+                        <div className="rounded-xl border border-border/70 bg-secondary/15 p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-[11px] font-bold uppercase tracking-wider text-foreground">
+                              LAPTOP IMAGE (LANDSCAPE – E.G. 1600 X 650)
+                            </Label>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800">
+                              Desktop / Laptop
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
                             {slide.imageUrl ? (
-                              <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border bg-secondary/30 shadow-sm">
+                              <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-xl border bg-secondary/30 shadow-xs">
                                 <img src={slide.imageUrl} alt={`Slide ${idx + 1} laptop preview`} className="h-full w-full object-cover" />
-                                <button type="button" onClick={() => {
-                                  const newSlides = [...(heroForm.slides || [])];
-                                  newSlides[idx] = { ...newSlides[idx], imageUrl: "" };
-                                  setHeroForm((prev) => ({
-                                    ...prev,
-                                    slides: newSlides,
-                                    ...(idx === 0 ? { imageUrl: "" } : {})
-                                  }));
-                                }}
-                                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md cursor-pointer hover:bg-destructive/90">
-                                  <X className="h-2.5 w-2.5" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveSlideImage(idx, 'desktop')}
+                                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm cursor-pointer hover:scale-110 active:scale-95 transition-transform"
+                                  title="Remove image"
+                                >
+                                  <X className="h-3 w-3" />
                                 </button>
                               </div>
                             ) : (
-                              <button type="button" onClick={() => document.getElementById(`slide-upload-${idx}-desktop`)?.click()}
-                                disabled={uploadingSlide !== null}
-                                className="flex h-28 w-28 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-background cursor-pointer hover:scale-105 active:scale-95 shadow-sm">
-                                {isUploadingDesktop ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-                                <span className="text-[10px] font-medium">Upload Desktop</span>
-                              </button>
+                              <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background text-muted-foreground/50">
+                                <ImagePlus className="h-6 w-6" />
+                              </div>
                             )}
-                            <input id={`slide-upload-${idx}-desktop`} type="file" accept="image/*" className="hidden"
-                              onChange={(e) => handleSlideImageUpload(e, idx, 'desktop')} />
-                            <div className="flex-1 text-xs text-muted-foreground pt-1">
-                              <p className="text-[10px]">Upload banner file or paste a URL below:</p>
-                              <Input className="mt-2 text-xs h-8" placeholder="https://…" value={slide.imageUrl || ""}
-                                onChange={(e) => {
-                                  const newSlides = [...(heroForm.slides || [])];
-                                  newSlides[idx] = { ...newSlides[idx], imageUrl: e.target.value };
-                                  setHeroForm((prev) => ({
-                                    ...prev,
-                                    slides: newSlides,
-                                    ...(idx === 0 ? { imageUrl: e.target.value } : {})
-                                  }));
-                                }} />
+
+                            <div className="flex-1 space-y-1.5 min-w-0">
+                              <p className="text-[11px] text-muted-foreground">Upload landscape banner or paste URL:</p>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  className="h-9 text-xs flex-1 bg-background"
+                                  placeholder="https://..."
+                                  value={slide.imageUrl || ""}
+                                  onChange={(e) => handleSlideUrlChange(idx, 'desktop', e.target.value)}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => document.getElementById(`slide-upload-${idx}-desktop`)?.click()}
+                                  disabled={uploadingSlide !== null}
+                                  className="h-9 px-3 gap-1.5 shrink-0 bg-purple-50/50 hover:bg-purple-100/80 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 text-xs font-medium rounded-lg cursor-pointer transition-colors"
+                                >
+                                  {isUploadingDesktop ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                                  <span>Upload</span>
+                                </Button>
+                              </div>
+                              <input
+                                id={`slide-upload-${idx}-desktop`}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleSlideImageUpload(e, idx, 'desktop')}
+                              />
                             </div>
                           </div>
                         </div>
 
                         {/* Mobile Image (Portrait) */}
-                        <div className="space-y-2">
-                          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                            Mobile Image (Portrait - e.g. 414 x 650)
-                          </Label>
-                          <div className="flex items-start gap-4">
+                        <div className="rounded-xl border border-border/70 bg-secondary/15 p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-[11px] font-bold uppercase tracking-wider text-foreground">
+                              MOBILE IMAGE (PORTRAIT – E.G. 414 X 650)
+                            </Label>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+                              Mobile Phones
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
                             {slide.mobileImageUrl ? (
-                              <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border bg-secondary/30 shadow-sm">
+                              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-secondary/30 shadow-xs">
                                 <img src={slide.mobileImageUrl} alt={`Slide ${idx + 1} mobile preview`} className="h-full w-full object-cover" />
-                                <button type="button" onClick={() => {
-                                  const newSlides = [...(heroForm.slides || [])];
-                                  newSlides[idx] = { ...newSlides[idx], mobileImageUrl: "" };
-                                  setHeroForm((prev) => ({
-                                    ...prev,
-                                    slides: newSlides,
-                                    ...(idx === 0 ? { mobileImageUrl: "" } : {})
-                                  }));
-                                }}
-                                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md cursor-pointer hover:bg-destructive/90">
-                                  <X className="h-2.5 w-2.5" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveSlideImage(idx, 'mobile')}
+                                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm cursor-pointer hover:scale-110 active:scale-95 transition-transform"
+                                  title="Remove image"
+                                >
+                                  <X className="h-3 w-3" />
                                 </button>
                               </div>
                             ) : (
-                              <button type="button" onClick={() => document.getElementById(`slide-upload-${idx}-mobile`)?.click()}
-                                disabled={uploadingSlide !== null}
-                                className="flex h-28 w-28 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-background cursor-pointer hover:scale-105 active:scale-95 shadow-sm">
-                                {isUploadingMobile ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-                                <span className="text-[10px] font-medium">Upload Mobile</span>
-                              </button>
+                              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background text-muted-foreground/50">
+                                <ImagePlus className="h-6 w-6" />
+                              </div>
                             )}
-                            <input id={`slide-upload-${idx}-mobile`} type="file" accept="image/*" className="hidden"
-                              onChange={(e) => handleSlideImageUpload(e, idx, 'mobile')} />
-                            <div className="flex-1 text-xs text-muted-foreground pt-1">
-                              <p className="text-[10px]">Upload mobile banner or paste a URL below:</p>
-                              <Input className="mt-2 text-xs h-8" placeholder="https://…" value={slide.mobileImageUrl || ""}
-                                onChange={(e) => {
-                                  const newSlides = [...(heroForm.slides || [])];
-                                  newSlides[idx] = { ...newSlides[idx], mobileImageUrl: e.target.value };
-                                  setHeroForm((prev) => ({
-                                    ...prev,
-                                    slides: newSlides,
-                                    ...(idx === 0 ? { mobileImageUrl: e.target.value } : {})
-                                  }));
-                                }} />
+
+                            <div className="flex-1 space-y-1.5 min-w-0">
+                              <p className="text-[11px] text-muted-foreground">Upload mobile portrait banner or paste URL:</p>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  className="h-9 text-xs flex-1 bg-background"
+                                  placeholder="https://..."
+                                  value={slide.mobileImageUrl || ""}
+                                  onChange={(e) => handleSlideUrlChange(idx, 'mobile', e.target.value)}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => document.getElementById(`slide-upload-${idx}-mobile`)?.click()}
+                                  disabled={uploadingSlide !== null}
+                                  className="h-9 px-3 gap-1.5 shrink-0 bg-purple-50/50 hover:bg-purple-100/80 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 text-xs font-medium rounded-lg cursor-pointer transition-colors"
+                                >
+                                  {isUploadingMobile ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                                  <span>Upload</span>
+                                </Button>
+                              </div>
+                              <input
+                                id={`slide-upload-${idx}-mobile`}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleSlideImageUpload(e, idx, 'mobile')}
+                              />
                             </div>
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Slide Footer: Show in carousel & Reorder arrows */}
+                      <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                        <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-foreground">
+                          <input
+                            type="checkbox"
+                            checked={slide.showInCarousel !== false}
+                            onChange={(e) => handleSlideShowInCarouselToggle(idx, e.target.checked)}
+                            className="h-4 w-4 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer"
+                          />
+                          <span>Show in carousel</span>
+                        </label>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7 rounded-md border-border text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer"
+                            disabled={idx === 0}
+                            onClick={() => handleMoveSlide(idx, 'prev')}
+                            title="Move slide earlier"
+                          >
+                            <ArrowLeft className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7 rounded-md border-border text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer"
+                            disabled={idx === (heroForm.slides || []).length - 1}
+                            onClick={() => handleMoveSlide(idx, 'next')}
+                            title="Move slide later"
+                          >
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -3758,7 +4033,221 @@ function HomepageAdmin() {
                 })}
               </div>
 
-              <Button type="submit" className="w-full">Save Hero Carousel Changes</Button>
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddSlide}
+                  className="flex-1 border-dashed border-2 hover:border-primary hover:text-primary gap-2 h-10 cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Banner Slide</span>
+                </Button>
+                <Button type="submit" className="flex-1 h-10 cursor-pointer">
+                  Save Hero Carousel Changes
+                </Button>
+              </div>
+            </form>
+          </AccordionContent>
+        </AccordionItem>
+
+        <div className="h-[1px] bg-border" />
+
+        {/* COLLECTIONS / CATEGORIES GRID SECTION */}
+        <AccordionItem value="collectionsSection" className="border-b-0 py-2">
+          <AccordionTrigger className="text-lg font-medium hover:no-underline">
+            2. Collections / Categories Grid
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-6">
+            <form onSubmit={handleSaveHomepage} className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="col-badge">Section Badge</Label>
+                  <Input
+                    id="col-badge"
+                    value={homepageForm.collectionsSection?.badge || ""}
+                    onChange={(e) =>
+                      setHomepageForm({
+                        ...homepageForm,
+                        collectionsSection: {
+                          ...(homepageForm.collectionsSection || defaultHomepageSettings.collectionsSection!),
+                          badge: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="e.g., Artisanal Weaves"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="col-title">Section Title</Label>
+                  <Input
+                    id="col-title"
+                    value={homepageForm.collectionsSection?.title || ""}
+                    onChange={(e) =>
+                      setHomepageForm({
+                        ...homepageForm,
+                        collectionsSection: {
+                          ...(homepageForm.collectionsSection || defaultHomepageSettings.collectionsSection!),
+                          title: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="e.g., Collections"
+                  />
+                </div>
+              </div>
+
+              {/* List of Category Cards */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-serif text-base font-semibold text-foreground">
+                    Category Cards ({(homepageForm.collectionsSection?.items || []).length})
+                  </h4>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddCollectionItem}
+                    className="gap-1.5 text-xs h-8 cursor-pointer"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Category Card
+                  </Button>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {(homepageForm.collectionsSection?.items || []).map((col, idx) => (
+                    <div
+                      key={col.id || idx}
+                      className="p-4 border rounded-2xl bg-secondary/15 space-y-3.5 relative flex flex-col justify-between"
+                    >
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <span className="font-serif text-sm font-semibold text-foreground">
+                          Card #{idx + 1}: {col.name || "Untitled"}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => handleMoveCollectionItem(idx, "up")}
+                            className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                            title="Move Left/Up"
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === (homepageForm.collectionsSection?.items || []).length - 1}
+                            onClick={() => handleMoveCollectionItem(idx, "down")}
+                            className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                            title="Move Right/Down"
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCollectionItem(idx)}
+                            className="p-1 rounded hover:bg-destructive/10 text-destructive cursor-pointer transition-colors"
+                            title="Delete Category Card"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Image Preview & Upload */}
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">Category Image</Label>
+                        <div className="flex items-start gap-3">
+                          {col.image ? (
+                            <div className="relative aspect-[3/4] w-20 shrink-0 overflow-hidden rounded-xl border bg-secondary/30 shadow-sm">
+                              <img
+                                src={col.image}
+                                alt={col.name}
+                                className="h-full w-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => updateCollectionItem(idx, "image", "")}
+                                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md cursor-pointer hover:bg-destructive/90"
+                              >
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => document.getElementById(`col-upload-${idx}`)?.click()}
+                              disabled={uploadingCollectionIndex !== null}
+                              className="flex aspect-[3/4] w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-background cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
+                            >
+                              {uploadingCollectionIndex === idx ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Upload className="h-4 w-4" />
+                              )}
+                              <span className="text-[10px] font-medium">Upload</span>
+                            </button>
+                          )}
+                          <input
+                            id={`col-upload-${idx}`}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleCollectionImageUpload(e, idx)}
+                          />
+                          <div className="flex-1 space-y-1.5">
+                            <p className="text-[11px] text-muted-foreground">
+                              Upload an image or paste a direct URL:
+                            </p>
+                            <Input
+                              placeholder="https://..."
+                              value={col.image || ""}
+                              onChange={(e) => updateCollectionItem(idx, "image", e.target.value)}
+                              className="text-xs h-8 bg-background"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Category Name */}
+                      <div className="space-y-1">
+                        <Label htmlFor={`col-name-${idx}`} className="text-xs font-medium">
+                          Category Name
+                        </Label>
+                        <Input
+                          id={`col-name-${idx}`}
+                          value={col.name}
+                          onChange={(e) => updateCollectionItem(idx, "name", e.target.value)}
+                          placeholder="e.g., Floor Mats"
+                          className="h-8 text-xs bg-background"
+                        />
+                      </div>
+
+                      {/* Click Target Link / Path */}
+                      <div className="space-y-1">
+                        <Label htmlFor={`col-link-${idx}`} className="text-xs font-medium">
+                          Click Destination Path / URL
+                        </Label>
+                        <Input
+                          id={`col-link-${idx}`}
+                          value={col.link || (col.category ? `/shop?category=${col.category}` : "")}
+                          onChange={(e) => updateCollectionItem(idx, "link", e.target.value)}
+                          placeholder="e.g., /shop?category=Floor or /shop"
+                          className="h-8 text-xs bg-background"
+                        />
+                        <p className="text-[10px] text-muted-foreground">
+                          Route visited when users click this card on the homepage.
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full">
+                Save Collections Changes
+              </Button>
             </form>
           </AccordionContent>
         </AccordionItem>
@@ -3768,19 +4257,19 @@ function HomepageAdmin() {
         {/* VALUES BAND SECTION */}
         <AccordionItem value="valuesBand" className="border-b-0 py-2">
           <AccordionTrigger className="text-lg font-medium hover:no-underline">
-            2. Features / Values Band
+            3. Features / Values Band
           </AccordionTrigger>
           <AccordionContent className="pt-4 pb-6 space-y-6">
             <form onSubmit={handleSaveHomepage} className="space-y-6">
               <div className="grid gap-4 md:grid-cols-4">
-                {homepageForm.valuesBand.map((item, idx) => (
+                {(homepageForm.valuesBand || []).map((item, idx) => (
                   <div key={idx} className="p-4 border rounded-xl bg-secondary/10 space-y-4">
                     <h4 className="font-medium text-primary text-sm">Feature Column {idx + 1}</h4>
                     <div className="space-y-2">
                       <Label htmlFor={`val-icon-${idx}`}>Lucide Icon Name</Label>
                       <Input
                         id={`val-icon-${idx}`}
-                        value={item.icon}
+                        value={item.icon || ""}
                         onChange={(e) => updateValuesBand(idx, "icon", e.target.value)}
                         placeholder="e.g. Hand, Leaf, Package"
                       />
@@ -3792,7 +4281,7 @@ function HomepageAdmin() {
                       <Label htmlFor={`val-title-${idx}`}>Title</Label>
                       <Input
                         id={`val-title-${idx}`}
-                        value={item.title}
+                        value={item.title || ""}
                         onChange={(e) => updateValuesBand(idx, "title", e.target.value)}
                       />
                     </div>
@@ -3800,7 +4289,7 @@ function HomepageAdmin() {
                       <Label htmlFor={`val-text-${idx}`}>Description</Label>
                       <Textarea
                         id={`val-text-${idx}`}
-                        value={item.text}
+                        value={item.text || ""}
                         onChange={(e) => updateValuesBand(idx, "text", e.target.value)}
                         rows={2}
                       />
@@ -3818,7 +4307,7 @@ function HomepageAdmin() {
         {/* FEATURED SECTION */}
         <AccordionItem value="featuredSection" className="border-b-0 py-2">
           <AccordionTrigger className="text-lg font-medium hover:no-underline">
-            3. Featured Collection Headers
+            4. Featured Collection Headers
           </AccordionTrigger>
           <AccordionContent className="pt-4 pb-6 space-y-4">
             <form onSubmit={handleSaveHomepage} className="space-y-4">
@@ -3826,10 +4315,10 @@ function HomepageAdmin() {
                 <Label htmlFor="feat-badge">Collection Badge Text</Label>
                 <Input
                   id="feat-badge"
-                  value={homepageForm.featuredSection.badge}
+                  value={homepageForm.featuredSection?.badge || ""}
                   onChange={(e) => setHomepageForm({
                     ...homepageForm,
-                    featuredSection: { ...homepageForm.featuredSection, badge: e.target.value }
+                    featuredSection: { ...(homepageForm.featuredSection || {}), badge: e.target.value }
                   })}
                 />
               </div>
@@ -3837,10 +4326,10 @@ function HomepageAdmin() {
                 <Label htmlFor="feat-title">Collection Main Title</Label>
                 <Input
                   id="feat-title"
-                  value={homepageForm.featuredSection.title}
+                  value={homepageForm.featuredSection?.title || ""}
                   onChange={(e) => setHomepageForm({
                     ...homepageForm,
-                    featuredSection: { ...homepageForm.featuredSection, title: e.target.value }
+                    featuredSection: { ...(homepageForm.featuredSection || {}), title: e.target.value }
                   })}
                 />
               </div>
@@ -3854,7 +4343,7 @@ function HomepageAdmin() {
         {/* CRAFT STORY SECTION */}
         <AccordionItem value="craftStory" className="border-b-0 py-2">
           <AccordionTrigger className="text-lg font-medium hover:no-underline">
-            4. Craft Story Section
+            5. Craft Story Section
           </AccordionTrigger>
           <AccordionContent className="pt-4 pb-6 space-y-4">
             <form onSubmit={handleSaveHomepage} className="space-y-4">
@@ -3862,10 +4351,10 @@ function HomepageAdmin() {
                 <Label htmlFor="craft-badge">Story Badge Text</Label>
                 <Input
                   id="craft-badge"
-                  value={homepageForm.craftStory.badge}
+                  value={homepageForm.craftStory?.badge || ""}
                   onChange={(e) => setHomepageForm({
                     ...homepageForm,
-                    craftStory: { ...homepageForm.craftStory, badge: e.target.value }
+                    craftStory: { ...(homepageForm.craftStory || {}), badge: e.target.value }
                   })}
                 />
               </div>
@@ -3873,10 +4362,10 @@ function HomepageAdmin() {
                 <Label htmlFor="craft-title">Story Title</Label>
                 <Input
                   id="craft-title"
-                  value={homepageForm.craftStory.title}
+                  value={homepageForm.craftStory?.title || ""}
                   onChange={(e) => setHomepageForm({
                     ...homepageForm,
-                    craftStory: { ...homepageForm.craftStory, title: e.target.value }
+                    craftStory: { ...(homepageForm.craftStory || {}), title: e.target.value }
                   })}
                 />
               </div>
@@ -3884,10 +4373,10 @@ function HomepageAdmin() {
                 <Label htmlFor="craft-desc">Story Description</Label>
                 <Textarea
                   id="craft-desc"
-                  value={homepageForm.craftStory.description}
+                  value={homepageForm.craftStory?.description || ""}
                   onChange={(e) => setHomepageForm({
                     ...homepageForm,
-                    craftStory: { ...homepageForm.craftStory, description: e.target.value }
+                    craftStory: { ...(homepageForm.craftStory || {}), description: e.target.value }
                   })}
                   rows={5}
                 />
@@ -3895,7 +4384,7 @@ function HomepageAdmin() {
               <div className="space-y-2">
                 <Label>Story Image</Label>
                 <div className="flex items-start gap-4">
-                  {homepageForm.craftStory.imageUrl ? (
+                  {homepageForm.craftStory?.imageUrl ? (
                     <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-xl border bg-secondary/30">
                       <img src={homepageForm.craftStory.imageUrl} alt="Craft story preview" className="h-full w-full object-cover" />
                       <button type="button" onClick={() => setHomepageForm((prev) => ({ ...prev, craftStory: { ...prev.craftStory, imageUrl: "" } }))}
@@ -3914,7 +4403,7 @@ function HomepageAdmin() {
                   <input ref={craftFileRef} type="file" accept="image/*" className="hidden" onChange={handleCraftUpload} />
                   <div className="flex-1 text-xs text-muted-foreground pt-1">
                     <p>Upload from your computer or paste an external URL below:</p>
-                    <Input className="mt-2" placeholder="https://…" value={homepageForm.craftStory.imageUrl}
+                    <Input className="mt-2" placeholder="https://…" value={homepageForm.craftStory?.imageUrl || ""}
                       onChange={(e) => setHomepageForm((prev) => ({ ...prev, craftStory: { ...prev.craftStory, imageUrl: e.target.value } }))} />
                   </div>
                 </div>
@@ -3929,7 +4418,7 @@ function HomepageAdmin() {
         {/* TESTIMONIALS SECTION */}
         <AccordionItem value="testimonials" className="border-b-0 py-2">
           <AccordionTrigger className="text-lg font-medium hover:no-underline">
-            5. Customer Testimonials
+            6. Customer Testimonials
           </AccordionTrigger>
           <AccordionContent className="pt-4 pb-6 space-y-6">
             <form onSubmit={handleSaveHomepage} className="space-y-6">
@@ -3946,14 +4435,14 @@ function HomepageAdmin() {
                 </Label>
               </div>
               <div className="grid gap-6 md:grid-cols-3">
-                {homepageForm.testimonials.map((item, idx) => (
+                {(homepageForm.testimonials || []).map((item, idx) => (
                   <div key={idx} className="p-4 border rounded-xl bg-secondary/10 space-y-4">
                     <h4 className="font-medium text-primary text-sm">Testimonial {idx + 1}</h4>
                     <div className="space-y-2">
                       <Label htmlFor={`test-q-${idx}`}>Quote / Review</Label>
                       <Textarea
                         id={`test-q-${idx}`}
-                        value={item.q}
+                        value={item.q || ""}
                         onChange={(e) => updateTestimonials(idx, "q", e.target.value)}
                         rows={4}
                       />
@@ -3962,7 +4451,7 @@ function HomepageAdmin() {
                       <Label htmlFor={`test-a-${idx}`}>Author / Location</Label>
                       <Input
                         id={`test-a-${idx}`}
-                        value={item.a}
+                        value={item.a || ""}
                         onChange={(e) => updateTestimonials(idx, "a", e.target.value)}
                         placeholder="e.g. Priya, Bangalore"
                       />

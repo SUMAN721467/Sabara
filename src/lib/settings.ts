@@ -3,12 +3,25 @@ import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/hero.jpg";
 import craftImg from "@/assets/craft.jpg";
 
+export type HeroSlide = {
+  id: string;
+  badge?: string;
+  title?: string;
+  subtitle?: string;
+  imageUrl: string;
+  mobileImageUrl?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  showInCarousel?: boolean;
+};
+
 export type HeroSettings = {
   title: string;
   subtitle: string;
   badge: string;
   imageUrl: string;
   mobileImageUrl?: string;
+  slides?: HeroSlide[];
 };
 
 const defaultSettings: HeroSettings = {
@@ -17,6 +30,7 @@ const defaultSettings: HeroSettings = {
   badge: "Small batch · Handwoven",
   imageUrl: heroImg,
   mobileImageUrl: heroImg,
+  slides: [],
 };
 
 export function useHeroSettings() {
@@ -154,6 +168,25 @@ export function usePromoSettings() {
   return { settings, updateSettings, isLoaded };
 }
 
+import mat1 from "@/assets/mat-1.jpg";
+import mat2 from "@/assets/mat-2.jpg";
+import mat3 from "@/assets/mat-3.jpg";
+import mat4 from "@/assets/mat-4.jpg";
+
+export type CollectionCategoryItem = {
+  id: string;
+  name: string;
+  category?: string;
+  link?: string;
+  image: string;
+};
+
+export type CollectionsSection = {
+  badge: string;
+  title: string;
+  items: CollectionCategoryItem[];
+};
+
 export type ValuesBandItem = {
   icon: string;
   title: string;
@@ -161,6 +194,7 @@ export type ValuesBandItem = {
 };
 
 export type HomepageSettings = {
+  collectionsSection?: CollectionsSection;
   valuesBand: ValuesBandItem[];
   featuredSection: {
     badge: string;
@@ -180,6 +214,16 @@ export type HomepageSettings = {
 };
 
 export const defaultHomepageSettings: HomepageSettings = {
+  collectionsSection: {
+    badge: "Artisanal Weaves",
+    title: "Collections",
+    items: [
+      { id: "col-1", name: "Floor Mats", category: "Floor", link: "/shop?category=Floor", image: mat1 },
+      { id: "col-2", name: "Yoga Mats", category: "Yoga", link: "/shop?category=Yoga", image: mat2 },
+      { id: "col-3", name: "Doormats", category: "Doormat", link: "/shop?category=Doormat", image: mat3 },
+      { id: "col-4", name: "Table Linens", category: "Table", link: "/shop?category=Table", image: mat4 },
+    ],
+  },
   valuesBand: [
     { icon: "Hand", title: "Handmade", text: "Woven slowly on traditional pit looms." },
     { icon: "Leaf", title: "Eco-Friendly", text: "Natural, biodegradable materials." },
@@ -216,6 +260,7 @@ export function useHomepageSettings() {
           const data = await res.json();
           if (data?.success && data?.value) {
             setSettings({
+              collectionsSection: data.value.collectionsSection || defaultHomepageSettings.collectionsSection,
               valuesBand: data.value.valuesBand || defaultHomepageSettings.valuesBand,
               featuredSection: {
                 ...defaultHomepageSettings.featuredSection,
@@ -243,6 +288,10 @@ export function useHomepageSettings() {
     const updated = {
       ...settings,
       ...newSettings,
+      collectionsSection: {
+        ...(settings.collectionsSection || defaultHomepageSettings.collectionsSection!),
+        ...(newSettings.collectionsSection || {}),
+      },
       featuredSection: {
         ...settings.featuredSection,
         ...(newSettings.featuredSection || {}),

@@ -19,11 +19,8 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { cn } from "@/lib/utils";
 
 let featuredCache: { data: any[]; timestamp: number } | null = null;
 let heroCache: { data: any; timestamp: number } | null = null;
@@ -173,18 +170,7 @@ function Index() {
   const showHero = true;
 
   const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
-  const [count, setCount] = useState(0);
 
-  useEffect(() => {
-    if (!api) return;
-    setCount(api.scrollSnapList().length);
-    setCurrent(api.selectedScrollSnap());
-
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap());
-    });
-  }, [api]);
 
   useEffect(() => {
     if (!api) return;
@@ -198,7 +184,7 @@ function Index() {
     return () => clearInterval(interval);
   }, [api]);
 
-  const dbSlides = (settings as any).slides?.filter((s: any) => s.imageUrl || s.mobileImageUrl);
+  const dbSlides = (settings as any).slides?.filter((s: any) => (s.imageUrl || s.mobileImageUrl) && s.showInCarousel !== false);
   const slides = (dbSlides && dbSlides.length > 0) ? dbSlides : [
     {
       id: "slide-1",
@@ -262,7 +248,7 @@ function Index() {
             {slides.map((slide: any, index: number) => (
               <CarouselItem key={slide.id || index} className="pl-0 relative h-full w-full flex-none">
                 <Link
-                  to="/shop"
+                  to={slide.buttonLink || slide.link || "/shop"}
                   className="block relative w-full aspect-[207/325] md:aspect-[32/13] overflow-hidden cursor-pointer"
                 >
                   <picture className="block h-full w-full">
@@ -294,28 +280,7 @@ function Index() {
             ))}
           </CarouselContent>
           
-          {/* Custom Arrow buttons absolute overlays */}
-          <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/30 hover:bg-background/60 hover:text-foreground text-foreground border-none rounded-full h-10 w-10 flex items-center justify-center backdrop-blur-sm cursor-pointer z-10 transition-all hover:scale-105 active:scale-95 shrink-0" />
-          <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/30 hover:bg-background/60 hover:text-foreground text-foreground border-none rounded-full h-10 w-10 flex items-center justify-center backdrop-blur-sm cursor-pointer z-10 transition-all hover:scale-105 active:scale-95 shrink-0" />
 
-          {/* Dots indicators overlay */}
-          <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-1.5 z-10 pointer-events-auto">
-            {Array.from({ length: count }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => api?.scrollTo(i)}
-                className="flex items-center justify-center p-2 min-h-[44px] min-w-[36px] cursor-pointer"
-                aria-label={`Go to slide ${i + 1}`}
-              >
-                <span
-                  className={cn(
-                    "h-2 rounded-full transition-all duration-300",
-                    current === i ? "w-6 bg-primary" : "w-2 bg-foreground/40 hover:bg-foreground/60"
-                  )}
-                />
-              </button>
-            ))}
-          </div>
         </Carousel>
       </section>
 
@@ -348,44 +313,45 @@ function Index() {
           <ScrollReveal variant="fade-up" duration={700}>
             <div className="text-center mb-12">
               <span className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                Artisanal Weaves
+                {homepageSettings?.collectionsSection?.badge || defaultHomepageSettings.collectionsSection?.badge || "Artisanal Weaves"}
               </span>
               <h2 className="mt-2 font-serif text-3xl sm:text-4xl text-foreground">
-                Collections
+                {homepageSettings?.collectionsSection?.title || defaultHomepageSettings.collectionsSection?.title || "Collections"}
               </h2>
               <div className="mx-auto mt-4 h-[1px] w-12 bg-primary/45" />
             </div>
           </ScrollReveal>
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-4">
-            {[
-              { name: "Floor Mats", category: "Floor", image: mat1 },
-              { name: "Yoga Mats", category: "Yoga", image: mat2 },
-              { name: "Doormats", category: "Doormat", image: mat3 },
-              { name: "Table Linens", category: "Table", image: mat4 },
-            ].map((col, i) => (
-              <ScrollReveal key={col.name} variant="fade-up" delay={i * 100} duration={700}>
-                <Link
-                  to={`/shop?category=${col.category}`}
-                  className="group block text-center"
-                >
-                  <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border/20 shadow-sm transition-all duration-300 hover:shadow-md">
-                    <img
-                      src={col.image}
-                      alt={col.name}
-                      width={300}
-                      height={400}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                    />
-                  </div>
-                  <h3 className="mt-4 font-serif text-xs sm:text-sm font-semibold uppercase tracking-wider text-foreground transition-colors group-hover:text-primary">
-                    {col.name}
-                  </h3>
-                </Link>
-              </ScrollReveal>
-            ))}
+            {(homepageSettings?.collectionsSection?.items && homepageSettings.collectionsSection.items.length > 0
+              ? homepageSettings.collectionsSection.items
+              : (defaultHomepageSettings.collectionsSection?.items || [])
+            ).map((col, i) => {
+              const targetUrl = col.link || (col.category ? `/shop?category=${encodeURIComponent(col.category)}` : "/shop");
+              return (
+                <ScrollReveal key={col.id || col.name || i} variant="fade-up" delay={i * 100} duration={700}>
+                  <Link
+                    to={targetUrl}
+                    className="group block text-center"
+                  >
+                    <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border/20 shadow-sm transition-all duration-300 hover:shadow-md">
+                      <img
+                        src={col.image}
+                        alt={col.name}
+                        width={300}
+                        height={400}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      />
+                    </div>
+                    <h3 className="mt-4 font-serif text-xs sm:text-sm font-semibold uppercase tracking-wider text-foreground transition-colors group-hover:text-primary">
+                      {col.name}
+                    </h3>
+                  </Link>
+                </ScrollReveal>
+              );
+            })}
           </div>
         </div>
       </section>
