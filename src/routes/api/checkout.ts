@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { sendOrderEmails } from "@/lib/email";
 import dns from "node:dns";
+import Razorpay from "razorpay";
 
 if (typeof dns.setDefaultResultOrder === "function") {
   dns.setDefaultResultOrder("ipv4first");
@@ -43,47 +44,53 @@ export const Route = createFileRoute("/api/checkout")({
               })
             : createClient(supabaseUrl!, supabaseKey!);
 
-          // Verify and deduct stock for each item in the order, and calculate secure subtotal
-          let secureSubtotal = 0;
-          for (const item of items) {
-            if (item.productId) {
-              const { data: prod, error: prodErr } = await supabase
-                .from("products")
-                .select("stock, name, price")
-                .eq("id", item.productId)
-                .single();
-
-              if (!prodErr && prod) {
-                const currentStock = prod.stock !== undefined && prod.stock !== null ? Number(prod.stock) : 10;
-                if (currentStock < item.qty) {
-                  return Response.json(
-                    { success: false, error: `Product "${prod.name}" only has ${currentStock} item(s) left in stock.` },
-                    { status: 400 }
-                  );
-                }
-
-                secureSubtotal += Number(prod.price) * item.qty;
-              } else {
-                // If it fails to find the product in the DB, fallback to the item price sent by client
-                secureSubtotal += Number(item.price) * item.qty;
-              }
+          // 1. Batch verify and deduct stock in a single DB query
+          const productIds = items.map((i: any) => i.productId).filter(Boolean);
+          let prodMap = new Map<string, any>();
+          if (productIds.length > 0) {
+            const { data: dbProducts } = await supabase
+              .from("products")
+              .select("id, stock, name, price")
+              .in("id", productIds);
+            if (dbProducts) {
+              dbProducts.forEach((p: any) => prodMap.set(p.id, p));
             }
           }
 
+          let secureSubtotal = 0;
+          for (const item of items) {
+            const prod = prodMap.get(item.productId);
+            if (prod) {
+              const currentStock = prod.stock !== undefined && prod.stock !== null ? Number(prod.stock) : 10;
+              if (currentStock < item.qty) {
+                return Response.json(
+                  { success: false, error: `Product "${prod.name}" only has ${currentStock} item(s) left in stock.` },
+                  { status: 400 }
+                );
+              }
+              secureSubtotal += Number(prod.price) * item.qty;
+            } else {
+              secureSubtotal += Number(item.price) * item.qty;
+            }
+          }
+
+          // 2. Fetch coupons, shipping settings, and recent orders simultaneously in parallel
+          const code = couponCode?.trim().toUpperCase();
+          const [couponSettingRes, shippingSettingRes, recentOrdersRes] = await Promise.all([
+            code
+              ? supabase.from("site_settings").select("value").eq("key", "coupons").maybeSingle()
+              : Promise.resolve({ data: null }),
+            supabase.from("site_settings").select("value").eq("key", "shipping").maybeSingle(),
+            supabase.from("orders").select("order_number").order("created_at", { ascending: false }).limit(20),
+          ]);
+
           // Apply coupon discount securely
           let discount = 0;
-          const code = couponCode?.trim().toUpperCase();
           let matchedCouponToDecrement: any = null;
           let allCouponsList: any[] = [];
 
           if (code) {
-            const { data: settingData } = await supabase
-              .from("site_settings")
-              .select("value")
-              .eq("key", "coupons")
-              .single();
-
-            let dbCoupons = (settingData?.value as any)?.coupons;
+            let dbCoupons = (couponSettingRes.data?.value as any)?.coupons;
 
             if (!dbCoupons) {
               try {
@@ -145,14 +152,9 @@ export const Route = createFileRoute("/api/checkout")({
               );
             }
           }
-          // Fetch shipping settings from database
-          const { data: shippingSetting } = await supabase
-            .from("site_settings")
-            .select("value")
-            .eq("key", "shipping")
-            .single();
 
-          const shippingSettings = (shippingSetting?.value as any) || {
+          // Shipping settings
+          const shippingSettings = (shippingSettingRes.data?.value as any) || {
             enabled: true,
             fee: 100,
             minOrder: 1000
@@ -165,16 +167,12 @@ export const Route = createFileRoute("/api/checkout")({
 
           const finalTotal = Math.max(0, secureSubtotal - discount + shippingFee);
 
-
-          // Find max sequence number to avoid duplicate key conflicts
+          // Find sequence number from latest orders
           let seq = 1;
-          const { data: existingOrders } = await supabase
-            .from("orders")
-            .select("order_number");
-          
+          const existingOrders = recentOrdersRes.data;
           if (existingOrders && existingOrders.length > 0) {
             const seqs = existingOrders
-              .map(o => {
+              .map((o: any) => {
                 const match = o.order_number?.match(/^LW-2026-(\d+)$/);
                 return match ? parseInt(match[1], 10) : 0;
               })
@@ -330,8 +328,42 @@ export const Route = createFileRoute("/api/checkout")({
 
           // Note: Confirmation emails will be sent from /api/verify-payment after successful payment verification.
 
+          // Pre-generate Razorpay Order immediately on server to eliminate second client round-trip
+          let razorpayData = null;
+          const keyId = process.env.RAZORPAY_KEY_ID?.replace(/['"]/g, '').trim();
+          const keySecret = process.env.RAZORPAY_KEY_SECRET?.replace(/['"]/g, '').trim();
 
-          return Response.json({ success: true, order: camelCaseOrder });
+          if (keyId && keySecret) {
+            try {
+              const RazorpayConstructor = (Razorpay as any).default || Razorpay;
+              const razorpay = new RazorpayConstructor({
+                key_id: keyId,
+                key_secret: keySecret,
+              });
+
+              const amountPaise = Math.round(Number(camelCaseOrder.total) * 100);
+              const rzpOrder = await razorpay.orders.create({
+                amount: amountPaise,
+                currency: "INR",
+                receipt: camelCaseOrder.orderNumber,
+              });
+
+              razorpayData = {
+                key_id: keyId,
+                order_id: rzpOrder.id,
+                amount: rzpOrder.amount,
+                currency: rzpOrder.currency,
+              };
+            } catch (rzpErr: any) {
+              console.warn("[api/checkout Razorpay order creation warning]", rzpErr);
+            }
+          }
+
+          return Response.json({
+            success: true,
+            order: camelCaseOrder,
+            razorpay: razorpayData,
+          });
         } catch (err: any) {
           console.error("[api/checkout error]", err);
           return Response.json({ success: false, error: err.message }, { status: 500 });

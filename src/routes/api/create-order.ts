@@ -1,5 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Razorpay from "razorpay";
+import dns from "node:dns";
+
+if (typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 export const Route = createFileRoute("/api/create-order")({
   server: {

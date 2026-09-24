@@ -19,7 +19,14 @@ export const Route = createFileRoute("/checkout")({
     };
   },
   component: CheckoutPage,
-  head: () => ({ meta: [{ title: "Checkout · Sabara" }] }),
+  head: () => ({
+    meta: [{ title: "Checkout · Sabara" }],
+    links: [
+      { rel: "preload", href: "https://checkout.razorpay.com/v1/checkout.js", as: "script" },
+      { rel: "preconnect", href: "https://api.razorpay.com" },
+      { rel: "dns-prefetch", href: "https://api.razorpay.com" },
+    ],
+  }),
 });
 
 function CheckoutPage() {
@@ -28,18 +35,18 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { coupon } = Route.useSearch();
 
-  // Load Razorpay Script dynamically
+  // Load and cache Razorpay Script dynamically
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      const scriptNode = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
-      if (scriptNode && scriptNode.parentNode) {
-        scriptNode.parentNode.removeChild(scriptNode);
+    if (typeof window === "undefined") return;
+    if (!(window as any).Razorpay) {
+      const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+      if (!existing) {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        document.head.appendChild(script);
       }
-    };
+    }
   }, []);
 
   // Checkout states
@@ -517,39 +524,45 @@ function CheckoutPage() {
       
       dbOrder = json.order;
 
-      const amountPaise = Math.round(Number(dbOrder.total) * 100);
-      const razorpayOrderRes = await fetch("/api/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: amountPaise,
-          currency: "INR",
-          receipt: dbOrder.orderNumber
-        })
-      });
+      // Fast path: use pre-generated Razorpay order returned directly from /api/checkout
+      let razorpayOrderData = json.razorpay;
 
-      const razorpayOrderJson = await razorpayOrderRes.json();
-      if (!razorpayOrderRes.ok || !razorpayOrderJson.success) {
-        await fetch("/api/cancel-order", {
+      if (!razorpayOrderData || !razorpayOrderData.order_id) {
+        const amountPaise = Math.round(Number(dbOrder.total) * 100);
+        const razorpayOrderRes = await fetch("/api/create-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: dbOrder.id, reason: "Razorpay order creation failed" })
+          body: JSON.stringify({
+            amount: amountPaise,
+            currency: "INR",
+            receipt: dbOrder.orderNumber
+          })
         });
-        throw new Error(razorpayOrderJson.error || "Failed to initiate payment gateway.");
+
+        const razorpayOrderJson = await razorpayOrderRes.json();
+        if (!razorpayOrderRes.ok || !razorpayOrderJson.success) {
+          await fetch("/api/cancel-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: dbOrder.id, reason: "Razorpay order creation failed" })
+          });
+          throw new Error(razorpayOrderJson.error || "Failed to initiate payment gateway.");
+        }
+        razorpayOrderData = razorpayOrderJson;
       }
 
-      const razorpayKeyId = razorpayOrderJson.key_id;
+      const razorpayKeyId = razorpayOrderData.key_id;
       if (!razorpayKeyId) {
         throw new Error("Razorpay Key ID is not configured on the server.");
       }
 
       const options = {
         key: razorpayKeyId,
-        amount: razorpayOrderJson.amount,
-        currency: razorpayOrderJson.currency,
+        amount: razorpayOrderData.amount,
+        currency: razorpayOrderData.currency,
         name: "Sabara",
         description: `Order ${dbOrder.orderNumber}`,
-        order_id: razorpayOrderJson.order_id,
+        order_id: razorpayOrderData.order_id,
         handler: async function (response: any) {
           setBusy(true);
           try {
