@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { categories, products as fallbackProducts, type Category, type Product } from "@/data/products";
 import { ProductCard } from "@/components/site/ProductCard";
 import { cn } from "@/lib/utils";
@@ -11,20 +11,6 @@ type Sort = "featured" | "low" | "high";
 
 type SearchParams = { q?: string; category?: string };
 
-export const Route = createFileRoute("/shop")({
-  component: Shop,
-  validateSearch: (search: Record<string, unknown>): SearchParams => ({
-    q: typeof search.q === "string" ? search.q : undefined,
-    category: typeof search.category === "string" ? search.category : undefined,
-  }),
-  head: () => ({
-    meta: [
-      { title: "Shop · Sabara" },
-      { name: "description", content: "Browse our collection of handwoven natural-fibre mats." },
-    ],
-  }),
-});
-
 async function fetchProducts(params: { q?: string; category?: string }): Promise<{ products: Product[]; categories: string[] }> {
   const search = new URLSearchParams();
   if (params.q) search.set("q", params.q);
@@ -33,6 +19,34 @@ async function fetchProducts(params: { q?: string; category?: string }): Promise
   if (!res.ok) throw new Error("Failed to load products");
   return res.json() as Promise<{ products: Product[]; categories: string[] }>;
 }
+
+export const Route = createFileRoute("/shop")({
+  validateSearch: (search: Record<string, unknown>): SearchParams => ({
+    q: typeof search.q === "string" ? search.q : undefined,
+    category: typeof search.category === "string" ? search.category : undefined,
+  }),
+  loaderDeps: ({ search: { q, category } }) => ({ q, category }),
+  loader: async ({ context, deps: { q, category } }) => {
+    const queryClient = (context as { queryClient?: QueryClient })?.queryClient;
+    if (queryClient && typeof window !== "undefined") {
+      try {
+        await queryClient.ensureQueryData({
+          queryKey: ["products", q ?? "", category ?? "All"],
+          queryFn: () => fetchProducts({ q, category }),
+        });
+      } catch (err) {
+        console.error("[Shop loader prefetch error]", err);
+      }
+    }
+  },
+  head: () => ({
+    meta: [
+      { title: "Shop · Sabara" },
+      { name: "description", content: "Browse our collection of handwoven natural-fibre mats." },
+    ],
+  }),
+  component: Shop,
+});
 
 function groupProducts(list: Product[]): Product[] {
   const groups = new Map<string, Product[]>();

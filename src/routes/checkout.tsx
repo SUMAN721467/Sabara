@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Minus, Plus, X, Loader2, CheckCircle2, Info, MapPin, Pencil } from "lucide-react";
+import { Minus, Plus, X, Loader2, CheckCircle2, Info, MapPin, Pencil, Tag, Sparkles, Percent } from "lucide-react";
 import { toast } from "sonner";
 import { formatPrice, useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
@@ -1360,41 +1360,68 @@ function CheckoutPage() {
                 )}
 
                 {/* Coupon Form */}
-                <div className="mb-6 border-t border-[#f0f0f0] pt-4">
-                  <Label htmlFor="coupon-input" className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
-                    Promo / Coupon Code
-                  </Label>
+                <div className="mb-6 border-t border-border/60 pt-5">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <Label htmlFor="coupon-input" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Tag className="h-3.5 w-3.5 text-primary" />
+                      <span>Promo / Coupon Code</span>
+                    </Label>
+                    {appliedCoupon && (
+                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Applied
+                      </span>
+                    )}
+                  </div>
+
                   {appliedCoupon ? (
-                    <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-4 py-2.5">
-                      <div className="text-xs sm:text-sm">
-                        <span className="font-semibold text-primary">
-                          {appliedCoupon} ({
-                            availableCoupons.find(c => c.code.toUpperCase() === appliedCoupon.toUpperCase())?.discount || 0
-                          }% off)
-                        </span>
-                        <span className="text-xs text-muted-foreground ml-1.5 font-normal">applied</span>
+                    <div className="relative overflow-hidden bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl p-3.5 flex items-center justify-between shadow-xs transition-all animate-in fade-in zoom-in-95">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="h-8 w-8 rounded-xl bg-emerald-600/10 dark:bg-emerald-400/10 flex items-center justify-center shrink-0 text-emerald-700 dark:text-emerald-300">
+                          <Percent className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-bold text-xs tracking-wider text-emerald-800 dark:text-emerald-200 uppercase bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded-md border border-emerald-300/60 dark:border-emerald-700/60">
+                              {appliedCoupon}
+                            </span>
+                            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                              {availableCoupons.find(c => c.code.toUpperCase() === appliedCoupon.toUpperCase())?.discount || 0}% OFF
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80 mt-0.5">
+                            You saved <strong className="font-semibold">{formatPrice(discount)}</strong> with this coupon
+                          </p>
+                        </div>
                       </div>
                       <button
                         onClick={handleRemoveCoupon}
-                        className="text-xs text-destructive hover:underline font-medium cursor-pointer bg-transparent border-none p-0"
+                        className="text-xs font-medium text-destructive/80 hover:text-destructive hover:bg-destructive/10 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer bg-transparent border-none shrink-0"
                       >
                         Remove
                       </button>
                     </div>
                   ) : (
                     <>
-                      <div className="flex gap-2">
-                        <Input
+                      <div className="relative flex items-center bg-background border border-border/80 rounded-2xl p-1 shadow-xs focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+                        <Tag className="h-4 w-4 text-muted-foreground/50 ml-3 shrink-0" />
+                        <input
                           id="coupon-input"
-                          placeholder="e.g. SABARA15"
                           value={couponCode}
-                          onChange={(e) => setCouponCode(e.target.value)}
-                          className="flex-1 min-w-0 bg-background/80 rounded-full h-9 sm:h-10 text-xs sm:text-sm border-border font-mono uppercase"
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleApplyCoupon();
+                            }
+                          }}
+                          className="flex-1 min-w-0 bg-transparent px-3 py-2 text-xs sm:text-sm font-mono tracking-wider font-semibold uppercase text-foreground focus:outline-none border-none placeholder-transparent"
                         />
                         <Button
                           onClick={handleApplyCoupon}
-                          variant="outline"
-                          className="rounded-full px-4 sm:px-5 h-9 sm:h-10 text-xs sm:text-sm cursor-pointer border-primary text-primary hover:bg-primary/5"
+                          disabled={!couponCode.trim()}
+                          size="sm"
+                          className="rounded-xl h-8 sm:h-9 px-4 sm:px-5 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 shrink-0 shadow-xs cursor-pointer disabled:opacity-40"
                         >
                           Apply
                         </Button>
@@ -1402,24 +1429,30 @@ function CheckoutPage() {
 
                       {/* Available Coupons list */}
                       {availableCoupons.filter(c => c.showInList !== false).length > 0 && (
-                        <div className="mt-4 space-y-2">
-                          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-                            Available Coupons
-                          </span>
-                          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <div className="mt-4 space-y-2.5">
+                          <div className="flex items-center gap-1.5">
+                            <Sparkles className="h-3.5 w-3.5 text-primary" />
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                              Available Coupons
+                            </span>
+                          </div>
+                          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                             {availableCoupons.filter(c => c.showInList !== false).map((c) => (
-                              <div key={c.code} className="flex items-center justify-between p-2 sm:p-2.5 border border-[#f0f0f0] rounded-lg bg-card/50 hover:bg-primary/5 transition-colors text-xs">
-                                <div className="text-left flex flex-col gap-0.5 min-w-0">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-mono font-bold bg-primary/10 border border-primary/20 text-primary px-1.5 py-0.5 rounded text-[10px] uppercase">
+                              <div
+                                key={c.code}
+                                className="relative overflow-hidden rounded-xl border border-dashed border-primary/30 bg-primary/[0.02] hover:bg-primary/[0.06] hover:border-primary/60 transition-all p-3 flex items-center justify-between gap-3 group shadow-2xs"
+                              >
+                                <div className="text-left flex flex-col gap-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-mono font-bold bg-primary/10 border border-primary/20 text-primary px-2 py-0.5 rounded-md text-[11px] uppercase tracking-wider">
                                       {c.code}
                                     </span>
-                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded">
                                       {c.discount}% OFF
                                     </span>
                                   </div>
-                                  <span className="text-[10px] text-muted-foreground truncate">
-                                    {c.minOrder ? `Valid on orders of ₹${c.minOrder} or more` : "No minimum order value required"}
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {c.minOrder ? `On orders above ₹${c.minOrder}` : "No minimum order required"}
                                   </span>
                                 </div>
                                 <button
@@ -1427,7 +1460,7 @@ function CheckoutPage() {
                                     e.preventDefault();
                                     handleApplyDirectCoupon(c);
                                   }}
-                                  className="text-xs font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer bg-transparent border-none p-1 shrink-0"
+                                  className="text-xs font-semibold text-primary hover:text-primary-foreground hover:bg-primary border border-primary/30 hover:border-primary px-3 py-1.5 rounded-lg transition-all cursor-pointer bg-background shrink-0 active:scale-95 shadow-2xs"
                                 >
                                   Apply
                                 </button>

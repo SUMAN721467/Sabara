@@ -202,9 +202,7 @@ function RootComponent() {
               <AnnouncementBar />
               <Navbar />
               <main className="flex-1">
-                <div>
-                  <Outlet />
-                </div>
+                <Outlet />
               </main>
               <Footer />
             </div>

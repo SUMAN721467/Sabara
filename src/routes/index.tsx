@@ -9,7 +9,7 @@ import mat2 from "@/assets/mat-2.jpg";
 import mat3 from "@/assets/mat-3.jpg";
 import mat4 from "@/assets/mat-4.jpg";
 import { ProductCard } from "@/components/site/ProductCard";
-import { useHeroSettings, useHomepageSettings, defaultHomepageSettings } from "@/lib/settings";
+import { defaultHomepageSettings } from "@/lib/settings";
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { getOrSeedProducts } from "./api/products";
@@ -162,11 +162,9 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { featured, heroSettings, homepageSettings: serverHomepageSettings } = Route.useLoaderData();
-  const { settings: clientSettings, isLoaded } = useHeroSettings();
-  const { settings: clientHomepageSettings, isLoaded: homepageLoaded } = useHomepageSettings();
 
-  const settings = heroSettings || (isLoaded ? clientSettings : defaultHomepageSettings);
-  const homepageSettings = (serverHomepageSettings || (homepageLoaded ? clientHomepageSettings : defaultHomepageSettings)) || defaultHomepageSettings;
+  const settings = heroSettings || defaultHomepageSettings;
+  const homepageSettings = serverHomepageSettings || defaultHomepageSettings;
   const showHero = true;
 
   const [api, setApi] = useState<CarouselApi>();
