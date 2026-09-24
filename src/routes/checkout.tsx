@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { INDIAN_STATES, fetchDistrictAndStateFromPincode } from "@/lib/pincode";
 import { useShippingSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
+import { LogoSpinner } from "@/components/ui/logo-spinner";
 
 export const Route = createFileRoute("/checkout")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -23,7 +24,9 @@ export const Route = createFileRoute("/checkout")({
     meta: [{ title: "Checkout · Sabara" }],
     links: [
       { rel: "preload", href: "https://checkout.razorpay.com/v1/checkout.js", as: "script" },
+      { rel: "preconnect", href: "https://checkout.razorpay.com" },
       { rel: "preconnect", href: "https://api.razorpay.com" },
+      { rel: "dns-prefetch", href: "https://checkout.razorpay.com" },
       { rel: "dns-prefetch", href: "https://api.razorpay.com" },
     ],
   }),
@@ -483,7 +486,6 @@ function CheckoutPage() {
     }
 
     setBusy(true);
-    setCheckoutStep(3);
     let dbOrder: any = null;
 
     try {
@@ -642,10 +644,12 @@ function CheckoutPage() {
         }
       });
       rzp.open();
+      // Dismiss preparation loader immediately as Razorpay modal is rendered
+      setBusy(false);
 
     } catch (err: any) {
-      setCheckoutStep(2);
       toast.error(err.message || "Something went wrong during checkout.");
+      setBusy(false);
     } finally {
       if (!dbOrder) {
         setBusy(false);
@@ -704,6 +708,16 @@ function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 pb-14 sm:px-6 md:pt-8 md:pb-16">
+      {busy && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/55 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-8 shadow-2xl flex flex-col items-center max-w-sm w-full mx-auto text-center animate-in zoom-in-95 duration-150">
+            <LogoSpinner size="lg" label="Connecting to payment gateway..." />
+            <p className="text-xs text-muted-foreground mt-3 font-medium">
+              Securing payment session. Please do not refresh.
+            </p>
+          </div>
+        </div>
+      )}
       <h1 className="font-serif text-3xl text-foreground md:text-4xl mb-6 text-center sm:text-left">Checkout</h1>
 
       {detailed.length === 0 ? (

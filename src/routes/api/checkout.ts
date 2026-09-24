@@ -8,6 +8,41 @@ if (typeof dns.setDefaultResultOrder === "function") {
   dns.setDefaultResultOrder("ipv4first");
 }
 
+let cachedSupabase: any = null;
+let cachedRazorpay: any = null;
+
+function getSupabase() {
+  if (cachedSupabase) return cachedSupabase;
+  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)?.replace(/['"]/g, "").trim();
+  const supabaseKey = (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)?.replace(/['"]/g, "").trim();
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.replace(/['"]/g, "").trim();
+  const isServiceKeyValid = !!(serviceKey && serviceKey.startsWith("eyJ"));
+
+  cachedSupabase = isServiceKeyValid
+    ? createClient(supabaseUrl!, serviceKey, {
+        auth: {
+          storage: undefined,
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      })
+    : createClient(supabaseUrl!, supabaseKey!);
+  return cachedSupabase;
+}
+
+function getRazorpay() {
+  if (cachedRazorpay) return cachedRazorpay;
+  const keyId = process.env.RAZORPAY_KEY_ID?.replace(/['"]/g, "").trim();
+  const keySecret = process.env.RAZORPAY_KEY_SECRET?.replace(/['"]/g, "").trim();
+  if (!keyId || !keySecret) return null;
+  const RazorpayConstructor = (Razorpay as any).default || Razorpay;
+  cachedRazorpay = new RazorpayConstructor({
+    key_id: keyId,
+    key_secret: keySecret,
+  });
+  return cachedRazorpay;
+}
+
 export const Route = createFileRoute("/api/checkout")({
   server: {
     handlers: {
@@ -30,31 +65,26 @@ export const Route = createFileRoute("/api/checkout")({
             );
           }
 
-          const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)?.replace(/['"]/g, '').trim();
-          const supabaseKey = (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)?.replace(/['"]/g, '').trim();
-          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.replace(/['"]/g, '').trim();
-          const isServiceKeyValid = !!(serviceKey && serviceKey.startsWith("eyJ"));
-          const supabase = isServiceKeyValid
-            ? createClient(supabaseUrl!, serviceKey, {
-                auth: {
-                  storage: undefined,
-                  persistSession: false,
-                  autoRefreshToken: false,
-                }
-              })
-            : createClient(supabaseUrl!, supabaseKey!);
+          const supabase = getSupabase();
 
-          // 1. Batch verify and deduct stock in a single DB query
+          // 1. Execute ALL initial queries concurrently in parallel (batch product stock, coupons, shipping, recent orders)
           const productIds = items.map((i: any) => i.productId).filter(Boolean);
+          const code = couponCode?.trim().toUpperCase();
+
+          const [productsRes, couponSettingRes, shippingSettingRes, recentOrdersRes] = await Promise.all([
+            productIds.length > 0
+              ? supabase.from("products").select("id, stock, name, price").in("id", productIds)
+              : Promise.resolve({ data: [] }),
+            code
+              ? supabase.from("site_settings").select("value").eq("key", "coupons").maybeSingle()
+              : Promise.resolve({ data: null }),
+            supabase.from("site_settings").select("value").eq("key", "shipping").maybeSingle(),
+            supabase.from("orders").select("order_number").order("created_at", { ascending: false }).limit(5),
+          ]);
+
           let prodMap = new Map<string, any>();
-          if (productIds.length > 0) {
-            const { data: dbProducts } = await supabase
-              .from("products")
-              .select("id, stock, name, price")
-              .in("id", productIds);
-            if (dbProducts) {
-              dbProducts.forEach((p: any) => prodMap.set(p.id, p));
-            }
+          if (productsRes.data) {
+            productsRes.data.forEach((p: any) => prodMap.set(p.id, p));
           }
 
           let secureSubtotal = 0;
@@ -73,16 +103,6 @@ export const Route = createFileRoute("/api/checkout")({
               secureSubtotal += Number(item.price) * item.qty;
             }
           }
-
-          // 2. Fetch coupons, shipping settings, and recent orders simultaneously in parallel
-          const code = couponCode?.trim().toUpperCase();
-          const [couponSettingRes, shippingSettingRes, recentOrdersRes] = await Promise.all([
-            code
-              ? supabase.from("site_settings").select("value").eq("key", "coupons").maybeSingle()
-              : Promise.resolve({ data: null }),
-            supabase.from("site_settings").select("value").eq("key", "shipping").maybeSingle(),
-            supabase.from("orders").select("order_number").order("created_at", { ascending: false }).limit(20),
-          ]);
 
           // Apply coupon discount securely
           let discount = 0;
@@ -182,53 +202,59 @@ export const Route = createFileRoute("/api/checkout")({
             }
           }
 
+          const currentOrderNumber = `LW-2026-${String(seq).padStart(4, "0")}`;
           const baseStreet = `${shippingAddress.street.replace(/\|/g, " ")}${shippingAddress.landmark ? ` (Landmark: ${shippingAddress.landmark.replace(/\|/g, " ")})` : ""}${shippingAddress.district ? ` (District: ${shippingAddress.district.replace(/\|/g, " ")})` : ""}`;
 
-          // Insert order with retry loop for unique constraint safety
-          let order = null;
-          let attempts = 0;
-          const maxAttempts = 5;
+          // Pre-initialize Razorpay order concurrently alongside order insertion
+          const keyId = process.env.RAZORPAY_KEY_ID?.replace(/['"]/g, "").trim();
+          const amountPaise = Math.round(Number(finalTotal) * 100);
 
-          while (attempts < maxAttempts) {
-            const currentOrderNumber = `LW-2026-${String(seq).padStart(4, "0")}`;
-            const { data, error: insertError } = await supabase
-              .from("orders")
-              .insert({
-                order_number: currentOrderNumber,
-                customer_name: customerName,
-                customer_email: customerEmail,
-                customer_phone: customerPhone || null,
-                total: finalTotal,
-                status: "Pending",
-                shipping_street: code 
-                  ? `${baseStreet}|||${code}|${discount}` 
-                  : baseStreet,
-                shipping_city: shippingAddress.city,
-                shipping_state: shippingAddress.state,
-                shipping_zip_code: shippingAddress.zipCode,
-                user_id: userId || null
-              })
-              .select("*")
-              .single();
+          const orderInsertPromise = supabase
+            .from("orders")
+            .insert({
+              order_number: currentOrderNumber,
+              customer_name: customerName,
+              customer_email: customerEmail,
+              customer_phone: customerPhone || null,
+              total: finalTotal,
+              status: "Pending",
+              shipping_street: code 
+                ? `${baseStreet}|||${code}|${discount}` 
+                : baseStreet,
+              shipping_city: shippingAddress.city,
+              shipping_state: shippingAddress.state,
+              shipping_zip_code: shippingAddress.zipCode,
+              user_id: userId || null
+            })
+            .select("*")
+            .single();
 
-            if (!insertError) {
-              order = data;
-              break;
+          const razorpayOrderPromise = (async () => {
+            const razorpay = getRazorpay();
+            if (!razorpay) return null;
+            try {
+              return await razorpay.orders.create({
+                amount: amountPaise,
+                currency: "INR",
+                receipt: currentOrderNumber,
+              });
+            } catch (rzpErr) {
+              console.warn("[api/checkout Razorpay order creation warning]", rzpErr);
+              return null;
             }
+          })();
 
-            if (insertError.message.includes("duplicate key") || insertError.message.includes("unique constraint")) {
-              seq++;
-              attempts++;
-            } else {
-              throw new Error(insertError.message);
-            }
+          const [orderRes, rzpOrder] = await Promise.all([
+            orderInsertPromise,
+            razorpayOrderPromise,
+          ]);
+
+          if (orderRes.error) {
+            throw new Error(orderRes.error.message);
           }
+          const order = orderRes.data;
 
-          if (!order) {
-            throw new Error("Failed to generate a unique order number after multiple attempts.");
-          }
-
-          // Insert order items
+          // Concurrently insert order items and update coupon limit
           const orderItemsPayload = items.map((item: any) => ({
             order_id: order.id,
             product_id: item.productId,
@@ -238,66 +264,52 @@ export const Route = createFileRoute("/api/checkout")({
             price: item.price
           }));
 
-          const { error: itemsError } = await supabase
+          const orderItemsPromise = supabase
             .from("order_items")
             .insert(orderItemsPayload);
 
-          if (itemsError) {
+          const couponUpdatePromise = (async () => {
+            if (!matchedCouponToDecrement || matchedCouponToDecrement.limit === undefined || matchedCouponToDecrement.limit === null) {
+              return null;
+            }
+            try {
+              const updatedCoupons = allCouponsList.map((c: any) => {
+                if (c.code?.trim().toUpperCase() === matchedCouponToDecrement.code?.trim().toUpperCase()) {
+                  return {
+                    ...c,
+                    limit: Math.max(0, Number(c.limit) - 1)
+                  };
+                }
+                return c;
+              });
+
+              await supabase.from("site_settings").upsert({
+                key: "coupons",
+                value: { coupons: updatedCoupons },
+                updated_at: new Date().toISOString()
+              });
+
+              // Write to fallback JSON file in background
+              import("path").then(async (path) => {
+                const fs = await import("fs/promises");
+                const filePath = path.join(process.cwd(), "src", "data", "coupons.json");
+                await fs.mkdir(path.dirname(filePath), { recursive: true });
+                await fs.writeFile(filePath, JSON.stringify({ coupons: updatedCoupons }, null, 2), "utf-8");
+              }).catch(() => {});
+            } catch (e) {
+              console.warn("[api/checkout coupon decrement error]", e);
+            }
+          })();
+
+          const [itemsRes] = await Promise.all([
+            orderItemsPromise,
+            couponUpdatePromise,
+          ]);
+
+          if (itemsRes.error) {
             // Roll back order insertion
             await supabase.from("orders").delete().eq("id", order.id);
-            throw new Error(itemsError.message);
-          }
-
-          // Decrement coupon limit if applicable
-          if (matchedCouponToDecrement && matchedCouponToDecrement.limit !== undefined && matchedCouponToDecrement.limit !== null) {
-            const updatedCoupons = allCouponsList.map((c: any) => {
-              if (c.code?.trim().toUpperCase() === matchedCouponToDecrement.code?.trim().toUpperCase()) {
-                return {
-                  ...c,
-                  limit: Math.max(0, Number(c.limit) - 1)
-                };
-              }
-              return c;
-            });
-
-            // Write back to database using Service Role key if possible to bypass RLS, otherwise fallback to publishable key client
-            const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.replace(/['"]/g, '').trim();
-            const isServiceKeyValid = !!(serviceKey && serviceKey.startsWith("eyJ"));
-            const supabaseAdmin = isServiceKeyValid
-              ? createClient(supabaseUrl!, serviceKey, {
-                  auth: {
-                    storage: undefined,
-                    persistSession: false,
-                    autoRefreshToken: false,
-                  }
-                })
-              : supabase;
-
-            try {
-              const { error: updateErr } = await supabaseAdmin
-                .from("site_settings")
-                .upsert({
-                  key: "coupons",
-                  value: { coupons: updatedCoupons },
-                  updated_at: new Date().toISOString()
-                });
-              if (updateErr) {
-                console.warn("[api/checkout coupon decrement db error]", updateErr.message);
-              }
-            } catch (e: any) {
-              console.warn("[api/checkout coupon decrement db exception]", e);
-            }
-
-            // Write to fallback JSON file
-            try {
-              const fs = await import("fs/promises");
-              const path = await import("path");
-              const filePath = path.join(process.cwd(), "src", "data", "coupons.json");
-              await fs.mkdir(path.dirname(filePath), { recursive: true });
-              await fs.writeFile(filePath, JSON.stringify({ coupons: updatedCoupons }, null, 2), "utf-8");
-            } catch (fsErr) {
-              console.error("[api/checkout coupon decrement local write error]", fsErr);
-            }
+            throw new Error(itemsRes.error.message);
           }
 
           const camelCaseOrder = {
@@ -326,38 +338,15 @@ export const Route = createFileRoute("/api/checkout")({
             }))
           };
 
-          // Note: Confirmation emails will be sent from /api/verify-payment after successful payment verification.
-
-          // Pre-generate Razorpay Order immediately on server to eliminate second client round-trip
-          let razorpayData = null;
-          const keyId = process.env.RAZORPAY_KEY_ID?.replace(/['"]/g, '').trim();
-          const keySecret = process.env.RAZORPAY_KEY_SECRET?.replace(/['"]/g, '').trim();
-
-          if (keyId && keySecret) {
-            try {
-              const RazorpayConstructor = (Razorpay as any).default || Razorpay;
-              const razorpay = new RazorpayConstructor({
-                key_id: keyId,
-                key_secret: keySecret,
-              });
-
-              const amountPaise = Math.round(Number(camelCaseOrder.total) * 100);
-              const rzpOrder = await razorpay.orders.create({
-                amount: amountPaise,
-                currency: "INR",
-                receipt: camelCaseOrder.orderNumber,
-              });
-
-              razorpayData = {
+          // Use pre-generated Razorpay order (created concurrently above) without repeating external API call
+          const razorpayData = (rzpOrder && keyId)
+            ? {
                 key_id: keyId,
                 order_id: rzpOrder.id,
                 amount: rzpOrder.amount,
                 currency: rzpOrder.currency,
-              };
-            } catch (rzpErr: any) {
-              console.warn("[api/checkout Razorpay order creation warning]", rzpErr);
-            }
-          }
+              }
+            : null;
 
           return Response.json({
             success: true,
@@ -372,3 +361,4 @@ export const Route = createFileRoute("/api/checkout")({
     }
   }
 });
+

@@ -6,6 +6,21 @@ if (typeof dns.setDefaultResultOrder === "function") {
   dns.setDefaultResultOrder("ipv4first");
 }
 
+let cachedFallbackRazorpay: any = null;
+
+function getFallbackRazorpay(keyId: string, keySecret: string) {
+  if (cachedFallbackRazorpay) return cachedFallbackRazorpay;
+  const RazorpayConstructor = (Razorpay as any).default || Razorpay;
+  if (typeof RazorpayConstructor !== "function") {
+    throw new Error("Razorpay SDK is not loaded as a constructor function");
+  }
+  cachedFallbackRazorpay = new RazorpayConstructor({
+    key_id: keyId,
+    key_secret: keySecret,
+  });
+  return cachedFallbackRazorpay;
+}
+
 export const Route = createFileRoute("/api/create-order")({
   server: {
     handlers: {
@@ -25,8 +40,6 @@ export const Route = createFileRoute("/api/create-order")({
 
           const keyId = process.env.RAZORPAY_KEY_ID?.replace(/['"]/g, '').trim();
           const keySecret = process.env.RAZORPAY_KEY_SECRET?.replace(/['"]/g, '').trim();
-
-          console.log("[api/create-order debug] keyId length:", keyId?.length, "keySecret length:", keySecret?.length);
 
           if (!keyId || !keySecret) {
             console.error("Razorpay API Key or Secret is missing in environment variables.");
@@ -51,16 +64,8 @@ export const Route = createFileRoute("/api/create-order")({
             );
           }
 
-          // Initialize Razorpay SDK (ESM/CJS compatibility fallback)
-          const RazorpayConstructor = (Razorpay as any).default || Razorpay;
-          if (typeof RazorpayConstructor !== "function") {
-            throw new Error("Razorpay SDK is not loaded as a constructor function");
-          }
+          const razorpay = getFallbackRazorpay(keyId, keySecret);
 
-          const razorpay = new RazorpayConstructor({
-            key_id: keyId,
-            key_secret: keySecret,
-          });
 
           const options = {
             amount: parsedAmount,
