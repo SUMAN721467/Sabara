@@ -38,6 +38,46 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 
 const BUCKET = "product-images";
 
+/** Extract bucket and path from Supabase storage URL */
+function getStorageInfoFromUrl(url: string): { bucket: string; path: string } | null {
+  if (!url || typeof url !== "string") return null;
+  const publicMarker = "/storage/v1/object/public/";
+  const publicIdx = url.indexOf(publicMarker);
+  if (publicIdx !== -1) {
+    const rest = url.substring(publicIdx + publicMarker.length).split("?")[0];
+    const slashIdx = rest.indexOf("/");
+    if (slashIdx !== -1) {
+      const bucket = decodeURIComponent(rest.substring(0, slashIdx));
+      const path = decodeURIComponent(rest.substring(slashIdx + 1));
+      if (bucket && path) return { bucket, path };
+    }
+  }
+  for (const bucket of ["product-images", "banners"]) {
+    const marker = `/${bucket}/`;
+    const idx = url.indexOf(marker);
+    if (idx !== -1) {
+      const path = decodeURIComponent(url.substring(idx + marker.length).split("?")[0]);
+      if (path) return { bucket, path };
+    }
+  }
+  return null;
+}
+
+/** Delete a file from Supabase storage using its public URL */
+async function deleteStorageFile(url?: string | null) {
+  if (!url) return;
+  const info = getStorageInfoFromUrl(url);
+  if (!info) return;
+  try {
+    const { error } = await supabase.storage.from(info.bucket).remove([info.path]);
+    if (error) {
+      console.warn(`[deleteStorageFile] Failed to remove ${info.path} from ${info.bucket}:`, error.message);
+    }
+  } catch (err) {
+    console.warn(`[deleteStorageFile] Error deleting file:`, err);
+  }
+}
+
 /** Upload a file to Supabase Storage and return the public URL */
 async function uploadImage(file: File): Promise<string> {
   const ext = file.name.split(".").pop() ?? "jpg";
@@ -47,6 +87,33 @@ async function uploadImage(file: File): Promise<string> {
     .upload(path, file, { cacheControl: "3600", upsert: false });
   if (error) throw new Error(error.message);
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+/** Upload a banner or category image directly to 'product-images' inside the 'banners' folder and delete old image */
+async function uploadBannerImage(file: File, folder: string = "banners", oldUrl?: string | null): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const prefix = folder === "categories" ? "category-" : "";
+  const fileName = `${prefix}${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  // Place directly inside the 'banners' folder created in product-images
+  const path = `banners/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("product-images")
+    .upload(path, file, { cacheControl: "3600", upsert: true });
+
+  if (uploadError) {
+    console.error("[uploadBannerImage error]", uploadError);
+    throw new Error(uploadError.message);
+  }
+
+  const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+
+  // Delete old image from storage if it exists
+  if (oldUrl) {
+    await deleteStorageFile(oldUrl);
+  }
+
   return data.publicUrl;
 }
 
@@ -3531,7 +3598,8 @@ function HomepageAdmin() {
     if (!file) return;
     setUploadingSlide({ index: slideIndex, type });
     try {
-      const url = await uploadImage(file);
+      const oldUrl = heroForm.slides?.[slideIndex]?.[type === 'desktop' ? 'imageUrl' : 'mobileImageUrl'] || (slideIndex === 0 ? heroForm[type === 'desktop' ? 'imageUrl' : 'mobileImageUrl'] : null);
+      const url = await uploadBannerImage(file, "banners", oldUrl);
       
       const newSlides = [...(heroForm.slides || [])];
       if (!newSlides[slideIndex]) {
@@ -3573,7 +3641,11 @@ function HomepageAdmin() {
     }));
   };
 
-  const handleRemoveSlideImage = (index: number, type: 'desktop' | 'mobile') => {
+  const handleRemoveSlideImage = async (index: number, type: 'desktop' | 'mobile') => {
+    const oldUrl = heroForm.slides?.[index]?.[type === 'desktop' ? 'imageUrl' : 'mobileImageUrl'] || (index === 0 ? heroForm[type === 'desktop' ? 'imageUrl' : 'mobileImageUrl'] : null);
+    if (oldUrl) {
+      await deleteStorageFile(oldUrl);
+    }
     handleSlideUrlChange(index, type, "");
   };
 
@@ -3607,8 +3679,13 @@ function HomepageAdmin() {
     }));
   };
 
-  const handleDeleteSlide = (index: number) => {
+  const handleDeleteSlide = async (index: number) => {
     if (!confirm(`Are you sure you want to delete Banner Slide ${index + 1}?`)) return;
+    const targetSlide = heroForm.slides?.[index];
+    if (targetSlide) {
+      if (targetSlide.imageUrl) await deleteStorageFile(targetSlide.imageUrl);
+      if (targetSlide.mobileImageUrl) await deleteStorageFile(targetSlide.mobileImageUrl);
+    }
     const newSlides = (heroForm.slides || []).filter((_, i) => i !== index);
     setHeroForm((prev) => ({
       ...prev,
@@ -3640,7 +3717,8 @@ function HomepageAdmin() {
     if (!file) return;
     setUploadingCraft(true);
     try {
-      const url = await uploadImage(file);
+      const oldUrl = homepageForm.craftStory?.imageUrl;
+      const url = await uploadBannerImage(file, "banners", oldUrl);
       setHomepageForm((prev) => ({
         ...prev,
         craftStory: { ...prev.craftStory, imageUrl: url }
@@ -3658,8 +3736,9 @@ function HomepageAdmin() {
     if (!file) return;
     setUploadingCollectionIndex(index);
     try {
-      const url = await uploadImage(file);
       const currentItems = homepageForm.collectionsSection?.items || defaultHomepageSettings.collectionsSection?.items || [];
+      const oldUrl = currentItems[index]?.image;
+      const url = await uploadBannerImage(file, "categories", oldUrl);
       const newItems = [...currentItems];
       if (newItems[index]) {
         newItems[index] = { ...newItems[index], image: url };
@@ -3715,9 +3794,13 @@ function HomepageAdmin() {
     }));
   };
 
-  const handleDeleteCollectionItem = (index: number) => {
+  const handleDeleteCollectionItem = async (index: number) => {
     if (!confirm("Are you sure you want to remove this category card from the homepage?")) return;
     const currentItems = homepageForm.collectionsSection?.items || defaultHomepageSettings.collectionsSection?.items || [];
+    const oldUrl = currentItems[index]?.image;
+    if (oldUrl) {
+      await deleteStorageFile(oldUrl);
+    }
     const newItems = currentItems.filter((_, i) => i !== index);
     setHomepageForm((prev) => ({
       ...prev,
