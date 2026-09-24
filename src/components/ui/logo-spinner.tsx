@@ -12,29 +12,29 @@ export interface LogoSpinnerProps {
 
 const sizeMap = {
   xs: {
-    container: "h-5 w-5",
-    logo: "h-3.5 w-3.5 p-[1px]",
-    stroke: 1.6,
-  },
-  sm: {
-    container: "h-7 w-7",
-    logo: "h-5 w-5 p-[1px]",
+    container: "h-6 w-6",
+    logo: "h-5 w-5",
     stroke: 1.5,
   },
-  md: {
-    container: "h-11 w-11",
-    logo: "h-8 w-8 p-[1.5px]",
+  sm: {
+    container: "h-8 w-8",
+    logo: "h-6.5 w-6.5",
     stroke: 1.4,
+  },
+  md: {
+    container: "h-12 w-12",
+    logo: "h-10 w-10",
+    stroke: 1.3,
   },
   lg: {
-    container: "h-14 w-14",
-    logo: "h-10 w-10 p-0.5",
-    stroke: 1.4,
+    container: "h-16 w-16",
+    logo: "h-13.5 w-13.5",
+    stroke: 1.3,
   },
   xl: {
-    container: "h-18 w-18",
-    logo: "h-13 w-13 p-1",
-    stroke: 1.3,
+    container: "h-22 w-22",
+    logo: "h-18.5 w-18.5",
+    stroke: 1.2,
   },
 };
 
@@ -46,7 +46,7 @@ const speedMap = {
 
 /**
  * LogoSpinner - Elegant branded loading spinner where a delicate, thin circular ring rotates
- * around the Sabara round logo.
+ * closely around a prominent Sabara round logo.
  */
 export function LogoSpinner({
   size = "md",
@@ -73,7 +73,7 @@ export function LogoSpinner({
           <circle
             cx="22"
             cy="22"
-            r="20"
+            r="20.5"
             stroke="currentColor"
             strokeWidth={currentSize.stroke}
             className={trackColor}
@@ -82,27 +82,27 @@ export function LogoSpinner({
           <circle
             cx="22"
             cy="22"
-            r="20"
+            r="20.5"
             stroke="currentColor"
             strokeWidth={currentSize.stroke}
             strokeLinecap="round"
-            strokeDasharray="36 90"
+            strokeDasharray="38 91"
           />
         </svg>
 
-        {/* Center Round Logo (Stationary, upright and crisp) */}
+        {/* Center Round Logo (Enlarged, stationary, upright and clear) */}
         <div
           className={cn(
-            "relative z-10 flex items-center justify-center rounded-full bg-card shadow-2xs ring-1 ring-border/50 overflow-hidden",
+            "relative z-10 flex items-center justify-center rounded-full bg-white shadow-2xs overflow-hidden",
             currentSize.logo,
           )}
         >
           <img
             src={roundLogo}
-            alt="Loading..."
-            width={64}
-            height={64}
-            className="h-full w-full rounded-full object-cover select-none pointer-events-none"
+            alt="Sabara"
+            width={80}
+            height={80}
+            className="h-full w-full rounded-full object-cover scale-[1.08] select-none pointer-events-none"
           />
         </div>
       </div>
