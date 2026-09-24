@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { INDIAN_STATES, fetchDistrictAndStateFromPincode } from "@/lib/pincode";
 import { cn } from "@/lib/utils";
+import { LogoSpinner } from "@/components/ui/logo-spinner";
 
 export const Route = createFileRoute("/account")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -1114,8 +1115,7 @@ function AccountPage() {
 
       {profileLoading && !profile ? (
         <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/80 bg-card p-12 text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground text-sm">Loading your account details...</p>
+          <LogoSpinner size="lg" label="Loading your account details..." />
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">

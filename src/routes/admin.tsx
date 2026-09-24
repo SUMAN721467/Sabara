@@ -23,6 +23,7 @@ import {
   ChevronDown, ChevronUp, Settings, Truck, RotateCcw, Sparkles
 } from "lucide-react";
 import { ArrowUp, ArrowDown, Trash2, Edit, Check, Star, ArrowRight } from "lucide-react";
+import { LogoSpinner } from "@/components/ui/logo-spinner";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
@@ -3219,8 +3220,8 @@ function CouponsAdmin() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex justify-center py-16">
+        <LogoSpinner size="lg" label="Loading coupons..." />
       </div>
     );
   }
@@ -3830,8 +3831,8 @@ function HomepageAdmin() {
 
   if (!heroLoaded || !homepageLoaded) {
     return (
-      <div className="flex justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex justify-center py-16">
+        <LogoSpinner size="lg" label="Loading homepage settings..." />
       </div>
     );
   }
@@ -4561,8 +4562,8 @@ function PromotionsAdmin() {
 
   if (!isLoaded) {
     return (
-      <div className="flex justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex justify-center py-16">
+        <LogoSpinner size="lg" label="Loading announcements..." />
       </div>
     );
   }
@@ -5061,8 +5062,8 @@ function ShippingAdmin() {
 
   if (!isLoaded) {
     return (
-      <div className="flex justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex justify-center py-16">
+        <LogoSpinner size="lg" label="Loading site settings..." />
       </div>
     );
   }
@@ -5686,8 +5687,8 @@ function FaqsAdmin() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-10">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex justify-center items-center py-16">
+        <LogoSpinner size="lg" label="Loading FAQs..." />
       </div>
     );
   }
