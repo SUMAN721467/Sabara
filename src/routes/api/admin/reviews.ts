@@ -71,12 +71,7 @@ export const Route = createFileRoute("/api/admin/reviews")({
           if (error) throw new Error(error.message);
 
           // Write reviews log for debugging
-          try {
-            const fs = await import("fs");
-            fs.writeFileSync("C:/Users/hp/OneDrive/Desktop/Sabara-Test-new/reviews-debug.log", JSON.stringify(reviews, null, 2));
-          } catch (logErr) {
-            console.error("Failed to write reviews-debug.log:", logErr);
-          }
+          // console.debug("[api/admin/reviews] Fetched reviews", reviews?.length);
 
           const dbProducts = await getOrSeedProducts(supabaseAdmin, false, true);
           const productsMap = new Map(dbProducts.map((p) => [p.id, p]));
@@ -198,23 +193,13 @@ export const Route = createFileRoute("/api/admin/reviews")({
 
           clearProductsCache();
 
-          // Write log to file
-          try {
-            const fs = await import("fs");
-            fs.appendFileSync("C:/Users/hp/OneDrive/Desktop/Sabara-Test-new/delete-reviews.log", logMsg + "\n");
-          } catch (logErr) {
-            console.error("Failed to write log file:", logErr);
-          }
+          // Write log to console
+          console.log(logMsg);
 
           return Response.json({ success: true, storageResults });
         } catch (err: any) {
           logMsg += `Handler caught error: ${err.message}\n`;
-          try {
-            const fs = await import("fs");
-            fs.appendFileSync("C:/Users/hp/OneDrive/Desktop/Sabara-Test-new/delete-reviews.log", logMsg + "\n");
-          } catch (logErr) {
-            console.error("Failed to write error log file:", logErr);
-          }
+          console.error(logMsg);
           console.error("[api/admin/reviews DELETE error]", err);
           return Response.json({ success: false, error: err.message }, { status: 500 });
         }

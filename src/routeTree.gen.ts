@@ -34,6 +34,7 @@ import { Route as ApiCancelOrderRouteImport } from './routes/api/cancel-order'
 import { Route as ApiUsersSyncRouteImport } from './routes/api/users/sync'
 import { Route as ApiUsersProfileRouteImport } from './routes/api/users/profile'
 import { Route as ApiUsersOrdersRouteImport } from './routes/api/users/orders'
+import { Route as ApiAuthCheckEmailRouteImport } from './routes/api/auth/check-email'
 import { Route as ApiAdminSiteSettingsRouteImport } from './routes/api/admin/site-settings'
 import { Route as ApiAdminReviewsRouteImport } from './routes/api/admin/reviews'
 import { Route as ApiAdminProductsRouteImport } from './routes/api/admin/products'
@@ -165,6 +166,11 @@ const ApiUsersOrdersRoute = ApiUsersOrdersRouteImport.update({
   path: '/api/users/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthCheckEmailRoute = ApiAuthCheckEmailRouteImport.update({
+  id: '/api/auth/check-email',
+  path: '/api/auth/check-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminSiteSettingsRoute = ApiAdminSiteSettingsRouteImport.update({
   id: '/api/admin/site-settings',
   path: '/api/admin/site-settings',
@@ -219,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/products': typeof ApiAdminProductsRoute
   '/api/admin/reviews': typeof ApiAdminReviewsRoute
   '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
+  '/api/auth/check-email': typeof ApiAuthCheckEmailRoute
   '/api/users/orders': typeof ApiUsersOrdersRoute
   '/api/users/profile': typeof ApiUsersProfileRoute
   '/api/users/sync': typeof ApiUsersSyncRoute
@@ -251,6 +258,7 @@ export interface FileRoutesByTo {
   '/api/admin/products': typeof ApiAdminProductsRoute
   '/api/admin/reviews': typeof ApiAdminReviewsRoute
   '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
+  '/api/auth/check-email': typeof ApiAuthCheckEmailRoute
   '/api/users/orders': typeof ApiUsersOrdersRoute
   '/api/users/profile': typeof ApiUsersProfileRoute
   '/api/users/sync': typeof ApiUsersSyncRoute
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   '/api/admin/products': typeof ApiAdminProductsRoute
   '/api/admin/reviews': typeof ApiAdminReviewsRoute
   '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
+  '/api/auth/check-email': typeof ApiAuthCheckEmailRoute
   '/api/users/orders': typeof ApiUsersOrdersRoute
   '/api/users/profile': typeof ApiUsersProfileRoute
   '/api/users/sync': typeof ApiUsersSyncRoute
@@ -318,6 +327,7 @@ export interface FileRouteTypes {
     | '/api/admin/products'
     | '/api/admin/reviews'
     | '/api/admin/site-settings'
+    | '/api/auth/check-email'
     | '/api/users/orders'
     | '/api/users/profile'
     | '/api/users/sync'
@@ -350,6 +360,7 @@ export interface FileRouteTypes {
     | '/api/admin/products'
     | '/api/admin/reviews'
     | '/api/admin/site-settings'
+    | '/api/auth/check-email'
     | '/api/users/orders'
     | '/api/users/profile'
     | '/api/users/sync'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/api/admin/products'
     | '/api/admin/reviews'
     | '/api/admin/site-settings'
+    | '/api/auth/check-email'
     | '/api/users/orders'
     | '/api/users/profile'
     | '/api/users/sync'
@@ -415,6 +427,7 @@ export interface RootRouteChildren {
   ApiAdminProductsRoute: typeof ApiAdminProductsRoute
   ApiAdminReviewsRoute: typeof ApiAdminReviewsRoute
   ApiAdminSiteSettingsRoute: typeof ApiAdminSiteSettingsRoute
+  ApiAuthCheckEmailRoute: typeof ApiAuthCheckEmailRoute
   ApiUsersOrdersRoute: typeof ApiUsersOrdersRoute
   ApiUsersProfileRoute: typeof ApiUsersProfileRoute
   ApiUsersSyncRoute: typeof ApiUsersSyncRoute
@@ -597,6 +610,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUsersOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/check-email': {
+      id: '/api/auth/check-email'
+      path: '/api/auth/check-email'
+      fullPath: '/api/auth/check-email'
+      preLoaderRoute: typeof ApiAuthCheckEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/site-settings': {
       id: '/api/admin/site-settings'
       path: '/api/admin/site-settings'
@@ -663,6 +683,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminProductsRoute: ApiAdminProductsRoute,
   ApiAdminReviewsRoute: ApiAdminReviewsRoute,
   ApiAdminSiteSettingsRoute: ApiAdminSiteSettingsRoute,
+  ApiAuthCheckEmailRoute: ApiAuthCheckEmailRoute,
   ApiUsersOrdersRoute: ApiUsersOrdersRoute,
   ApiUsersProfileRoute: ApiUsersProfileRoute,
   ApiUsersSyncRoute: ApiUsersSyncRoute,

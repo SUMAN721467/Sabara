@@ -40,11 +40,11 @@ function SignupPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
-  const [age, setAge] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [busy, setBusy] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [emailExists, setEmailExists] = useState(false);
 
   // Countdown timer for OTP resend
   useEffect(() => {
@@ -57,6 +57,26 @@ function SignupPage() {
   const onSubmitDetails = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
+    setEmailExists(false);
+
+    // Pre-check if email already exists to prevent Supabase from sending a fake OTP
+    try {
+      const res = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        const { exists } = await res.json();
+        if (exists) {
+          setEmailExists(true);
+          setBusy(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not pre-check email");
+    }
 
     // signUp with emailRedirectTo disabled — we want OTP verification, not a link
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -73,7 +93,17 @@ function SignupPage() {
     setBusy(false);
 
     if (authError) {
-      toast.error(authError.message);
+      if (authError.message.toLowerCase().includes("already registered")) {
+        setEmailExists(true);
+      } else {
+        toast.error(authError.message);
+      }
+      return;
+    }
+
+    // Check if the user already exists (identities array is missing/empty, or user is completely null when email enumeration protection is ON)
+    if (!authData?.user || !authData.user.identities || authData.user.identities.length === 0) {
+      setEmailExists(true);
       return;
     }
 
@@ -127,7 +157,6 @@ function SignupPage() {
         },
         body: JSON.stringify({
           fullName,
-          age,
           phone,
           address: null,
         }),
@@ -252,6 +281,23 @@ function SignupPage() {
         <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or register with email</span></div>
       </div>
 
+      {emailExists && (
+        <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
+          <p className="font-medium">This email is already registered.</p>
+          <p className="mt-1 text-destructive/80">
+            Please{" "}
+            <Link to="/login" className="font-semibold underline hover:text-destructive">
+              log in
+            </Link>{" "}
+            or use the{" "}
+            <Link to="/login" search={{ view: "forgot-password" }} className="font-semibold underline hover:text-destructive">
+              forgot password
+            </Link>{" "}
+            page to recover your account.
+          </p>
+        </div>
+      )}
+
       <form onSubmit={onSubmitDetails} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -285,20 +331,23 @@ function SignupPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <label className="text-sm text-foreground">Full Name</label>
-            <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" />
-          </div>
-          <div>
-            <label className="text-sm text-foreground">Age</label>
-            <input type="number" required value={age} onChange={(e) => setAge(e.target.value)} className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+        <div>
+          <label className="text-sm text-foreground">Full Name</label>
+          <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" />
         </div>
 
         <div>
           <label className="text-sm text-foreground">Phone Number</label>
-          <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" />
+          <input 
+            type="tel" 
+            required 
+            maxLength={10}
+            pattern="[0-9]{10}"
+            title="Please enter a 10-digit phone number"
+            value={phone} 
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} 
+            className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" 
+          />
         </div>
 
         <button

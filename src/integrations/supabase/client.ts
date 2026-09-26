@@ -20,7 +20,7 @@ function createSupabaseClient() {
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
-      storage: typeof window !== 'undefined' ? localStorage : undefined,
+      storage: typeof window !== 'undefined' ? sessionStorage : undefined,
       storageKey: 'sabara-auth-token',   // namespaced key, avoids conflicts
       persistSession: true,              // keep session across page reloads
       autoRefreshToken: true,            // silently refresh access token before expiry

@@ -5365,7 +5365,7 @@ function ReviewsAdmin({ initialReviews, onRefresh }: { initialReviews: any[]; on
                     {r.comment || <span className="text-muted-foreground italic">No written comment</span>}
                   </TableCell>
                   <TableCell>
-                    {r.images && r.images.length > 0 ? (
+                    {Array.isArray(r.images) && r.images.length > 0 ? (
                       <div className="flex gap-1">
                         {r.images.map((img: string, idx: number) => (
                           <a

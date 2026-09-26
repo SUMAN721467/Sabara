@@ -23,6 +23,7 @@ import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { SearchModal } from "./SearchModal";
 import { toast } from "sonner";
 
 const links = [
@@ -698,35 +699,10 @@ export function Navbar() {
             </Link>
           </div>
         </div>
-
-        {/* ── Search bar ─────────────────────────────────────────────────────── */}
-        <div
-          className={cn(
-            "overflow-hidden border-t border-border/60 transition-[max-height] duration-300",
-            searchOpen ? "max-h-24" : "max-h-0",
-          )}
-        >
-          <form
-            onSubmit={onSearch}
-            className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 sm:px-6"
-          >
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <input
-              autoFocus={searchOpen}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search mats by name, material, category…"
-              className="h-9 flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background"
-            >
-              Search
-            </button>
-          </form>
-        </div>
       </header>
+      
+      {/* Search Modal */}
+      <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
 }

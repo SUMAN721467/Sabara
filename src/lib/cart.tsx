@@ -63,19 +63,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // 1. Hydrate cart lines from localStorage
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setLines(JSON.parse(raw));
-    } catch {}
     setHydrated(true);
   }, []);
 
   // 2. Persist cart lines to localStorage
   useEffect(() => {
     if (!hydrated) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
-    } catch {}
   }, [lines, hydrated]);
 
   // 3. Fetch products dynamically from the database

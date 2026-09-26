@@ -62,19 +62,12 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   // 1. Hydrate wishlist from localStorage
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setWishlist(JSON.parse(raw));
-    } catch {}
     setHydrated(true);
   }, []);
 
   // 2. Persist wishlist to localStorage
   useEffect(() => {
     if (!hydrated) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(wishlist));
-    } catch {}
   }, [wishlist, hydrated]);
 
   // 3. Fetch products dynamically from the database

@@ -123,37 +123,37 @@ export async function dispatchEmail({ to, subject, html }: { to: string; subject
     }
   }
 
-  // 2. Try sending via Resend API if configured
-  const apiKey = process.env.RESEND_API_KEY;
-  if (apiKey) {
+  // 2. Try sending via Brevo API if configured
+  const brevoApiKey = process.env.BREVO_API_KEY;
+  if (brevoApiKey) {
     try {
-      const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+      const fromEmail = process.env.BREVO_FROM_EMAIL || "admin@sabara.in";
       const fromName = "Sabara";
-      const fromHeader = `${fromName} <${fromEmail}>`;
 
-      const res = await fetch("https://api.resend.com/emails", {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
         headers: {
+          "Accept": "application/json",
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
+          "api-key": brevoApiKey
         },
         body: JSON.stringify({
-          from: fromHeader,
-          to: [to],
+          sender: { name: fromName, email: fromEmail },
+          to: [{ email: to }],
           subject,
-          html
+          htmlContent: html
         })
       });
 
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(`Resend API returned status ${res.status}: ${text}`);
+        throw new Error(`Brevo API returned status ${res.status}: ${text}`);
       }
 
-      console.log(`[Email Service] Sent email to ${to} via Resend API`);
-      return { success: true, method: "Resend" };
-    } catch (resendErr: any) {
-      console.error("[Email Service] Resend API fallback failed", resendErr.message);
+      console.log(`[Email Service] Sent email to ${to} via Brevo API`);
+      return { success: true, method: "Brevo" };
+    } catch (brevoErr: any) {
+      console.error("[Email Service] Brevo API fallback failed", brevoErr.message);
     }
   }
 

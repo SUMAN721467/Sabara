@@ -111,10 +111,13 @@ function Shop() {
   );
   const [sort, setSort] = useState<Sort>("featured");
   const [query, setQuery] = useState(search.q ?? "");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 12;
 
   // Sync URL changes (e.g. from navbar search) into local input
   useEffect(() => {
     setQuery(search.q ?? "");
+    setPage(1); // Reset page on search change
   }, [search.q]);
 
   const { data, isLoading, isError } = useQuery({
@@ -158,11 +161,13 @@ function Shop() {
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setPage(1);
     navigate({ search: { q: query.trim() || undefined, category: cat !== "All" ? cat : undefined } });
   };
 
   const onCategory = (c: Category | "All") => {
     setCat(c);
+    setPage(1);
     navigate({ search: { q: search.q, category: c !== "All" ? c : undefined } });
   };
 
@@ -259,13 +264,24 @@ function Shop() {
             <ProductCardSkeleton key={i} />
           ))
         ) : (
-          visible.map((p, i) => (
+          visible.slice(0, page * PAGE_SIZE).map((p, i) => (
             <ScrollReveal key={p.id} variant="fade-up" delay={(i % 8) * 60} duration={600} once={true}>
               <ProductCard product={p} />
             </ScrollReveal>
           ))
         )}
       </div>
+
+      {!isLoading && visible.length > page * PAGE_SIZE && (
+        <div className="mt-12 flex justify-center">
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded-full border border-border px-8 py-2.5 text-sm font-medium transition-colors hover:bg-foreground hover:text-background"
+          >
+            Load More
+          </button>
+        </div>
+      )}
 
       {!isLoading && visible.length === 0 && (
         <p className="mt-12 text-center text-muted-foreground animate-in fade-in duration-300">

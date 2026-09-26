@@ -1023,7 +1023,7 @@ function ProductPage() {
                             </p>
 
                             {/* Review Photos */}
-                            {review.images && review.images.length > 0 && (
+                            {Array.isArray(review.images) && review.images.length > 0 && (
                               <div className="flex gap-2 pt-0.5 pl-1">
                                 {review.images.map((img: string, i: number) => (
                                   <button
