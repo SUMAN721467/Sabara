@@ -202,12 +202,15 @@ export async function sendOrderEmails({ order, items, origin }: EmailPayload) {
   const itemsRowsHtml = buildItemsHtml(items);
 
   const customerHtml = `
-    <div style="${emailStyle}">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #f3f4f4; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);">
+    <div style="${emailStyle} background-color: #F9F8F4;">
+      <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #EBE7E0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
         <tr>
-          <td align="center" style="background-color: #faf7f2; padding: 40px 20px; border-bottom: 1px solid #f1ece4;">
-            <div style="font-family: Georgia, serif; font-size: 28px; letter-spacing: 0.1em; color: #3d3a35; text-transform: uppercase; font-weight: 500;">S A B A R A</div>
-            <div style="font-size: 12px; letter-spacing: 0.2em; color: #8c857b; text-transform: uppercase; margin-top: 4px;">Woven with Tradition</div>
+          <td align="center" style="background-color: #FDFCF8; padding: 40px 20px; border-bottom: 1px solid #EBE7E0;">
+            <!-- Logo Image (Replace the src with your actual hosted logo URL like Supabase storage) -->
+            <!-- <img src="https://sabara.in/logo.png" alt="Sabara" width="180" style="display: block; margin: 0 auto 12px auto; max-width: 100%; height: auto;" /> -->
+            
+            <div style="font-family: Georgia, serif; font-size: 36px; letter-spacing: 0.15em; color: #4A5320; text-transform: uppercase; font-weight: 500;">SABARA</div>
+            <div style="font-size: 14px; letter-spacing: 0.2em; color: #8B5A2B; text-transform: uppercase; margin-top: 6px; font-style: italic;">Woven with Tradition</div>
           </td>
         </tr>
         <tr>
