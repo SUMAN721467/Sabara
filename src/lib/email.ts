@@ -206,11 +206,7 @@ export async function sendOrderEmails({ order, items, origin }: EmailPayload) {
       <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #EBE7E0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
         <tr>
           <td align="center" style="background-color: #FDFCF8; padding: 40px 20px; border-bottom: 1px solid #EBE7E0;">
-            <!-- Logo Image (Replace the src with your actual hosted logo URL like Supabase storage) -->
-            <!-- <img src="https://sabara.in/logo.png" alt="Sabara" width="180" style="display: block; margin: 0 auto 12px auto; max-width: 100%; height: auto;" /> -->
-            
-            <div style="font-family: Georgia, serif; font-size: 36px; letter-spacing: 0.15em; color: #4A5320; text-transform: uppercase; font-weight: 500;">SABARA</div>
-            <div style="font-size: 14px; letter-spacing: 0.2em; color: #8B5A2B; text-transform: uppercase; margin-top: 6px; font-style: italic;">Woven with Tradition</div>
+            <img src="https://auzyzlrimtjmzbkimtvz.supabase.co/storage/v1/object/public/asset/sabara%20logo.png" alt="Sabara" width="180" style="display: block; margin: 0 auto; max-width: 100%; height: auto;" />
           </td>
         </tr>
         <tr>
