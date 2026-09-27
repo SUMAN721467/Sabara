@@ -101,9 +101,8 @@ function SignupPage() {
       return;
     }
 
-    // Check if the user already exists (identities array is missing/empty, or user is completely null when email enumeration protection is ON)
-    if (!authData?.user || !authData.user.identities || authData.user.identities.length === 0) {
-      setEmailExists(true);
+    if (!authData?.user) {
+      toast.error("An unexpected error occurred. Please try again.");
       return;
     }
 

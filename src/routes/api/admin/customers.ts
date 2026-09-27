@@ -117,7 +117,7 @@ export const Route = createFileRoute("/api/admin/customers")({
           const orders = dbOrders || [];
 
           // Fetch auth users from Supabase Auth using admin client to get email and phone
-          const authUserMap: Record<string, { email?: string; phone?: string }> = {};
+          const authUserMap: Record<string, { email?: string; phone?: string; emailConfirmed?: boolean }> = {};
           if (useAdmin) {
             try {
               const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
@@ -125,7 +125,8 @@ export const Route = createFileRoute("/api/admin/customers")({
                 listData.users.forEach((u) => {
                   authUserMap[u.id] = {
                     email: u.email || undefined,
-                    phone: u.phone || u.user_metadata?.phone || undefined
+                    phone: u.phone || u.user_metadata?.phone || undefined,
+                    emailConfirmed: !!u.email_confirmed_at
                   };
                 });
               } else if (listError) {
@@ -210,7 +211,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               cart: profile.cart || [],
               wishlist: profile.wishlist || [],
               loginMethod: profile.login_method || "email",
-              avatarUrl: profile.avatar_url || null
+              avatarUrl: profile.avatar_url || null,
+              emailConfirmed: authUser?.emailConfirmed || false
             });
           });
 

@@ -36,7 +36,7 @@ export const Route = createFileRoute("/api/auth/check-email")({
           }
 
           const userExists = data.users.some(
-            (u) => u.email?.toLowerCase() === email.toLowerCase()
+            (u) => u.email?.toLowerCase() === email.toLowerCase() && !!u.email_confirmed_at
           );
 
           return Response.json({ exists: userExists });

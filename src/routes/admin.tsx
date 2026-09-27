@@ -2564,7 +2564,7 @@ function CustomersAdmin({
     const aov = c.totalOrders > 0 ? c.totalSpent / c.totalOrders : 0;
 
     // Login Method Styling
-    const getLoginMethodUI = (method: string) => {
+    const getLoginMethodUI = (method: string, emailConfirmed?: boolean) => {
       const formatted = (method || "").toLowerCase();
       if (formatted === "google") {
         return {
@@ -2579,15 +2579,20 @@ function CustomersAdmin({
           icon: <Users className="h-4 w-4 text-slate-500 mr-1.5" />
         };
       } else {
+        const isVerified = emailConfirmed === true;
+        const verifiedText = isVerified ? " (Verified)" : " (Unverified)";
+        const badgeClasses = isVerified 
+          ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25"
+          : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25";
         return {
-          label: "Email / Password",
-          badge: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25",
-          icon: <Mail className="h-4 w-4 text-indigo-500 mr-1.5" />
+          label: `Email / Password${verifiedText}`,
+          badge: badgeClasses,
+          icon: <Mail className={`h-4 w-4 mr-1.5 ${isVerified ? 'text-indigo-500' : 'text-amber-500'}`} />
         };
       }
     };
 
-    const loginUI = getLoginMethodUI(c.loginMethod);
+    const loginUI = getLoginMethodUI(c.loginMethod, c.emailConfirmed);
 
     return (
       <div className="space-y-6">
