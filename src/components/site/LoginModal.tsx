@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { AuthService } from "@/services/auth.service";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, X, AlertCircle } from "lucide-react";
 import logoImg from "@/assets/Sabara-logo.png";
 import { Link } from "@tanstack/react-router";
 
@@ -12,6 +12,8 @@ export function LoginModal() {
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
   const [otpToken, setOtpToken] = useState("");
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState(0);
   const [busy, setBusy] = useState(false);
 
   // Close when pressing Escape key
@@ -31,9 +33,19 @@ export function LoginModal() {
     if (!isLoginModalOpen) {
       setStep("email");
       setOtpToken("");
+      setOtpError(null);
       setBusy(false);
     }
   }, [isLoginModalOpen]);
+
+  // Count down resend timer
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const timer = setInterval(() => {
+      setResendTimer((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendTimer]);
 
   if (!isLoginModalOpen || user) return null;
 
@@ -45,10 +57,11 @@ export function LoginModal() {
     }
   };
 
-  const handleSendOtp = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSendOtp = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
     if (!email) return;
     setBusy(true);
+    setOtpError(null);
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -62,12 +75,14 @@ export function LoginModal() {
     }
     toast.success("OTP sent to your email!");
     setStep("otp");
+    setResendTimer(30);
   };
 
   const handleVerifyOtp = async (e: FormEvent) => {
     e.preventDefault();
     if (!otpToken) return;
     setBusy(true);
+    setOtpError(null);
     const { error } = await supabase.auth.verifyOtp({
       email,
       token: otpToken.trim(),
@@ -75,7 +90,12 @@ export function LoginModal() {
     });
     setBusy(false);
     if (error) {
-      toast.error(error.message);
+      const msg = error.message.toLowerCase();
+      if (msg.includes("invalid") || msg.includes("expired") || msg.includes("token")) {
+        setOtpError("Wrong OTP. Please enter the correct 6-digit code.");
+      } else {
+        setOtpError(error.message || "Wrong OTP. Please try again.");
+      }
       return;
     }
     toast.success("Logged in successfully");
@@ -241,10 +261,25 @@ export function LoginModal() {
                       placeholder="000000"
                       maxLength={6}
                       value={otpToken}
-                      onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, ""))}
-                      className="block w-full text-center px-3 sm:px-4 py-3 sm:py-4 rounded-xl border-2 border-border/80 bg-white text-xl sm:text-2xl tracking-[0.35em] sm:tracking-[0.5em] font-mono focus:border-primary focus:ring-0 transition-colors outline-none shadow-sm"
+                      onChange={(e) => {
+                        setOtpError(null);
+                        setOtpToken(e.target.value.replace(/\D/g, ""));
+                      }}
+                      className={`block w-full text-center px-3 sm:px-4 py-3 sm:py-4 rounded-xl border-2 bg-white text-xl sm:text-2xl tracking-[0.35em] sm:tracking-[0.5em] font-mono focus:ring-0 transition-colors outline-none shadow-sm ${
+                        otpError
+                          ? "border-red-500 text-red-600 focus:border-red-500 bg-red-50/30"
+                          : "border-border/80 focus:border-primary text-foreground"
+                      }`}
                     />
                   </div>
+
+                  {/* Inline Error Message before Verify button */}
+                  {otpError && (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-semibold animate-in fade-in slide-in-from-top-1 duration-200">
+                      <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                      <span>{otpError}</span>
+                    </div>
+                  )}
 
                   <button
                     type="submit"
@@ -254,13 +289,25 @@ export function LoginModal() {
                     {busy ? "Verifying…" : "Verify & Log in"}
                   </button>
 
-                  <div className="flex items-center justify-center mt-5 sm:mt-6">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-4 px-1">
                     <button
                       type="button"
-                      onClick={() => setStep("email")}
-                      className="flex items-center gap-1.5 text-xs sm:text-[13px] text-muted-foreground hover:text-foreground cursor-pointer font-medium transition-colors touch-manipulation py-1 px-2"
+                      onClick={() => {
+                        setStep("email");
+                        setOtpError(null);
+                      }}
+                      className="flex items-center gap-1.5 hover:text-foreground cursor-pointer font-medium transition-colors touch-manipulation py-1"
                     >
-                      <ArrowLeft className="h-4 w-4" /> Change email
+                      <ArrowLeft className="h-3.5 w-3.5" /> Change email
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSendOtp()}
+                      disabled={busy || resendTimer > 0}
+                      className="text-primary hover:underline cursor-pointer font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline py-1"
+                    >
+                      {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend code"}
                     </button>
                   </div>
                 </form>
