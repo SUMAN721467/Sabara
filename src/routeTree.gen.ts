@@ -34,6 +34,8 @@ import { Route as ApiCancelOrderRouteImport } from './routes/api/cancel-order'
 import { Route as ApiUsersSyncRouteImport } from './routes/api/users/sync'
 import { Route as ApiUsersProfileRouteImport } from './routes/api/users/profile'
 import { Route as ApiUsersOrdersRouteImport } from './routes/api/users/orders'
+import { Route as ApiAuthVerifySignupOtpRouteImport } from './routes/api/auth/verify-signup-otp'
+import { Route as ApiAuthSendSignupOtpRouteImport } from './routes/api/auth/send-signup-otp'
 import { Route as ApiAuthCheckEmailRouteImport } from './routes/api/auth/check-email'
 import { Route as ApiAdminSiteSettingsRouteImport } from './routes/api/admin/site-settings'
 import { Route as ApiAdminReviewsRouteImport } from './routes/api/admin/reviews'
@@ -166,6 +168,16 @@ const ApiUsersOrdersRoute = ApiUsersOrdersRouteImport.update({
   path: '/api/users/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthVerifySignupOtpRoute = ApiAuthVerifySignupOtpRouteImport.update({
+  id: '/api/auth/verify-signup-otp',
+  path: '/api/auth/verify-signup-otp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSendSignupOtpRoute = ApiAuthSendSignupOtpRouteImport.update({
+  id: '/api/auth/send-signup-otp',
+  path: '/api/auth/send-signup-otp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthCheckEmailRoute = ApiAuthCheckEmailRouteImport.update({
   id: '/api/auth/check-email',
   path: '/api/auth/check-email',
@@ -226,6 +238,8 @@ export interface FileRoutesByFullPath {
   '/api/admin/reviews': typeof ApiAdminReviewsRoute
   '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
   '/api/auth/check-email': typeof ApiAuthCheckEmailRoute
+  '/api/auth/send-signup-otp': typeof ApiAuthSendSignupOtpRoute
+  '/api/auth/verify-signup-otp': typeof ApiAuthVerifySignupOtpRoute
   '/api/users/orders': typeof ApiUsersOrdersRoute
   '/api/users/profile': typeof ApiUsersProfileRoute
   '/api/users/sync': typeof ApiUsersSyncRoute
@@ -259,6 +273,8 @@ export interface FileRoutesByTo {
   '/api/admin/reviews': typeof ApiAdminReviewsRoute
   '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
   '/api/auth/check-email': typeof ApiAuthCheckEmailRoute
+  '/api/auth/send-signup-otp': typeof ApiAuthSendSignupOtpRoute
+  '/api/auth/verify-signup-otp': typeof ApiAuthVerifySignupOtpRoute
   '/api/users/orders': typeof ApiUsersOrdersRoute
   '/api/users/profile': typeof ApiUsersProfileRoute
   '/api/users/sync': typeof ApiUsersSyncRoute
@@ -293,6 +309,8 @@ export interface FileRoutesById {
   '/api/admin/reviews': typeof ApiAdminReviewsRoute
   '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
   '/api/auth/check-email': typeof ApiAuthCheckEmailRoute
+  '/api/auth/send-signup-otp': typeof ApiAuthSendSignupOtpRoute
+  '/api/auth/verify-signup-otp': typeof ApiAuthVerifySignupOtpRoute
   '/api/users/orders': typeof ApiUsersOrdersRoute
   '/api/users/profile': typeof ApiUsersProfileRoute
   '/api/users/sync': typeof ApiUsersSyncRoute
@@ -328,6 +346,8 @@ export interface FileRouteTypes {
     | '/api/admin/reviews'
     | '/api/admin/site-settings'
     | '/api/auth/check-email'
+    | '/api/auth/send-signup-otp'
+    | '/api/auth/verify-signup-otp'
     | '/api/users/orders'
     | '/api/users/profile'
     | '/api/users/sync'
@@ -361,6 +381,8 @@ export interface FileRouteTypes {
     | '/api/admin/reviews'
     | '/api/admin/site-settings'
     | '/api/auth/check-email'
+    | '/api/auth/send-signup-otp'
+    | '/api/auth/verify-signup-otp'
     | '/api/users/orders'
     | '/api/users/profile'
     | '/api/users/sync'
@@ -394,6 +416,8 @@ export interface FileRouteTypes {
     | '/api/admin/reviews'
     | '/api/admin/site-settings'
     | '/api/auth/check-email'
+    | '/api/auth/send-signup-otp'
+    | '/api/auth/verify-signup-otp'
     | '/api/users/orders'
     | '/api/users/profile'
     | '/api/users/sync'
@@ -428,6 +452,8 @@ export interface RootRouteChildren {
   ApiAdminReviewsRoute: typeof ApiAdminReviewsRoute
   ApiAdminSiteSettingsRoute: typeof ApiAdminSiteSettingsRoute
   ApiAuthCheckEmailRoute: typeof ApiAuthCheckEmailRoute
+  ApiAuthSendSignupOtpRoute: typeof ApiAuthSendSignupOtpRoute
+  ApiAuthVerifySignupOtpRoute: typeof ApiAuthVerifySignupOtpRoute
   ApiUsersOrdersRoute: typeof ApiUsersOrdersRoute
   ApiUsersProfileRoute: typeof ApiUsersProfileRoute
   ApiUsersSyncRoute: typeof ApiUsersSyncRoute
@@ -610,6 +636,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUsersOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/verify-signup-otp': {
+      id: '/api/auth/verify-signup-otp'
+      path: '/api/auth/verify-signup-otp'
+      fullPath: '/api/auth/verify-signup-otp'
+      preLoaderRoute: typeof ApiAuthVerifySignupOtpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/send-signup-otp': {
+      id: '/api/auth/send-signup-otp'
+      path: '/api/auth/send-signup-otp'
+      fullPath: '/api/auth/send-signup-otp'
+      preLoaderRoute: typeof ApiAuthSendSignupOtpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/check-email': {
       id: '/api/auth/check-email'
       path: '/api/auth/check-email'
@@ -684,6 +724,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminReviewsRoute: ApiAdminReviewsRoute,
   ApiAdminSiteSettingsRoute: ApiAdminSiteSettingsRoute,
   ApiAuthCheckEmailRoute: ApiAuthCheckEmailRoute,
+  ApiAuthSendSignupOtpRoute: ApiAuthSendSignupOtpRoute,
+  ApiAuthVerifySignupOtpRoute: ApiAuthVerifySignupOtpRoute,
   ApiUsersOrdersRoute: ApiUsersOrdersRoute,
   ApiUsersProfileRoute: ApiUsersProfileRoute,
   ApiUsersSyncRoute: ApiUsersSyncRoute,

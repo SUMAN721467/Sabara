@@ -32,6 +32,9 @@ type AuthContextValue = {
   /** true for ~2.5 s after a fresh SIGNED_IN event — drives the login popup */
   justLoggedIn: boolean;
   signOut: () => Promise<void>;
+  isLoginModalOpen: boolean;
+  openLoginModal: () => void;
+  closeLoginModal: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -103,6 +106,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [triggerLoginPopup]);
 
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const openLoginModal = useCallback(() => setIsLoginModalOpen(true), []);
+  const closeLoginModal = useCallback(() => setIsLoginModalOpen(false), []);
+
+  // Listen to custom event so any component or link can open it
+  useEffect(() => {
+    const handleOpen = () => setIsLoginModalOpen(true);
+    const handleClose = () => setIsLoginModalOpen(false);
+    window.addEventListener("open-login-modal", handleOpen);
+    window.addEventListener("close-login-modal", handleClose);
+    return () => {
+      window.removeEventListener("open-login-modal", handleOpen);
+      window.removeEventListener("close-login-modal", handleClose);
+    };
+  }, []);
+
+  // Auto-detect ?auth=login or ?login=true in URL on load
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("login") === "true" || params.get("auth") === "login") {
+      setIsLoginModalOpen(true);
+      params.delete("login");
+      params.delete("auth");
+      const newSearch = params.toString() ? `?${params.toString()}` : "";
+      window.history.replaceState(null, "", `${window.location.pathname}${newSearch}`);
+    }
+  }, []);
+
+  // Auto-close modal if user is logged in
+  useEffect(() => {
+    if (session?.user) {
+      setIsLoginModalOpen(false);
+    }
+  }, [session?.user]);
+
   const value: AuthContextValue = {
     user: session?.user ?? null,
     session,
@@ -110,6 +149,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin: isAdminEmail(session?.user?.email),
     justLoggedIn,
     signOut: () => supabase.auth.signOut().then(() => {}),
+    isLoginModalOpen,
+    openLoginModal,
+    closeLoginModal,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

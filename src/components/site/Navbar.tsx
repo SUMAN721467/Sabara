@@ -266,7 +266,7 @@ function AccountPanel({
 export function Navbar() {
   const { count } = useCart();
   const { count: wishlistCount } = useWishlist();
-  const { user, signOut, isAdmin, justLoggedIn } = useAuth();
+  const { user, signOut, isAdmin, justLoggedIn, openLoginModal } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -502,29 +502,20 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    openLoginModal();
+                  }}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary w-full text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span>Sign in</span>
+                    <span>Sign in / Sign up</span>
                   </div>
                   <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
-                </Link>
-
-                <Link
-                  to="/signup"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Sparkles className="h-4 w-4 text-muted-foreground" />
-                    <span>Create account</span>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
-                </Link>
+                </button>
 
                 <Link
                   to="/wishlist"
@@ -662,13 +653,14 @@ export function Navbar() {
                   )}
                 </>
               ) : (
-                <Link
-                  to="/login"
+                <button
+                  type="button"
+                  onClick={openLoginModal}
                   aria-label="Sign in"
                   className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-foreground transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-90 cursor-pointer"
                 >
                   <User className="h-4 w-4 sm:h-5 sm:w-5" />
-                </Link>
+                </button>
               )}
             </div>
 
