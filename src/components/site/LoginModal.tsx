@@ -168,7 +168,7 @@ export function LoginModal() {
                 <button
                   type="button"
                   onClick={handleGoogleLogin}
-                  className="flex w-full min-h-[46px] sm:min-h-[48px] items-center justify-center gap-3 rounded-xl sm:rounded-lg border border-border/80 bg-white px-4 sm:px-5 py-3 sm:py-3.5 text-[13px] sm:text-[14px] font-bold text-foreground transition-all hover:bg-stone-50 btn-interactive touch-manipulation shadow-[0_2px_10px_-4px_rgba(0,0,0,0.06)] active:scale-[0.99]"
+                  className="flex w-full min-h-[46px] sm:min-h-[48px] items-center justify-center gap-3 rounded-xl sm:rounded-lg border border-border/80 bg-white px-4 sm:px-5 py-3 sm:py-3.5 text-[13px] sm:text-[14px] font-bold text-foreground transition-all hover:bg-stone-50 btn-interactive touch-manipulation shadow-[0_2px_10px_-4px_rgba(0,0,0,0.06)] active:scale-[0.99] cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" aria-hidden="true">
                     <path d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z" fill="#EA4335" />

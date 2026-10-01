@@ -55,6 +55,40 @@ function cleanOAuthUrl() {
   window.history.replaceState(null, "", window.location.pathname);
 }
 
+// ── 30-Day Inactivity Session Policy via Cookies (Zero localStorage) ──────────
+const INACTIVITY_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30 days in seconds
+const LAST_ACTIVITY_COOKIE = "sabara-last-activity";
+
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp("(?:^|;\\s*)" + encodeURIComponent(name) + "=([^;]*)"));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function setCookie(name: string, value: string, maxAge = COOKIE_MAX_AGE_SECONDS) {
+  if (typeof document === "undefined") return;
+  const secure = typeof location !== "undefined" && location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+}
+
+function removeCookie(name: string) {
+  if (typeof document === "undefined") return;
+  document.cookie = `${encodeURIComponent(name)}=; path=/; max-age=0; SameSite=Lax`;
+}
+
+export function recordUserActivity() {
+  setCookie(LAST_ACTIVITY_COOKIE, Date.now().toString(), COOKIE_MAX_AGE_SECONDS);
+}
+
+export function isSessionExpiredDueToInactivity(): boolean {
+  if (typeof document === "undefined") return false;
+  const lastActivity = getCookie(LAST_ACTIVITY_COOKIE);
+  if (!lastActivity) return false;
+  const elapsed = Date.now() - parseInt(lastActivity, 10);
+  return elapsed > INACTIVITY_TIMEOUT_MS;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,6 +109,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, s) => {
+      if (s) {
+        if (isSessionExpiredDueToInactivity()) {
+          removeCookie(LAST_ACTIVITY_COOKIE);
+          supabase.auth.signOut().catch(() => {});
+          setSession(null);
+          setLoading(false);
+          return;
+        }
+        recordUserActivity();
+      }
+
       setSession(s);
       setLoading(false);
 
@@ -88,12 +133,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // ── 2. Resolve any existing session (localStorage / cookie) ─────────────
+    // ── 2. Resolve any existing session (cookies) ────────────────────────────
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session && isOAuthCallback()) {
-        triggerLoginPopup();
-        cleanOAuthUrl();
-        setTimeout(() => { window.location.href = "/"; }, 100);
+      if (data.session) {
+        if (isSessionExpiredDueToInactivity()) {
+          removeCookie(LAST_ACTIVITY_COOKIE);
+          supabase.auth.signOut().catch(() => {});
+          setSession(null);
+          setLoading(false);
+          return;
+        }
+        recordUserActivity();
+
+        if (isOAuthCallback()) {
+          triggerLoginPopup();
+          cleanOAuthUrl();
+          setTimeout(() => { window.location.href = "/"; }, 100);
+        }
       }
       setSession(data.session);
       setLoading(false);
@@ -142,13 +198,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [session?.user]);
 
+  // ── Track user activity to maintain 30-day inactivity session ─────────────
+  useEffect(() => {
+    if (!session?.user || typeof window === "undefined") return;
+
+    let lastSaved = Date.now();
+    recordUserActivity();
+
+    const handleActivity = () => {
+      const now = Date.now();
+      // Throttle localStorage updates to once every 5 minutes
+      if (now - lastSaved > 5 * 60 * 1000) {
+        lastSaved = now;
+        recordUserActivity();
+      }
+    };
+
+    const events = ["mousedown", "keydown", "scroll", "touchstart", "click"];
+    events.forEach((evt) => window.addEventListener(evt, handleActivity, { passive: true }));
+
+    const checkInactivity = () => {
+      if (isSessionExpiredDueToInactivity()) {
+        removeCookie(LAST_ACTIVITY_COOKIE);
+        supabase.auth.signOut().catch(() => {});
+        setSession(null);
+      }
+    };
+
+    window.addEventListener("focus", checkInactivity);
+    const hourlyCheck = setInterval(checkInactivity, 60 * 60 * 1000);
+
+    return () => {
+      events.forEach((evt) => window.removeEventListener(evt, handleActivity));
+      window.removeEventListener("focus", checkInactivity);
+      clearInterval(hourlyCheck);
+    };
+  }, [session?.user]);
+
   const value: AuthContextValue = {
     user: session?.user ?? null,
     session,
     loading,
     isAdmin: isAdminEmail(session?.user?.email),
     justLoggedIn,
-    signOut: () => supabase.auth.signOut().then(() => {}),
+    signOut: async () => {
+      removeCookie(LAST_ACTIVITY_COOKIE);
+      try {
+        localStorage.removeItem("sabara-auth-token");
+        localStorage.removeItem("sabara-last-activity");
+      } catch {}
+      await supabase.auth.signOut();
+      setSession(null);
+    },
     isLoginModalOpen,
     openLoginModal,
     closeLoginModal,

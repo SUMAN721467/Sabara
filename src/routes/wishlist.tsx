@@ -14,7 +14,7 @@ export const Route = createFileRoute("/wishlist")({
 function WishlistPage() {
   const { detailed, remove, count, clear } = useWishlist();
   const { add: addToCart, lines } = useCart();
-  const { user } = useAuth();
+  const { user, openLoginModal } = useAuth();
   const navigate = useNavigate();
 
   const handleAddToCart = (product: any) => {
@@ -149,7 +149,7 @@ function WishlistPage() {
                     )
                   ) : (
                     <Button
-                      onClick={() => navigate({ to: "/login", search: { redirect: "/wishlist" } })}
+                      onClick={openLoginModal}
                       variant="secondary"
                       className="flex-1 rounded-full text-sm font-medium py-5 border border-border cursor-pointer"
                     >

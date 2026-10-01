@@ -16,7 +16,7 @@ export const Route = createFileRoute("/cart")({
 
 function CartPage() {
   const { detailed, subtotal, setQty, remove, count } = useCart();
-  const { user } = useAuth();
+  const { user, openLoginModal } = useAuth();
   const navigate = useNavigate();
   const { settings: shippingSettings } = useShippingSettings();
 
@@ -139,22 +139,17 @@ function CartPage() {
       return;
     }
     if (!user) {
-      // User is not logged in: navigate to /login and pass redirect to /checkout
-      navigate({
-        to: "/login",
-        search: {
-          redirect: appliedCoupon ? `/checkout?coupon=${appliedCoupon}` : "/checkout"
-        }
-      });
-    } else {
-      // User is logged in: navigate to /checkout and pass the applied coupon
-      navigate({
-        to: "/checkout",
-        search: {
-          coupon: appliedCoupon || undefined
-        }
-      });
+      toast.info("Please log in to proceed to checkout.");
+      openLoginModal();
+      return;
     }
+    // User is logged in: navigate to /checkout and pass the applied coupon
+    navigate({
+      to: "/checkout",
+      search: {
+        coupon: appliedCoupon || undefined
+      }
+    });
   };
 
   return (
@@ -515,7 +510,7 @@ function CartPage() {
                 disabled={hasOutOfStockItems}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-[4px] py-4 sm:py-6 text-sm sm:text-base font-bold transition-all uppercase tracking-wider shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Proceed to Checkout
+                {!user ? "LOG IN TO CHECKOUT" : "Proceed to Checkout"}
               </Button>
             </aside>
           </div>

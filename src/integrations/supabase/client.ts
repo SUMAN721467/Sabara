@@ -2,6 +2,61 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+const COOKIE_MAX_AGE_30_DAYS = 30 * 24 * 60 * 60; // 30 days in seconds
+
+function getSingleCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + encodeURIComponent(name) + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function setSingleCookie(name: string, value: string, maxAge = COOKIE_MAX_AGE_30_DAYS) {
+  if (typeof document === 'undefined') return;
+  const secure = typeof location !== 'undefined' && location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+}
+
+export const cookieStorage = {
+  getItem: (key: string): string | null => {
+    if (typeof document === 'undefined') return null;
+    const firstChunk = getSingleCookie(`${key}.0`);
+    if (firstChunk !== null) {
+      let full = firstChunk;
+      let i = 1;
+      while (true) {
+        const next = getSingleCookie(`${key}.${i}`);
+        if (next === null) break;
+        full += next;
+        i++;
+      }
+      return full;
+    }
+    return getSingleCookie(key);
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof document === 'undefined') return;
+    const CHUNK_SIZE = 2800;
+    cookieStorage.removeItem(key);
+
+    if (value.length > CHUNK_SIZE) {
+      const chunks = Math.ceil(value.length / CHUNK_SIZE);
+      for (let i = 0; i < chunks; i++) {
+        const chunk = value.substring(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        setSingleCookie(`${key}.${i}`, chunk, COOKIE_MAX_AGE_30_DAYS);
+      }
+    } else {
+      setSingleCookie(key, value, COOKIE_MAX_AGE_30_DAYS);
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof document === 'undefined') return;
+    setSingleCookie(key, '', 0);
+    for (let i = 0; i < 5; i++) {
+      setSingleCookie(`${key}.${i}`, '', 0);
+    }
+  },
+};
+
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
@@ -18,11 +73,20 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
+  // Clear any old localStorage or sessionStorage auth tokens
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem('sabara-auth-token');
+      localStorage.removeItem('sabara-last-activity');
+      sessionStorage.removeItem('sabara-auth-token');
+    } catch {}
+  }
+
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
-      storage: typeof window !== 'undefined' ? sessionStorage : undefined,
-      storageKey: 'sabara-auth-token',   // namespaced key, avoids conflicts
-      persistSession: true,              // keep session across page reloads
+      storage: typeof document !== 'undefined' ? cookieStorage : undefined,
+      storageKey: 'sabara-auth-token',   // namespaced cookie key
+      persistSession: true,              // keep session active for 30 days in cookies
       autoRefreshToken: true,            // silently refresh access token before expiry
       detectSessionInUrl: true,          // exchange the OAuth code from URL after redirect
       flowType: 'pkce',                  // PKCE: tokens never appear in the URL bar

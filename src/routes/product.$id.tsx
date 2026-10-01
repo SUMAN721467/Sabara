@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, ShoppingCart, Minus, Plus, Heart, Star, MessageSquare, X, Loader2, Share2, Ruler, ChevronDown, Truck, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, ShoppingCart, Minus, Plus, Heart, Star, MessageSquare, X, Loader2, Share2, ChevronDown, Truck, RotateCcw, Sparkles, LogIn } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { formatPrice, useCart } from "@/lib/cart";
@@ -335,7 +335,7 @@ function ProductPage() {
   const { product, related, variants } = Route.useLoaderData();
   const { add, lines } = useCart();
   const { toggle: toggleWishlist, has: hasWishlist } = useWishlist();
-  const { user } = useAuth();
+  const { user, openLoginModal } = useAuth();
   const navigate = useNavigate();
   const isWishlisted = hasWishlist(product.id);
   const isInCart = useMemo(() => {
@@ -428,7 +428,6 @@ function ProductPage() {
     delivery: false,
   });
 
-  const [showSizeChart, setShowSizeChart] = useState(false);
   const [isExpressCheckingOut, setIsExpressCheckingOut] = useState(false);
 
   const toggleAccordion = (key: string) => {
@@ -463,6 +462,11 @@ function ProductPage() {
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
+    if (!user) {
+      toast.info("Please log in to add products to your cart.");
+      openLoginModal();
+      return;
+    }
     add(product.id, qty);
     toast.success(`${product.name} (${qty}) added to cart!`);
   };
@@ -472,13 +476,14 @@ function ProductPage() {
       toast.error("This item is currently out of stock.");
       return;
     }
+    if (!user) {
+      toast.info("Please log in to proceed with checkout.");
+      openLoginModal();
+      return;
+    }
     setIsExpressCheckingOut(true);
     add(product.id, qty);
-    if (!user) {
-      navigate({ to: "/login", search: { redirect: "/checkout" } });
-    } else {
-      navigate({ to: "/checkout" });
-    }
+    navigate({ to: "/checkout" });
   };
 
   const galleryImages = useMemo(() => {
@@ -619,21 +624,11 @@ function ProductPage() {
 
           {/* ── Size & Size Chart Section ──────────────────────────── */}
           <div className="mt-5 border-t border-border/60 pt-4">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-foreground">SIZE:</span>
-                <span className="text-xs font-medium text-muted-foreground">
-                  {product.dimensions || "Standard Size"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSizeChart(true)}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer group"
-              >
-                <Ruler className="h-3.5 w-3.5 transition-transform group-hover:rotate-12" />
-                <span className="underline underline-offset-4">Size Chart</span>
-              </button>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-foreground">SIZE:</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                {product.dimensions || "Standard Size"}
+              </span>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -676,6 +671,15 @@ function ProductPage() {
                   className="flex-1 rounded-xl bg-muted text-muted-foreground px-4 text-xs sm:text-sm font-bold tracking-wider uppercase cursor-not-allowed opacity-60 flex items-center justify-center"
                 >
                   Out of Stock
+                </button>
+              ) : !user ? (
+                <button
+                  type="button"
+                  onClick={openLoginModal}
+                  className="flex-1 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-wider uppercase text-xs sm:text-sm shadow-sm transition-all duration-200 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span>LOG IN TO ADD TO CART</span>
                 </button>
               ) : isInCart ? (
                 <button
@@ -736,7 +740,7 @@ function ProductPage() {
             <button
               type="button"
               disabled={isOutOfStock || isExpressCheckingOut}
-              onClick={handleBuyNow}
+              onClick={!user ? openLoginModal : handleBuyNow}
               className={cn(
                 "w-full h-12 rounded-xl font-bold tracking-wider uppercase text-xs sm:text-sm shadow-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]",
                 isOutOfStock
@@ -748,6 +752,11 @@ function ProductPage() {
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span>Processing Express Checkout...</span>
+                </>
+              ) : !user ? (
+                <>
+                  <LogIn className="h-4 w-4" />
+                  <span>LOG IN TO BUY NOW</span>
                 </>
               ) : (
                 <span>BUY IT NOW (EXPRESS CHECKOUT)</span>
@@ -1067,144 +1076,7 @@ function ProductPage() {
       </div>
 
 
-      {/* Size Chart Modal */}
-      {showSizeChart && (
-        <div
-          onClick={() => setShowSizeChart(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card border border-border p-6 shadow-2xl animate-in zoom-in-95 duration-200"
-          >
-            {/* Header */}
-            <div className="flex items-start justify-between border-b border-border/60 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
-                  <Ruler className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-serif text-xl font-bold text-foreground">Size & Placement Guide</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Standard dimensions for handwoven natural mats & recommended placements
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSizeChart(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer"
-                aria-label="Close size guide"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
 
-            {/* Current Product Size Highlight */}
-            {product.dimensions && (
-              <div className="mt-4 flex items-center justify-between rounded-xl bg-primary/5 border border-primary/20 p-3.5">
-                <div className="flex items-center gap-2">
-                  <span className="inline-block h-2 w-2 rounded-full bg-primary" />
-                  <span className="text-xs font-semibold text-foreground">This Product's Dimensions:</span>
-                </div>
-                <span className="rounded-md bg-primary text-primary-foreground font-mono font-bold text-xs px-2.5 py-1">
-                  {product.dimensions}
-                </span>
-              </div>
-            )}
-
-            {/* Dimensions Table */}
-            <div className="mt-5 overflow-hidden rounded-xl border border-border/60">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-secondary/50 text-foreground font-semibold border-b border-border/60">
-                  <tr>
-                    <th className="p-3">Category / Use</th>
-                    <th className="p-3">Feet (ft)</th>
-                    <th className="p-3">Inches (in)</th>
-                    <th className="p-3">Metric (cm)</th>
-                    <th className="p-3">Ideal Placement</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40 text-muted-foreground">
-                  <tr className="hover:bg-secondary/20">
-                    <td className="p-3 font-medium text-foreground">Large Floor Chatai</td>
-                    <td className="p-3 font-mono">6.5 × 4.5 ft</td>
-                    <td className="p-3 font-mono">78 × 54 in</td>
-                    <td className="p-3 font-mono">198 × 137 cm</td>
-                    <td className="p-3">Living room, bedroom seating</td>
-                  </tr>
-                  <tr className="hover:bg-secondary/20">
-                    <td className="p-3 font-medium text-foreground">Medium Floor Mat</td>
-                    <td className="p-3 font-mono">5.0 × 3.0 ft</td>
-                    <td className="p-3 font-mono">60 × 36 in</td>
-                    <td className="p-3 font-mono">152 × 91 cm</td>
-                    <td className="p-3">Bedside, prayer / pooja corner</td>
-                  </tr>
-                  <tr className="hover:bg-secondary/20">
-                    <td className="p-3 font-medium text-foreground">Yoga & Fitness Mat</td>
-                    <td className="p-3 font-mono">6.0 × 2.2 ft</td>
-                    <td className="p-3 font-mono">72 × 26 in</td>
-                    <td className="p-3 font-mono">183 × 66 cm</td>
-                    <td className="p-3">Yoga studio, workout, meditation</td>
-                  </tr>
-                  <tr className="hover:bg-secondary/20">
-                    <td className="p-3 font-medium text-foreground">Round Accent Mat</td>
-                    <td className="p-3 font-mono">Ø 3.0 ft</td>
-                    <td className="p-3 font-mono">Ø 36 in</td>
-                    <td className="p-3 font-mono">Ø 90 cm</td>
-                    <td className="p-3">Coffee table base, nursery, accent</td>
-                  </tr>
-                  <tr className="hover:bg-secondary/20">
-                    <td className="p-3 font-medium text-foreground">Dining Table Mat (Set)</td>
-                    <td className="p-3 font-mono">1.5 × 1.0 ft</td>
-                    <td className="p-3 font-mono">18 × 12 in</td>
-                    <td className="p-3 font-mono">45 × 30 cm</td>
-                    <td className="p-3">Dining table setting, hot plates</td>
-                  </tr>
-                  <tr className="hover:bg-secondary/20">
-                    <td className="p-3 font-medium text-foreground">Doormat / Entryway</td>
-                    <td className="p-3 font-mono">2.0 × 1.3 ft</td>
-                    <td className="p-3 font-mono">24 × 16 in</td>
-                    <td className="p-3 font-mono">60 × 40 cm</td>
-                    <td className="p-3">Main entrance, patio, balcony</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Practical Measuring Tips */}
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="rounded-xl border border-border/60 bg-secondary/20 p-3.5 space-y-1">
-                <span className="font-semibold text-foreground flex items-center gap-1.5">
-                  📐 Placement Rule of Thumb
-                </span>
-                <p className="text-muted-foreground leading-relaxed">
-                  For living rooms, leave at least 8–12 inches of floor visible around the mat for a balanced aesthetic.
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-secondary/20 p-3.5 space-y-1">
-                <span className="font-semibold text-foreground flex items-center gap-1.5">
-                  🌿 Natural Weave Note
-                </span>
-                <p className="text-muted-foreground leading-relaxed">
-                  As each mat is handwoven from natural fibres, slight ±0.5 inch variations are inherent proof of artisanal craftsmanship.
-                </p>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowSizeChart(false)}
-                className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs hover:bg-primary/90 transition-colors cursor-pointer"
-              >
-                Got It
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Lightbox / Image Zoom Overlay */}
       {lightboxImage && (
