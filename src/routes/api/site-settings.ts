@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createClient } from "@supabase/supabase-js";
+import { getServerSupabase } from "@/lib/supabase-server";
 
 let settingsCache: Record<string, { value: any; timestamp: number }> = {};
 const SETTINGS_CACHE_TTL = 120000; // 120 seconds (2 minutes)
@@ -19,12 +19,7 @@ export async function getSiteSetting(key: string): Promise<any> {
     return cached.value;
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing Supabase configuration on server");
-  }
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getServerSupabase();
 
   const { data, error } = await supabase
     .from("site_settings")

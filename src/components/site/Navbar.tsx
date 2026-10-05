@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import logoImg from "@/assets/Sabara-logo.png";
+import logoImg from "@/assets/Sabara-logo.webp";
 import {
   ShoppingBag,
   ShoppingCart,

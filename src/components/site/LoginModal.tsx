@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { AuthService } from "@/services/auth.service";
 import { ArrowLeft, X, AlertCircle } from "lucide-react";
-import logoImg from "@/assets/Sabara-logo.png";
+import logoImg from "@/assets/Sabara-logo.webp";
 import { Link } from "@tanstack/react-router";
 
 export function LoginModal() {

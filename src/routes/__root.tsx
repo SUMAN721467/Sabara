@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import faviconIcon from "../assets/round logo.png";
+import faviconIcon from "../assets/favicon.webp";
 import { buildPageMeta } from "@/lib/seo";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
@@ -115,9 +115,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         ...defaultMeta.meta,
       ],
       links: [
-        { rel: "preconnect", href: "https://fonts.googleapis.com" },
-        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-        { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Work+Sans:wght@300;400;500;600&display=swap" },
         { rel: "stylesheet", href: appCss },
         { rel: "icon", href: faviconIcon },
         ...defaultMeta.links,
@@ -135,6 +132,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Work+Sans:wght@300;400;500;600&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Work+Sans:wght@300;400;500;600&display=swap" media="print" onLoad={(e) => { e.currentTarget.media = 'all'; }} />
+        <noscript>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Work+Sans:wght@300;400;500;600&display=swap" />
+        </noscript>
       </head>
       <body>
         {/* Google Tag Manager (noscript) */}

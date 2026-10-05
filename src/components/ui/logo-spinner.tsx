@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import roundLogo from "@/assets/round logo.png";
+import roundLogo from "@/assets/round-logo.webp";
 
 export interface LogoSpinnerProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";

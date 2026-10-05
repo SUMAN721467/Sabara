@@ -1,21 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createClient } from "@supabase/supabase-js";
 import { getSiteSetting } from "./site-settings";
+import { getServerSupabase } from "@/lib/supabase-server";
 
 let productsCache: { data: any[]; timestamp: number } | null = null;
 const PRODUCTS_CACHE_TTL = 120000; // 120 seconds (2 minutes)
 
 export function clearProductsCache() {
   productsCache = null;
-}
-
-function getServerSupabase() {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing Supabase environment variables on server");
-  }
-  return createClient(supabaseUrl, supabaseKey);
 }
 
 export async function getOrSeedProducts(supabase: any, filterHidden = false, bypassCache = false) {
@@ -26,10 +17,12 @@ export async function getOrSeedProducts(supabase: any, filterHidden = false, byp
     if (!bypassCache && productsCache && (now - productsCache.timestamp) < PRODUCTS_CACHE_TTL) {
       rawList = productsCache.data;
     } else {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const [productsRes, reviewsRes] = await Promise.all([
+        supabase.from("products").select("*").order("created_at", { ascending: false }),
+        supabase.from("product_reviews").select("product_id, rating")
+      ]);
+      
+      const { data, error } = productsRes;
       
       if (error) {
         console.error("[getOrSeedProducts] fetch error:", error.message);
@@ -40,9 +33,7 @@ export async function getOrSeedProducts(supabase: any, filterHidden = false, byp
       // Aggregate ratings
       let reviewsMap: Record<string, { rating: number; count: number }> = {};
       try {
-        const { data: reviewsData, error: reviewsErr } = await supabase
-          .from("product_reviews")
-          .select("product_id, rating");
+        const { data: reviewsData, error: reviewsErr } = reviewsRes;
           
         if (!reviewsErr && reviewsData) {
           const groups: Record<string, number[]> = {};

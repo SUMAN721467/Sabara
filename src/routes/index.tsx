@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { ArrowRight, Leaf, Hand, Package, Shield, Truck, HelpCircle } from "lucide-react";
-import hero from "@/assets/hero.jpg";
+import heroDesktop from "@/assets/hero.webp";
+import heroMobile from "@/assets/hero-mobile.webp";
 import craft from "@/assets/craft.jpg";
 import mat1 from "@/assets/mat-1.jpg";
 import mat2 from "@/assets/mat-2.jpg";
@@ -116,6 +117,9 @@ const getHomepageSettingsServer = createServerFn({ method: "GET" })
   });
 
 export const Route = createFileRoute("/")({
+  headers: () => ({
+    "Cache-Control": "public, max-age=60, stale-while-revalidate=86400",
+  }),
   staleTime: 1000 * 60 * 5, // 5 minutes client cache: instant navigation back to home
   preloadStaleTime: 1000 * 60 * 5,
   loader: async () => {
@@ -133,18 +137,22 @@ export const Route = createFileRoute("/")({
   },
   component: Index,
   head: ({ loaderData }: any) => {
-    const heroFirstSlide =
+    const heroFirstSlideDesktop =
       loaderData?.heroSettings?.slides?.[0]?.imageUrl ||
-      loaderData?.heroSettings?.slides?.[0]?.mobileImageUrl ||
       loaderData?.heroSettings?.imageUrl ||
-      hero;
+      heroDesktop;
+
+    const heroFirstSlideMobile =
+      loaderData?.heroSettings?.slides?.[0]?.mobileImageUrl ||
+      loaderData?.heroSettings?.mobileImageUrl ||
+      heroMobile;
 
     const metaData = buildPageMeta({
       title: "Sabara — Handcrafted Natural Grass Home Decor & Mats",
       description:
         "Shop handcrafted Madur Kathi and natural grass home decor from West Bengal. Floor mats, yoga mats, wall organisers and table linens — woven by artisans, shipped across India.",
       path: "/",
-      ogImage: heroFirstSlide,
+      ogImage: heroFirstSlideDesktop,
     });
 
     return {
@@ -154,7 +162,15 @@ export const Route = createFileRoute("/")({
         {
           rel: "preload",
           as: "image",
-          href: heroFirstSlide,
+          href: heroFirstSlideDesktop,
+          media: "(min-width: 768px)",
+          fetchPriority: "high",
+        },
+        {
+          rel: "preload",
+          as: "image",
+          href: heroFirstSlideMobile,
+          media: "(max-width: 767px)",
           fetchPriority: "high",
         },
       ],
@@ -191,8 +207,8 @@ function Index() {
       badge: settings.badge || "Small batch · Handwoven",
       title: settings.title || "Mats woven slowly, to live with you for years.",
       subtitle: settings.subtitle || "A collection of natural-fibre floor mats, yoga mats, doormats and table linens - each piece worked on a wooden loom by a single pair of hands.",
-      imageUrl: settings.imageUrl || hero,
-      mobileImageUrl: settings.mobileImageUrl || settings.imageUrl || hero,
+      imageUrl: settings.imageUrl || heroDesktop,
+      mobileImageUrl: settings.mobileImageUrl || settings.imageUrl || heroMobile,
       buttonText: "Shop the collection",
       buttonLink: "/shop",
     },
