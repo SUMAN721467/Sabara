@@ -25,7 +25,12 @@ import {
 import { ArrowUp, ArrowDown, Trash2, Edit, Check, Star, ArrowRight } from "lucide-react";
 import { LogoSpinner } from "@/components/ui/logo-spinner";
 
-export const Route = createFileRoute("/admin")({ component: AdminPage });
+import { buildPageMeta } from "@/lib/seo";
+
+export const Route = createFileRoute("/admin")({ 
+  component: AdminPage,
+  head: () => buildPageMeta({ title: "Admin | Sabara", description: "Admin dashboard.", path: "/admin", noindex: true }),
+});
 
 /* ── helpers ──────────────────────────────────────────────────────────────── */
 

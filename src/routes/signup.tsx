@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 
+import { buildPageMeta } from "@/lib/seo";
+
 export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>) => {
     return {
@@ -9,6 +11,12 @@ export const Route = createFileRoute("/signup")({
     };
   },
   component: SignupPage,
+  head: () => buildPageMeta({
+    title: "Sign up | Sabara",
+    description: "Sign up to Sabara.",
+    path: "/signup",
+    noindex: true
+  }),
 });
 
 function SignupPage() {

@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
+import { buildPageMeta } from "@/lib/seo";
+
 export const Route = createFileRoute("/wishlist")({
   component: WishlistPage,
-  head: () => ({ meta: [{ title: "Wishlist · Sabara" }] }),
+  head: () => buildPageMeta({ title: "Wishlist | Sabara", description: "Your wishlist.", path: "/wishlist", noindex: true }),
 });
 
 function WishlistPage() {

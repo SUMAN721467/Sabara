@@ -13,6 +13,8 @@ import { useShippingSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 import { LogoSpinner } from "@/components/ui/logo-spinner";
 
+import { buildPageMeta } from "@/lib/seo";
+
 export const Route = createFileRoute("/checkout")({
   validateSearch: (search: Record<string, unknown>) => {
     return {
@@ -20,16 +22,20 @@ export const Route = createFileRoute("/checkout")({
     };
   },
   component: CheckoutPage,
-  head: () => ({
-    meta: [{ title: "Checkout · Sabara" }],
-    links: [
-      { rel: "preload", href: "https://checkout.razorpay.com/v1/checkout.js", as: "script" },
-      { rel: "preconnect", href: "https://checkout.razorpay.com" },
-      { rel: "preconnect", href: "https://api.razorpay.com" },
-      { rel: "dns-prefetch", href: "https://checkout.razorpay.com" },
-      { rel: "dns-prefetch", href: "https://api.razorpay.com" },
-    ],
-  }),
+  head: () => {
+    const meta = buildPageMeta({ title: "Checkout | Sabara", description: "Checkout", path: "/checkout", noindex: true });
+    return {
+      meta: meta.meta,
+      links: [
+        ...meta.links,
+        { rel: "preload", href: "https://checkout.razorpay.com/v1/checkout.js", as: "script" },
+        { rel: "preconnect", href: "https://checkout.razorpay.com" },
+        { rel: "preconnect", href: "https://api.razorpay.com" },
+        { rel: "dns-prefetch", href: "https://checkout.razorpay.com" },
+        { rel: "dns-prefetch", href: "https://api.razorpay.com" },
+      ],
+    };
+  },
 });
 
 function CheckoutPage() {

@@ -1,0 +1,3 @@
+Contact: mailto:contact.sabara@gmail.com
+Preferred-Languages: en
+Canonical: https://www.sabara.in/.well-known/security.txt

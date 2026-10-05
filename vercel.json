@@ -5,23 +5,38 @@
       "DANGEROUSLY_DEPLOY_VULNERABLE_TANSTACK_START_XSS": "1"
     }
   },
+  "rewrites": [
+    { "source": "/robots.txt", "destination": "/api/robots" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" }
+  ],
+  "redirects": [
+    { "source": "/privacy", "destination": "/privacy-policy", "statusCode": 301 },
+    { "source": "/terms", "destination": "/terms-and-conditions", "statusCode": 301 },
+    { "source": "/terms-of-service", "destination": "/terms-and-conditions", "statusCode": 301 },
+    { "source": "/return-policy", "destination": "/refund-policy", "statusCode": 301 }
+  ],
   "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
+      ]
+    },
     {
       "source": "/assets/(.*)",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     },
     {
       "source": "/(.*\\.(?:js|css|woff2|woff|ttf|png|jpg|jpeg|webp|svg|ico))",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     }
   ]

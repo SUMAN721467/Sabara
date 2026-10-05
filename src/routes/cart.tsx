@@ -9,9 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useShippingSettings } from "@/lib/settings";
 
+import { buildPageMeta } from "@/lib/seo";
+
 export const Route = createFileRoute("/cart")({
   component: CartPage,
-  head: () => ({ meta: [{ title: "Cart · Sabara" }] }),
+  head: () => buildPageMeta({ title: "Cart | Sabara", description: "Your shopping cart.", path: "/cart", noindex: true }),
 });
 
 function CartPage() {

@@ -11,6 +11,7 @@ import {
 
 import appCss from "../styles.css?url";
 import faviconIcon from "../assets/round logo.png";
+import { buildPageMeta } from "@/lib/seo";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
 import { AuthProvider } from "@/lib/auth";
@@ -20,23 +21,44 @@ import { Toaster } from "@/components/ui/sonner";
 import { AnnouncementBar } from "@/components/site/AnnouncementBar";
 import { FaqChatBot } from "@/components/site/FaqChatBot";
 import { LoginModal } from "@/components/site/LoginModal";
+import { CookieConsent } from "@/components/site/CookieConsent";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="font-serif text-7xl text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
+    <div className="flex min-h-screen flex-col">
+      <div className="flex flex-1 items-center justify-center bg-background px-4 py-24">
+        <div className="max-w-md text-center">
+          <h1 className="font-serif text-7xl text-primary">404</h1>
+          <h2 className="mt-4 font-serif text-2xl font-semibold text-foreground">Page not found</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The page you're looking for doesn't exist or has been moved.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center rounded-full border border-primary bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 w-full sm:w-auto"
+            >
+              Go home
+            </Link>
+            <Link
+              to="/shop"
+              className="inline-flex items-center justify-center rounded-full border border-input bg-background px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary w-full sm:w-auto"
+            >
+              Shop all mats
+            </Link>
+          </div>
+          <div className="mt-10 border-t border-border/60 pt-8">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Popular Categories</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link to="/shop" search={{ category: "Yoga" }} className="text-sm text-foreground hover:text-primary transition-colors hover:underline">Yoga Mats</Link>
+              <span className="text-muted-foreground/30">•</span>
+              <Link to="/shop" search={{ category: "Floor" }} className="text-sm text-foreground hover:text-primary transition-colors hover:underline">Floor Mats</Link>
+              <span className="text-muted-foreground/30">•</span>
+              <Link to="/shop" search={{ category: "Table" }} className="text-sm text-foreground hover:text-primary transition-colors hover:underline">Table Decor</Link>
+              <span className="text-muted-foreground/30">•</span>
+              <Link to="/shop" search={{ category: "Doormat" }} className="text-sm text-foreground hover:text-primary transition-colors hover:underline">Doormats</Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -79,31 +101,29 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Sabara - Woven with Tradition" },
-      {
-        name: "description",
-        content: "Small-batch handwoven mats in natural fibres. Made slowly, to last.",
-      },
-      { property: "og:title", content: "Sabara - Woven with Tradition" },
-      {
-        property: "og:description",
-        content: "Small-batch handwoven mats in natural fibres. Made slowly, to last.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Work+Sans:wght@300;400;500;600&display=swap" },
-      { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: faviconIcon },
-    ],
-  }),
+  head: () => {
+    const defaultMeta = buildPageMeta({
+      title: "Sabara - Woven with Tradition",
+      description: "Small-batch handwoven mats in natural fibres. Made slowly, to last.",
+      path: "/",
+    });
+    
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        ...defaultMeta.meta,
+      ],
+      links: [
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+        { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Work+Sans:wght@300;400;500;600&display=swap" },
+        { rel: "stylesheet", href: appCss },
+        { rel: "icon", href: faviconIcon },
+        ...defaultMeta.links,
+      ],
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -167,21 +187,37 @@ function RootShell({ children }: { children: React.ReactNode }) {
   }
 
   // Defer non-critical scripts until after paint / idle / first user interaction
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(function() { setTimeout(loadThirdPartyScripts, 1500); }, { timeout: 3500 });
-  } else {
-    window.addEventListener('load', function() { setTimeout(loadThirdPartyScripts, 1500); });
+  function initLoader() {
+    if (document.cookie.indexOf('sabara-cookie-consent=accepted') !== -1) {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(function() { setTimeout(loadThirdPartyScripts, 1500); }, { timeout: 3500 });
+      } else {
+        setTimeout(loadThirdPartyScripts, 1500);
+      }
+
+      var events = ['pointerdown', 'touchstart', 'keydown', 'scroll'];
+      var triggerHandler = function() {
+        loadThirdPartyScripts();
+        events.forEach(function(evt) {
+          window.removeEventListener(evt, triggerHandler, { passive: true });
+        });
+      };
+      events.forEach(function(evt) {
+        window.addEventListener(evt, triggerHandler, { passive: true, once: true });
+      });
+    }
   }
 
-  var events = ['pointerdown', 'touchstart', 'keydown', 'scroll'];
-  var triggerHandler = function() {
+  // Check on load
+  if (document.readyState === 'complete') {
+    initLoader();
+  } else {
+    window.addEventListener('load', initLoader);
+  }
+
+  // Also listen for the custom event when consent is granted
+  window.addEventListener('cookie-consent-granted', function() {
     loadThirdPartyScripts();
-    events.forEach(function(evt) {
-      window.removeEventListener(evt, triggerHandler, { passive: true });
-    });
-  };
-  events.forEach(function(evt) {
-    window.addEventListener(evt, triggerHandler, { passive: true, once: true });
   });
 })();`,
           }}
@@ -210,6 +246,7 @@ function RootComponent() {
             <Toaster richColors position="top-right" />
             <FaqChatBot />
             <LoginModal />
+            <CookieConsent />
           </WishlistProvider>
         </CartProvider>
       </AuthProvider>

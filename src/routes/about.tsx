@@ -3,13 +3,14 @@ import craft from "@/assets/craft.jpg";
 import hero from "@/assets/hero.jpg";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
+import { buildPageMeta } from "@/lib/seo";
+
 export const Route = createFileRoute("/about")({
   component: About,
-  head: () => ({
-    meta: [
-      { title: "Our craft · Sabara" },
-      { name: "description", content: "How our handwoven mats are made — fibre, dye, loom and time." },
-    ],
+  head: () => buildPageMeta({
+    title: "Our craft | Sabara",
+    description: "How our handwoven Madur Kathi mats are made — fibre, dye, loom and time. Learn about the artisans of West Bengal who craft each piece.",
+    path: "/about"
   }),
 });
 

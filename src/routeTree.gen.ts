@@ -10,8 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WishlistRouteImport } from './routes/wishlist'
+import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CheckoutRouteImport } from './routes/checkout'
@@ -25,7 +28,9 @@ import { Route as ApiVerifyPaymentRouteImport } from './routes/api/verify-paymen
 import { Route as ApiTestReturnRouteImport } from './routes/api/test-return'
 import { Route as ApiTestEmailRouteImport } from './routes/api/test-email'
 import { Route as ApiTestDbRouteImport } from './routes/api/test-db'
+import { Route as ApiSitemapRouteImport } from './routes/api/sitemap'
 import { Route as ApiSiteSettingsRouteImport } from './routes/api/site-settings'
+import { Route as ApiRobotsRouteImport } from './routes/api/robots'
 import { Route as ApiProductsRouteImport } from './routes/api/products'
 import { Route as ApiCreateOrderRouteImport } from './routes/api/create-order'
 import { Route as ApiContactRouteImport } from './routes/api/contact'
@@ -48,6 +53,11 @@ const WishlistRoute = WishlistRouteImport.update({
   path: '/wishlist',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
+  id: '/terms-and-conditions',
+  path: '/terms-and-conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -56,6 +66,16 @@ const SignupRoute = SignupRouteImport.update({
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -123,9 +143,19 @@ const ApiTestDbRoute = ApiTestDbRouteImport.update({
   path: '/api/test-db',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSitemapRoute = ApiSitemapRouteImport.update({
+  id: '/api/sitemap',
+  path: '/api/sitemap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSiteSettingsRoute = ApiSiteSettingsRouteImport.update({
   id: '/api/site-settings',
   path: '/api/site-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRobotsRoute = ApiRobotsRouteImport.update({
+  id: '/api/robots',
+  path: '/api/robots',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProductsRoute = ApiProductsRouteImport.update({
@@ -218,15 +248,20 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/shop': typeof ShopRoute
   '/signup': typeof SignupRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/wishlist': typeof WishlistRoute
   '/api/cancel-order': typeof ApiCancelOrderRoute
   '/api/checkout': typeof ApiCheckoutRoute
   '/api/contact': typeof ApiContactRoute
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/products': typeof ApiProductsRoute
+  '/api/robots': typeof ApiRobotsRoute
   '/api/site-settings': typeof ApiSiteSettingsRoute
+  '/api/sitemap': typeof ApiSitemapRoute
   '/api/test-db': typeof ApiTestDbRoute
   '/api/test-email': typeof ApiTestEmailRoute
   '/api/test-return': typeof ApiTestReturnRoute
@@ -253,15 +288,20 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/shop': typeof ShopRoute
   '/signup': typeof SignupRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/wishlist': typeof WishlistRoute
   '/api/cancel-order': typeof ApiCancelOrderRoute
   '/api/checkout': typeof ApiCheckoutRoute
   '/api/contact': typeof ApiContactRoute
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/products': typeof ApiProductsRoute
+  '/api/robots': typeof ApiRobotsRoute
   '/api/site-settings': typeof ApiSiteSettingsRoute
+  '/api/sitemap': typeof ApiSitemapRoute
   '/api/test-db': typeof ApiTestDbRoute
   '/api/test-email': typeof ApiTestEmailRoute
   '/api/test-return': typeof ApiTestReturnRoute
@@ -289,15 +329,20 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/shop': typeof ShopRoute
   '/signup': typeof SignupRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/wishlist': typeof WishlistRoute
   '/api/cancel-order': typeof ApiCancelOrderRoute
   '/api/checkout': typeof ApiCheckoutRoute
   '/api/contact': typeof ApiContactRoute
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/products': typeof ApiProductsRoute
+  '/api/robots': typeof ApiRobotsRoute
   '/api/site-settings': typeof ApiSiteSettingsRoute
+  '/api/sitemap': typeof ApiSitemapRoute
   '/api/test-db': typeof ApiTestDbRoute
   '/api/test-email': typeof ApiTestEmailRoute
   '/api/test-return': typeof ApiTestReturnRoute
@@ -326,15 +371,20 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/login'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/shop'
     | '/signup'
+    | '/terms-and-conditions'
     | '/wishlist'
     | '/api/cancel-order'
     | '/api/checkout'
     | '/api/contact'
     | '/api/create-order'
     | '/api/products'
+    | '/api/robots'
     | '/api/site-settings'
+    | '/api/sitemap'
     | '/api/test-db'
     | '/api/test-email'
     | '/api/test-return'
@@ -361,15 +411,20 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/login'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/shop'
     | '/signup'
+    | '/terms-and-conditions'
     | '/wishlist'
     | '/api/cancel-order'
     | '/api/checkout'
     | '/api/contact'
     | '/api/create-order'
     | '/api/products'
+    | '/api/robots'
     | '/api/site-settings'
+    | '/api/sitemap'
     | '/api/test-db'
     | '/api/test-email'
     | '/api/test-return'
@@ -396,15 +451,20 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/login'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/shop'
     | '/signup'
+    | '/terms-and-conditions'
     | '/wishlist'
     | '/api/cancel-order'
     | '/api/checkout'
     | '/api/contact'
     | '/api/create-order'
     | '/api/products'
+    | '/api/robots'
     | '/api/site-settings'
+    | '/api/sitemap'
     | '/api/test-db'
     | '/api/test-email'
     | '/api/test-return'
@@ -432,15 +492,20 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ContactRoute: typeof ContactRoute
   LoginRoute: typeof LoginRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
   ShopRoute: typeof ShopRoute
   SignupRoute: typeof SignupRoute
+  TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   WishlistRoute: typeof WishlistRoute
   ApiCancelOrderRoute: typeof ApiCancelOrderRoute
   ApiCheckoutRoute: typeof ApiCheckoutRoute
   ApiContactRoute: typeof ApiContactRoute
   ApiCreateOrderRoute: typeof ApiCreateOrderRoute
   ApiProductsRoute: typeof ApiProductsRoute
+  ApiRobotsRoute: typeof ApiRobotsRoute
   ApiSiteSettingsRoute: typeof ApiSiteSettingsRoute
+  ApiSitemapRoute: typeof ApiSitemapRoute
   ApiTestDbRoute: typeof ApiTestDbRoute
   ApiTestEmailRoute: typeof ApiTestEmailRoute
   ApiTestReturnRoute: typeof ApiTestReturnRoute
@@ -468,6 +533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/terms-and-conditions': {
+      id: '/terms-and-conditions'
+      path: '/terms-and-conditions'
+      fullPath: '/terms-and-conditions'
+      preLoaderRoute: typeof TermsAndConditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -480,6 +552,20 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -573,11 +659,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTestDbRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/sitemap': {
+      id: '/api/sitemap'
+      path: '/api/sitemap'
+      fullPath: '/api/sitemap'
+      preLoaderRoute: typeof ApiSitemapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/site-settings': {
       id: '/api/site-settings'
       path: '/api/site-settings'
       fullPath: '/api/site-settings'
       preLoaderRoute: typeof ApiSiteSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/robots': {
+      id: '/api/robots'
+      path: '/api/robots'
+      fullPath: '/api/robots'
+      preLoaderRoute: typeof ApiRobotsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/products': {
@@ -704,15 +804,20 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ContactRoute: ContactRoute,
   LoginRoute: LoginRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   ShopRoute: ShopRoute,
   SignupRoute: SignupRoute,
+  TermsAndConditionsRoute: TermsAndConditionsRoute,
   WishlistRoute: WishlistRoute,
   ApiCancelOrderRoute: ApiCancelOrderRoute,
   ApiCheckoutRoute: ApiCheckoutRoute,
   ApiContactRoute: ApiContactRoute,
   ApiCreateOrderRoute: ApiCreateOrderRoute,
   ApiProductsRoute: ApiProductsRoute,
+  ApiRobotsRoute: ApiRobotsRoute,
   ApiSiteSettingsRoute: ApiSiteSettingsRoute,
+  ApiSitemapRoute: ApiSitemapRoute,
   ApiTestDbRoute: ApiTestDbRoute,
   ApiTestEmailRoute: ApiTestEmailRoute,
   ApiTestReturnRoute: ApiTestReturnRoute,

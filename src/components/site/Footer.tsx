@@ -26,6 +26,17 @@ export function Footer() {
 
         <div>
           <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Legal
+          </div>
+          <ul className="mt-4 space-y-2 text-sm">
+            <li><Link to="/privacy-policy" className="hover:text-foreground text-muted-foreground py-1 inline-block">Privacy Policy</Link></li>
+            <li><Link to="/terms-and-conditions" className="hover:text-foreground text-muted-foreground py-1 inline-block">Terms & Conditions</Link></li>
+            <li><Link to="/refund-policy" className="hover:text-foreground text-muted-foreground py-1 inline-block">Refund Policy</Link></li>
+          </ul>
+        </div>
+
+        <div>
+          <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
             Stay in touch
           </div>
           <div className="mt-4 flex gap-3">

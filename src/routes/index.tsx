@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { ArrowRight, Leaf, Hand, Package } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { ArrowRight, Leaf, Hand, Package, Shield, Truck, HelpCircle } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import craft from "@/assets/craft.jpg";
 import mat1 from "@/assets/mat-1.jpg";
@@ -10,6 +9,7 @@ import mat3 from "@/assets/mat-3.jpg";
 import mat4 from "@/assets/mat-4.jpg";
 import { ProductCard } from "@/components/site/ProductCard";
 import { defaultHomepageSettings } from "@/lib/settings";
+import { buildPageMeta, organizationSchema, websiteSchema } from "@/lib/seo";
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { getOrSeedProducts } from "./api/products";
@@ -139,16 +139,18 @@ export const Route = createFileRoute("/")({
       loaderData?.heroSettings?.imageUrl ||
       hero;
 
+    const metaData = buildPageMeta({
+      title: "Sabara — Handcrafted Natural Grass Home Decor & Mats",
+      description:
+        "Shop handcrafted Madur Kathi and natural grass home decor from West Bengal. Floor mats, yoga mats, wall organisers and table linens — woven by artisans, shipped across India.",
+      path: "/",
+      ogImage: heroFirstSlide,
+    });
+
     return {
-      meta: [
-        { title: "Sabara - Woven with Tradition" },
-        {
-          name: "description",
-          content:
-            "Small-batch handwoven mats in natural fibres. Floor mats, yoga mats, doormats and table linens made by artisans.",
-        },
-      ],
+      meta: metaData.meta,
       links: [
+        ...metaData.links,
         {
           rel: "preload",
           as: "image",
@@ -239,6 +241,18 @@ function Index() {
 
   return (
     <div>
+      <h1 className="sr-only">Sabara - Handcrafted Natural Grass Home Decor & Mats from India</h1>
+      
+      {/* Schema Markup for Homepage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema()) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema()) }}
+      />
+
       {/* HERO — full width sliding carousel */}
       <section className="relative w-full overflow-hidden">
         <Carousel setApi={setApi} opts={{ loop: true }} className="w-full relative aspect-[207/325] md:aspect-[32/13] h-auto min-h-0">
@@ -287,7 +301,10 @@ function Index() {
         <div className="mx-auto max-w-2xl px-2 sm:px-6">
           <div className="grid grid-cols-4 gap-x-1.5 sm:gap-x-4 justify-items-center">
             {values.map((v, i) => {
-              const IconComponent = (LucideIcons as any)[v.icon] || LucideIcons.HelpCircle;
+              const iconMap: Record<string, any> = {
+                Hand, Leaf, Package, Shield, Truck, ArrowRight, HelpCircle
+              };
+              const IconComponent = iconMap[v.icon] || HelpCircle;
               return (
                 <ScrollReveal key={i} variant="fade-up" delay={i * 80} duration={500}>
                   <div className="flex flex-col items-center text-center group cursor-default">

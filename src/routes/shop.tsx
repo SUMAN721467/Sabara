@@ -6,6 +6,7 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { cn } from "@/lib/utils";
 import { Search, ArrowLeft } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
+import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 
 type Sort = "featured" | "low" | "high";
 
@@ -19,6 +20,8 @@ async function fetchProducts(params: { q?: string; category?: string }): Promise
   if (!res.ok) throw new Error("Failed to load products");
   return res.json() as Promise<{ products: Product[]; categories: string[] }>;
 }
+
+import { buildPageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/shop")({
   validateSearch: (search: Record<string, unknown>): SearchParams => ({
@@ -39,12 +42,21 @@ export const Route = createFileRoute("/shop")({
       }
     }
   },
-  head: () => ({
-    meta: [
-      { title: "Shop · Sabara" },
-      { name: "description", content: "Browse our collection of handwoven natural-fibre mats." },
-    ],
-  }),
+  head: ({ search }) => {
+    const isCategory = search?.category && search.category !== "All";
+    const title = isCategory 
+      ? `${search.category} Mats & Decor | Sabara` 
+      : "Shop Handwoven Natural Grass Mats | Sabara";
+    const desc = isCategory
+      ? `Browse our collection of handwoven ${search.category?.toLowerCase()} mats. Ethically crafted from natural fibres in West Bengal.`
+      : "Browse our complete collection of handwoven natural-fibre mats. Floor mats, yoga mats, and table decor — crafted by artisans.";
+    
+    return buildPageMeta({
+      title,
+      description: desc,
+      path: isCategory ? `/shop?category=${encodeURIComponent(search.category!)}` : "/shop"
+    });
+  },
   component: Shop,
 });
 
@@ -174,12 +186,7 @@ function Shop() {
   return (
     <div className="mx-auto max-w-7xl px-4 pt-6 pb-14 sm:px-6 md:pt-8 md:pb-20">
       <ScrollReveal variant="fade-up" duration={800}>
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to home
-        </Link>
+        <Breadcrumbs items={[{ name: "Shop" }]} className="mb-6" />
         <header className="max-w-2xl">
           <span className="text-xs font-medium uppercase tracking-[0.22em] text-primary">
             The full collection

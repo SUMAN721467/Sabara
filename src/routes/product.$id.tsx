@@ -9,11 +9,13 @@ import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/site/ProductCard";
+import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { getOrSeedProducts } from "./api/products";
 import { products as fallbackProducts } from "@/data/products";
+import { buildPageMeta, productSchema, breadcrumbSchema } from "@/lib/seo";
 
 const productDetailsCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL_MS = 60 * 1000; // 1 minute in-memory server cache
@@ -189,15 +191,19 @@ export const Route = createFileRoute("/product/$id")({
       </Link>
     </div>
   ),
-  head: ({ loaderData }) =>
-    loaderData?.product
-      ? {
-          meta: [
-            { title: `${loaderData.product.name} · Sabara` },
-            { name: "description", content: loaderData.product.story },
-          ],
-        }
-      : {},
+  head: ({ loaderData }) => {
+    if (!loaderData?.product) return {};
+    const metaData = buildPageMeta({
+      title: `${loaderData.product.name} | Sabara`,
+      description: loaderData.product.story || "",
+      path: `/product/${loaderData.product.id}`,
+      ogImage: loaderData.product.image,
+    });
+    return {
+      meta: metaData.meta,
+      links: metaData.links,
+    };
+  },
 });
 
 function ZoomableImage({ src, alt }: { src: string; alt: string }) {
@@ -499,12 +505,25 @@ function ProductPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 md:py-8">
-      <Link
-        to="/shop"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to shop
-      </Link>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema([
+          { name: "Home", url: "https://www.sabara.in/" },
+          { name: "Shop", url: "https://www.sabara.in/shop" },
+          { name: product.name, url: `https://www.sabara.in/product/${product.id}` }
+        ])) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema(product)) }}
+      />
+      <Breadcrumbs 
+        items={[
+          { name: "Shop", url: "/shop" },
+          { name: product.name }
+        ]} 
+        className="mb-4"
+      />
 
       <div className="mt-4 grid gap-6 md:grid-cols-[390px_1fr] lg:grid-cols-[415px_1fr] lg:gap-10 items-start">
         <div className="flex flex-col gap-3 w-full max-w-[390px] lg:max-w-[415px] mx-auto md:mx-0 md:sticky md:top-20 self-start">

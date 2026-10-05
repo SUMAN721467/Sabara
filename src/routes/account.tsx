@@ -15,6 +15,8 @@ import { INDIAN_STATES, fetchDistrictAndStateFromPincode } from "@/lib/pincode";
 import { cn } from "@/lib/utils";
 import { LogoSpinner } from "@/components/ui/logo-spinner";
 
+import { buildPageMeta } from "@/lib/seo";
+
 export const Route = createFileRoute("/account")({
   validateSearch: (search: Record<string, unknown>) => {
     return {
@@ -22,11 +24,11 @@ export const Route = createFileRoute("/account")({
     };
   },
   component: AccountPage,
-  head: () => ({
-    meta: [
-      { title: "Sabara - Woven with Tradition" },
-      { name: "description", content: "Manage your Sabara account." },
-    ],
+  head: () => buildPageMeta({
+    title: "Account | Sabara",
+    description: "Manage your Sabara account.",
+    path: "/account",
+    noindex: true
   }),
 });
 

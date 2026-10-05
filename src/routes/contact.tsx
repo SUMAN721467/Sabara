@@ -4,13 +4,14 @@ import { toast } from "sonner";
 import { MapPin, Mail, Instagram, Phone } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
+import { buildPageMeta } from "@/lib/seo";
+
 export const Route = createFileRoute("/contact")({
   component: Contact,
-  head: () => ({
-    meta: [
-      { title: "Contact · Sabara" },
-      { name: "description", content: "Get in touch with the Sabara workshop." },
-    ],
+  head: () => buildPageMeta({
+    title: "Contact Us | Sabara",
+    description: "Get in touch with the Sabara workshop. Have a question about your order, our mats, or wholesale? Reach out to us.",
+    path: "/contact"
   }),
 });
 
