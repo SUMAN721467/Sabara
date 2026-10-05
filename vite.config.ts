@@ -187,7 +187,6 @@ export default defineConfig(async ({ command, mode }) => {
         output: {
           manualChunks(id) {
             if (id.includes("node_modules")) {
-              if (id.includes("lucide-react")) return "vendor-lucide";
               if (id.includes("@radix-ui")) return "vendor-radix";
               if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts";
               if (id.includes("embla-carousel")) return "vendor-carousel";

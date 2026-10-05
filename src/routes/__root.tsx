@@ -115,6 +115,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         ...defaultMeta.meta,
       ],
       links: [
+        { rel: "preconnect", href: "https://auzyzlrimtjmzbkimtvz.supabase.co", crossOrigin: "anonymous" },
         { rel: "stylesheet", href: appCss },
         { rel: "icon", href: faviconIcon },
         ...defaultMeta.links,
