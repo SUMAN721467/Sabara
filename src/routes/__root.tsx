@@ -11,6 +11,7 @@ import {
 
 import appCss from "../styles.css?url";
 import faviconIcon from "../assets/favicon.webp";
+import appleTouchIcon from "../assets/round-logo.webp";
 import { buildPageMeta } from "@/lib/seo";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
@@ -118,6 +119,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { rel: "preconnect", href: "https://auzyzlrimtjmzbkimtvz.supabase.co", crossOrigin: "anonymous" },
         { rel: "stylesheet", href: appCss },
         { rel: "icon", href: faviconIcon },
+        { rel: "apple-touch-icon", href: appleTouchIcon },
         ...defaultMeta.links,
       ],
     };

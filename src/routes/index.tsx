@@ -150,7 +150,7 @@ export const Route = createFileRoute("/")({
     const metaData = buildPageMeta({
       title: "Sabara — Handcrafted Natural Grass Home Decor & Mats",
       description:
-        "Shop handcrafted Madur Kathi and natural grass home decor from West Bengal. Floor mats, yoga mats, wall organisers and table linens — woven by artisans, shipped across India.",
+        "Shop handcrafted Madur Kathi mats and natural grass home decor from West Bengal. Explore artisan-made mats, wall organisers and more, shipped across India.",
       path: "/",
       ogImage: heroFirstSlideDesktop,
     });
@@ -258,7 +258,6 @@ function Index() {
   return (
     <div>
       <h1 className="sr-only">Sabara - Handcrafted Natural Grass Home Decor & Mats from India</h1>
-      
       {/* Schema Markup for Homepage */}
       <script
         type="application/ld+json"

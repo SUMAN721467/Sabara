@@ -326,7 +326,7 @@ export function Navbar() {
       >
         {/* Drawer Header */}
         <div className="flex h-16 items-center justify-between px-5 border-b border-border/60">
-          <Link to="/" onClick={() => setOpen(false)} className="shrink-0 group">
+          <Link to="/" onClick={() => setOpen(false)} aria-label="Sabara Homepage" className="shrink-0 group">
             <img
               src={logoImg}
               alt="Sabara"
@@ -581,7 +581,7 @@ export function Navbar() {
               {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
 
-            <Link to="/" className="font-serif text-xl tracking-tight group mr-2 sm:mr-3 shrink-0">
+            <Link to="/" aria-label="Sabara Homepage" className="font-serif text-xl tracking-tight group mr-2 sm:mr-3 shrink-0">
               <img src={logoImg} alt="Sabara" width={130} height={36} decoding="async" className="h-6 sm:h-9 w-auto max-h-6 sm:max-h-9 max-w-[90px] sm:max-w-none transition-transform duration-500 ease-out group-hover:scale-105" />
             </Link>
           </div>
